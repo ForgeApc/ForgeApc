@@ -1761,7 +1761,7 @@ export default function RigForge() {
               )}
               <div className="rf-acct-chip">
                 <span className="rf-acct-name">{hdrUser.name}</span>
-                <RankBadge rank={moggerRank(hdrUser.elo, hdrUser.crank)} />
+                <RankBadges elo={hdrUser.elo} custom={hdrUser.crank} />
                 <button className="rf-acct-out" onClick={() => setHdrLogoutAsk(true)} title="Log out"><X size={13} /></button>
               </div>
             </>
@@ -2124,36 +2124,34 @@ function moggerAI(ucKey, budget, elo) {
   return build;
 }
 // Custom rank can be plain text (legacy) or JSON {name,color,icon}.
-function parseCrank(c) {
-  if (!c) return null;
-  let s = String(c).trim(); if (!s) return null;
-  const Q = String.fromCharCode(34); // a double-quote char, without writing one in code
-  // try JSON (and unwrap a double-encoded string once)
+function parseCrankOne(s) {
+  const Q = String.fromCharCode(34);
+  s = String(s).trim();
   for (let i = 0; i < 2; i++) {
     if (s.charCodeAt(0) === 123) {
       try {
         const o = JSON.parse(s);
-        if (o && typeof o === "object" && o.name) return { name: String(o.name), color: o.color || "#ff7ae0", icon: o.icon || "\u2B50" };
-        if (typeof o === "string") { s = o.trim(); continue; }
+        if (o && typeof o === 'object' && o.name) return { name: String(o.name), color: o.color || '#ff7ae0', icon: o.icon || '⭐' };
+        if (typeof o === 'string') { s = o.trim(); continue; }
       } catch (e) {}
     }
     break;
   }
-  // malformed-but-recognizable JSON: pull fields out manually so raw braces never show
-  if (s.indexOf(Q + "name" + Q) >= 0) {
-    const grab = (key) => {
-      const t = s.indexOf(Q + key + Q); if (t < 0) return null;
-      const colon = s.indexOf(":", t); if (colon < 0) return null;
-      const q1 = s.indexOf(Q, colon + 1); if (q1 < 0) return null;
-      const q2 = s.indexOf(Q, q1 + 1); if (q2 < 0) return null;
-      return s.slice(q1 + 1, q2);
-    };
-    const nm = grab("name");
-    if (nm) return { name: nm, color: grab("color") || "#ff7ae0", icon: grab("icon") || "\u2B50" };
+  if (s.indexOf(Q + 'name' + Q) >= 0) {
+    const grab = (key) => { const t = s.indexOf(Q + key + Q); if (t < 0) return null; const colon = s.indexOf(':', t); if (colon < 0) return null; const q1 = s.indexOf(Q, colon + 1); if (q1 < 0) return null; const q2 = s.indexOf(Q, q1 + 1); if (q2 < 0) return null; return s.slice(q1 + 1, q2); };
+    const nm = grab('name'); if (nm) return { name: nm, color: grab('color') || '#ff7ae0', icon: grab('icon') || '⭐' };
   }
-  // plain text legacy rank
-  if (s.charCodeAt(0) === 123) return null; // looked like JSON but unreadable — fall back to elo rank
-  return { name: s, color: "#ff7ae0", icon: "\u2B50" };
+  if (s.charCodeAt(0) === 123) return null;
+  return { name: s, color: '#ff7ae0', icon: '⭐' };
+}
+function parseCrank(c) {
+  if (!c) return [];
+  let s = String(c).trim(); if (!s) return [];
+  if (s.charCodeAt(0) === 91) {
+    try { const arr = JSON.parse(s); if (Array.isArray(arr)) return arr.filter((o) => o && o.name).map((o) => ({ name: String(o.name), color: o.color || '#ff7ae0', icon: o.icon || '⭐' })); } catch (e) {}
+  }
+  const one = parseCrankOne(s);
+  return one ? [one] : [];
 }
 function hexToRgba(hex, a) {
   let h = String(hex || "").replace("#", "");
@@ -2161,10 +2159,7 @@ function hexToRgba(hex, a) {
   const n = parseInt(h, 16); if (isNaN(n) || h.length !== 6) return "rgba(255,122,224," + a + ")";
   return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
 }
-// Player rank from elo, or a custom override (set by admin).
-function moggerRank(elo, custom) {
-  const cr = parseCrank(custom);
-  if (cr) return { name: cr.name, cls: "custom", icon: cr.icon, color: cr.color, custom: true };
+function eloRank(elo) {
   const e = typeof elo === "number" && isFinite(elo) ? elo : 0;
   if (e >= 2500) return { name: "God Tier", cls: "god", icon: "👑", color: "#ffc24b" };
   if (e >= 1500) return { name: "Elite Tier", cls: "elite", icon: "💎", color: "#7c5cff" };
@@ -2173,10 +2168,21 @@ function moggerRank(elo, custom) {
   if (e >= 650) return { name: "Mid Tier", cls: "mid", icon: "🔧", color: "#46e0a0" };
   return { name: "Low Tier", cls: "low", icon: "🔩", color: "#8aa0b4" };
 }
+// Returns array of ranks — custom badges if any, else [eloRank]
+function moggerRanks(elo, custom) {
+  const cr = parseCrank(custom);
+  if (cr.length > 0) return cr.map((r) => ({ ...r, cls: "custom", custom: true }));
+  return [eloRank(elo)];
+}
+// kept for backwards compat — returns first rank only
+function moggerRank(elo, custom) { return moggerRanks(elo, custom)[0]; }
 function RankBadge({ rank }) {
   if (!rank) return null;
   const style = rank.custom ? { color: "#fff", background: hexToRgba(rank.color, 0.2), borderColor: rank.color, boxShadow: "0 0 12px " + hexToRgba(rank.color, 0.45) } : undefined;
   return <span className={"pm-rank pm-rank-" + rank.cls} style={style}>{rank.icon} {rank.name}</span>;
+}
+function RankBadges({ elo, custom }) {
+  return <>{moggerRanks(elo, custom).map((r, i) => <RankBadge key={i} rank={r} />)}</>;
 }
 // Searchable icon set (system emoji, rendered crisp/pixelated via CSS).
 const MOGGER_EMOJI = [
@@ -3046,6 +3052,7 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
   const [rankDraft, setRankDraft] = useState("");
   const [colorDraft, setColorDraft] = useState("#ff7ae0");
   const [iconDraft, setIconDraft] = useState("⭐");
+  const [ranksDraft, setRanksDraft] = useState([]);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [msg, setMsg] = useState("");
   const load = async () => { setRows(null); const r = await netAllUsers(); if (r.error) { setErr(r.error); setRows([]); } else { setErr(""); setRows(r.rows); } };
@@ -3058,7 +3065,7 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
     if (!r.ok) { setErr(r.error || "Delete failed — did you run the delete-permission SQL?"); return; }
     setRows((prev) => (prev || []).filter((u) => u.id !== id));
   };
-  const openRow = (u) => { if (expanded === u.id) { setExpanded(null); return; } setExpanded(u.id); setEloDraft(String(u.elo)); setPwDraft(""); const cr = parseCrank(u.crank); setRankDraft(cr ? cr.name : ""); setColorDraft(cr ? cr.color : "#ff7ae0"); setIconDraft(cr ? cr.icon : "⭐"); setEmojiOpen(false); setMsg(""); setErr(""); };
+  const openRow = (u) => { if (expanded === u.id) { setExpanded(null); return; } setExpanded(u.id); setEloDraft(String(u.elo)); setPwDraft(""); const cr = parseCrank(u.crank); setRanksDraft(cr); setRankDraft(""); setColorDraft("#ff7ae0"); setIconDraft("⭐"); setEmojiOpen(false); setMsg(""); setErr(""); };
   const saveElo = async (u) => {
     const v = parseInt(eloDraft, 10);
     if (isNaN(v) || v < 0 || v > 100000) { setErr("Enter a whole number between 0 and 100000."); return; }
@@ -3074,15 +3081,20 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
     setRows((prev) => (prev || []).map((x) => x.id === u.id ? { ...x, hash: "(updated)" } : x));
     setPwDraft(""); setMsg("Password reset. Tell the user their new password: " + pwDraft);
   };
-  const saveRank = async (u) => {
-    setMsg(""); setErr("");
+  const addRank = () => {
     const nm = rankDraft.trim().slice(0, 24);
-    const payload = nm ? JSON.stringify({ name: nm, color: colorDraft, icon: iconDraft || "⭐" }) : "";
+    if (!nm) { setErr(“Enter a rank name first.”); return; }
+    setRanksDraft((prev) => [...prev, { name: nm, color: colorDraft, icon: iconDraft || “⭐” }]);
+    setRankDraft(“”); setColorDraft(“#ff7ae0”); setIconDraft(“⭐”); setErr(“”);
+  };
+  const removeRank = (i) => setRanksDraft((prev) => prev.filter((_, idx) => idx !== i));
+  const saveRank = async (u) => {
+    setMsg(“”); setErr(“”);
+    const payload = ranksDraft.length > 0 ? JSON.stringify(ranksDraft) : “”;
     setBusyId(u.id); const r = await netSetCustomRank(u.id, payload); setBusyId(null);
-    if (!r.ok) { setErr(r.error || "Could not set rank."); return; }
-    const stored = nm ? payload : null;
-    setRows((prev) => (prev || []).map((x) => x.id === u.id ? { ...x, crank: stored } : x));
-    setMsg(nm ? "Custom rank set to “" + nm + "”." : "Custom rank cleared — back to elo rank.");
+    if (!r.ok) { setErr(r.error || “Could not set rank.”); return; }
+    setRows((prev) => (prev || []).map((x) => x.id === u.id ? { ...x, crank: payload || null } : x));
+    setMsg(ranksDraft.length > 0 ? “Ranks saved (“ + ranksDraft.length + “ badge” + (ranksDraft.length > 1 ? “s” : “”) + “).” : “Custom ranks cleared — back to elo rank.”);
   };
   if (!authed) {
     return (
@@ -3105,7 +3117,7 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
           {rows.map((u) => (
             <div key={u.id} className="pm-admin-item">
               <div className="pm-lb-row pm-admin-row">
-                <button className="pm-admin-open" onClick={() => openRow(u)}><span className="pm-lb-name">{u.name}<RankBadge rank={moggerRank(u.elo, u.crank)} /></span></button>
+                <button className="pm-admin-open" onClick={() => openRow(u)}><span className="pm-lb-name">{u.name}<RankBadges elo={u.elo} custom={u.crank} /></span></button>
                 <span className="pm-lb-elo">{u.elo}</span>
                 {isCoadmin ? (
                   <button className="pm-del-btn" disabled title="Co-admins can't delete accounts" style={{opacity:0.35,cursor:"not-allowed"}}><X size={14} /></button>
@@ -3118,10 +3130,11 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
               {expanded === u.id && (
                 <div className="pm-admin-edit">
                   <div className="pm-admin-line" style={isCoadmin ? {opacity:0.5} : {}}><span className="pm-admin-l">Elo</span><input className="pm-admin-in" value={eloDraft} onChange={(e) => setEloDraft(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" disabled={isCoadmin} /><button className="pm-admin-save" disabled={busyId === u.id || isCoadmin} onClick={() => saveElo(u)}>Save</button></div>
-                  <div className="pm-admin-line"><span className="pm-admin-l">Custom rank</span><input className="pm-admin-in" value={rankDraft} maxLength={24} onChange={(e) => setRankDraft(e.target.value)} placeholder="blank = elo rank" /></div>
-                  <div className="pm-admin-line"><span className="pm-admin-l">Color & icon</span><input className="pm-admin-color" type="color" value={colorDraft} onChange={(e) => setColorDraft(e.target.value)} /><button className="pm-emoji-cur" onClick={() => setEmojiOpen((o) => !o)}>{iconDraft || "⭐"} ▾</button><button className="pm-admin-save" disabled={busyId === u.id} onClick={() => saveRank(u)}>{rankDraft.trim() ? "Set" : "Clear"}</button></div>
+                  <div className="pm-admin-line"><span className="pm-admin-l">Badges</span><span style={{display:"flex",flexWrap:"wrap",gap:4}}>{ranksDraft.length === 0 ? <span style={{color:"var(--c-muted)",fontSize:12}}>none (elo rank)</span> : ranksDraft.map((rk, i) => <span key={i} style={{display:"inline-flex",alignItems:"center",gap:3}}><RankBadge rank={{...rk,cls:"custom",custom:true}} /><button onClick={() => removeRank(i)} style={{background:"none",border:"none",color:"var(--c-muted)",cursor:"pointer",fontSize:12,padding:"0 2px"}}>✕</button></span>)}</span></div>
+                  <div className="pm-admin-line"><span className="pm-admin-l">New badge</span><input className="pm-admin-in" value={rankDraft} maxLength={24} onChange={(e) => setRankDraft(e.target.value)} placeholder="badge name" style={{flex:1}} /></div>
+                  <div className="pm-admin-line"><span className="pm-admin-l">Color & icon</span><input className="pm-admin-color" type="color" value={colorDraft} onChange={(e) => setColorDraft(e.target.value)} /><button className="pm-emoji-cur" onClick={() => setEmojiOpen((o) => !o)}>{iconDraft || "⭐"} ▾</button><button className="pm-admin-save" disabled={!rankDraft.trim()} onClick={addRank}>+ Add</button></div>
                   {emojiOpen && <MoggerEmojiPicker onPick={(e) => { setIconDraft(e); setEmojiOpen(false); }} />}
-                  <div className="pm-admin-line"><span className="pm-admin-l">Preview</span><RankBadge rank={{ name: rankDraft.trim() || "(elo rank)", cls: "custom", icon: iconDraft || "⭐", color: colorDraft, custom: true }} /></div>
+                  <div className="pm-admin-line"><span className="pm-admin-l" /><button className="pm-admin-save" disabled={busyId === u.id} onClick={() => saveRank(u)}>Save badges</button><button className="pm-admin-save" style={{marginLeft:6,opacity:0.6}} disabled={busyId === u.id} onClick={() => { setRanksDraft([]); }}>Clear all</button></div>
                   <div className="pm-admin-line"><span className="pm-admin-l">New password</span><input className="pm-admin-in" value={pwDraft} onChange={(e) => setPwDraft(e.target.value)} placeholder="set a new one" /><button className="pm-admin-save" disabled={busyId === u.id || !pwDraft} onClick={() => resetPw(u)}>Reset</button></div>
                   <div className="pm-admin-hash"><span className="pm-admin-l">Stored hash</span><code>{u.hash}</code></div>
                   <p className="pm-admin-hint">Passwords aren't stored — only this one-way hash, so the real password can't be shown. Use “Reset” to set a new one.</p>
@@ -3147,7 +3160,7 @@ function MoggerLeaderboard({ onBack, meName }) {
           {rows.map((r, i) => (
             <div key={i} className={"pm-lb-row" + (r.name === meName ? " me" : "")}>
               <span className="pm-lb-rank">{i + 1}</span>
-              <span className="pm-lb-name">{r.name}<RankBadge rank={moggerRank(r.elo, r.crank)} /></span>
+              <span className="pm-lb-name">{r.name}<RankBadges elo={r.elo} custom={r.crank} /></span>
               <span className="pm-lb-elo">{r.elo}</span>
             </div>
           ))}
@@ -3218,7 +3231,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
     <div className="pm-mogger rf-fade">
       {screen === "menu" && (
         <div className="pm-menu">
-          <div className="pm-account">{user ? <><span className="pm-acct-name">{user.name}</span><RankBadge rank={moggerRank(user.elo, user.crank)} /><span className="pm-acct-elo">{user.elo} elo</span><button className="pm-acct-btn" onClick={() => persist(null)}>Log out</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in / Sign up</button>}</div>
+          <div className="pm-account">{user ? <><span className="pm-acct-name">{user.name}</span><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo} elo</span><button className="pm-acct-btn" onClick={() => persist(null)}>Log out</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in / Sign up</button>}</div>
           <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
           <p className="pm-tag">Build the best PC for the challenge. AI judges. One winner.</p>
           <div className="pm-mode-grid">
