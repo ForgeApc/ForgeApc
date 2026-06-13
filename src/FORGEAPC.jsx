@@ -184,16 +184,16 @@ const CATALOG = {
     {id:"gpu_87",name:"MSI Ventus 2X RTX 5050",brand:"MSI",model:"RTX 5050",variantLabel:"MSI Ventus 2X",price:270,perf:22,vram:8,tdp:130,len:254},
     {id:"gpu_88",name:"ASUS Dual RTX 5050",brand:"ASUS",model:"RTX 5050",variantLabel:"ASUS Dual",price:270,perf:22,vram:8,tdp:130,len:256},
     {id:"gpu_89",name:"Gigabyte Eagle RTX 5050",brand:"Gigabyte",model:"RTX 5050",variantLabel:"Gigabyte Eagle",price:275,perf:22,vram:8,tdp:130,len:259},
-    {id:"gpu_90",name:"PNY Verto RTX 5060",brand:"PNY",model:"RTX 5060",variantLabel:"PNY Verto",price:300,perf:30,vram:8,tdp:145,len:245},
-    {id:"gpu_91",name:"Zotac Twin Edge RTX 5060",brand:"Zotac",model:"RTX 5060",variantLabel:"Zotac Twin Edge",price:305,perf:30,vram:8,tdp:145,len:250},
-    {id:"gpu_92",name:"Gigabyte Windforce RTX 5060",brand:"Gigabyte",model:"RTX 5060",variantLabel:"Gigabyte Windforce",price:310,perf:30,vram:8,tdp:145,len:260},
-    {id:"gpu_93",name:"MSI Ventus 2X RTX 5060",brand:"MSI",model:"RTX 5060",variantLabel:"MSI Ventus 2X",price:315,perf:30,vram:8,tdp:145,len:255},
-    {id:"gpu_94",name:"ASUS Dual RTX 5060",brand:"ASUS",model:"RTX 5060",variantLabel:"ASUS Dual",price:320,perf:30,vram:8,tdp:145,len:257},
-    {id:"gpu_95",name:"Gigabyte Eagle RTX 5060",brand:"Gigabyte",model:"RTX 5060",variantLabel:"Gigabyte Eagle",price:320,perf:30,vram:8,tdp:145,len:260},
-    {id:"gpu_96",name:"MSI Ventus 3X RTX 5060",brand:"MSI",model:"RTX 5060",variantLabel:"MSI Ventus 3X",price:325,perf:30,vram:8,tdp:145,len:265},
-    {id:"gpu_97",name:"Gigabyte Gaming OC RTX 5060",brand:"Gigabyte",model:"RTX 5060",variantLabel:"Gigabyte Gaming OC",price:330,perf:30,vram:8,tdp:145,len:270},
-    {id:"gpu_98",name:"Zotac Trinity RTX 5060",brand:"Zotac",model:"RTX 5060",variantLabel:"Zotac Trinity",price:335,perf:30,vram:8,tdp:145,len:270},
-    {id:"gpu_99",name:"MSI Gaming Trio RTX 5060",brand:"MSI",model:"RTX 5060",variantLabel:"MSI Gaming Trio",price:340,perf:30,vram:8,tdp:145,len:275},
+    {id:"gpu_90",name:"PNY Verto RTX 5060",brand:"PNY",model:"RTX 5060",variantLabel:"PNY Verto",price:300,perf:38,vram:8,tdp:145,len:245},
+    {id:"gpu_91",name:"Zotac Twin Edge RTX 5060",brand:"Zotac",model:"RTX 5060",variantLabel:"Zotac Twin Edge",price:305,perf:38,vram:8,tdp:145,len:250},
+    {id:"gpu_92",name:"Gigabyte Windforce RTX 5060",brand:"Gigabyte",model:"RTX 5060",variantLabel:"Gigabyte Windforce",price:310,perf:38,vram:8,tdp:145,len:260},
+    {id:"gpu_93",name:"MSI Ventus 2X RTX 5060",brand:"MSI",model:"RTX 5060",variantLabel:"MSI Ventus 2X",price:315,perf:38,vram:8,tdp:145,len:255},
+    {id:"gpu_94",name:"ASUS Dual RTX 5060",brand:"ASUS",model:"RTX 5060",variantLabel:"ASUS Dual",price:320,perf:38,vram:8,tdp:145,len:257},
+    {id:"gpu_95",name:"Gigabyte Eagle RTX 5060",brand:"Gigabyte",model:"RTX 5060",variantLabel:"Gigabyte Eagle",price:320,perf:38,vram:8,tdp:145,len:260},
+    {id:"gpu_96",name:"MSI Ventus 3X RTX 5060",brand:"MSI",model:"RTX 5060",variantLabel:"MSI Ventus 3X",price:325,perf:38,vram:8,tdp:145,len:265},
+    {id:"gpu_97",name:"Gigabyte Gaming OC RTX 5060",brand:"Gigabyte",model:"RTX 5060",variantLabel:"Gigabyte Gaming OC",price:330,perf:38,vram:8,tdp:145,len:270},
+    {id:"gpu_98",name:"Zotac Trinity RTX 5060",brand:"Zotac",model:"RTX 5060",variantLabel:"Zotac Trinity",price:335,perf:38,vram:8,tdp:145,len:270},
+    {id:"gpu_99",name:"MSI Gaming Trio RTX 5060",brand:"MSI",model:"RTX 5060",variantLabel:"MSI Gaming Trio",price:340,perf:38,vram:8,tdp:145,len:275},
     {id:"gpu_100",name:"PNY Verto RTX 5060 Ti 8GB",brand:"PNY",model:"RTX 5060 Ti 8GB",variantLabel:"PNY Verto",price:370,perf:33,vram:8,tdp:180,len:245},
     {id:"gpu_101",name:"Zotac Twin Edge RTX 5060 Ti 8GB",brand:"Zotac",model:"RTX 5060 Ti 8GB",variantLabel:"Zotac Twin Edge",price:380,perf:33,vram:8,tdp:180,len:250},
     {id:"gpu_102",name:"Gigabyte Windforce RTX 5060 Ti 8GB",brand:"Gigabyte",model:"RTX 5060 Ti 8GB",variantLabel:"Gigabyte Windforce",price:385,perf:33,vram:8,tdp:180,len:260},
@@ -2508,7 +2508,7 @@ function MoggerResult({ round, you, opp, oppName, oppElo, myElo, myCrank, eloMsg
       };
       raf = requestAnimationFrame(tick);
       // verdict
-      const sum = (label, b, s) => `${label}: ${CATEGORY_ORDER.map((c) => CAT_META[c].label + "=" + (b[c] ? (b[c].model || b[c].name) : "none")).join(", ")}. Score ${s.total}/1000 (perf ${s.perf}, value ${s.value}, compat ${s.compat}, spent ${fmt(s.spend)}${s.over ? " OVER BUDGET" : ""}${s.dead ? " INCOMPATIBLE-DEAD" : ""}).`;
+      const sum = (label, b, s) => `${label}: ${CATEGORY_ORDER.map((c) => CAT_META[c].label + "=" + (b[c] ? (b[c].model || b[c].name) : "none")).join(", ")}. Score ${s.total}/1000 (perf ${s.perf}, compat ${s.compat}, spent ${fmt(s.spend)}${s.over ? " OVER BUDGET" : ""}${s.dead ? " INCOMPATIBLE-DEAD" : ""}).`;
       const system = "You are the judge of a PC-building battle in an app called PC Mogger. Write a short, punchy, entertaining verdict (2-3 sentences) saying why the winner won — call out the smartest pick and the biggest mistake, like a hype commentator. If a build scored 0 it had incompatible parts; roast that. Do not contradict the stated winner. No preamble.";
       const prompt = `Challenge: ${USE_CASES[round.useCase].label} build, budget ${fmt(round.budget)}.\n\n${sum("PLAYER (You)", you, sy)}\n${sum(oppName, opp, so)}\n\nWinner by score: ${youWin ? "You" : oppName}. Write the verdict.`;
       const fallback = () => { const w = youWin ? "You" : oppName; const d = Math.abs(sy.total - so.total); const loser = youWin ? so : sy; return `${w} take${youWin ? "" : "s"} it${d < 30 ? " in a photo finish" : d > 150 ? " in a blowout" : ""} — better balance for a ${USE_CASES[round.useCase].label} on ${fmt(round.budget)}. ${loser.dead ? "The other rig had incompatible parts and flatlined at zero." : loser.over ? "The other rig busted the budget." : "It came down to part-for-part value."}`; };
