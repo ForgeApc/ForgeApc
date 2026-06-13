@@ -1533,7 +1533,7 @@ export default function RigForge() {
             colorText: "#e2eaf4",
             colorTextSecondary: "#8aa0b4",
             colorDanger: "#ff5c72",
-            fontFamily: "'Sora', sans-serif",
+            fontFamily: "'Chakra Petch', sans-serif",
             borderRadius: "10px",
             spacingUnit: "4px",
           },
