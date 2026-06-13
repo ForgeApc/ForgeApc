@@ -1365,7 +1365,9 @@ export default function RigForge() {
   const [checkoutPlan, setCheckoutPlan] = useState(null); // the tier object being purchased
   const [checkoutErr, setCheckoutErr] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const checkoutInstanceRef = useRef(null);
+  const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
+  const [checkoutReady, setCheckoutReady] = useState(false);
+  const checkoutInstanceRef = useRef(null); // { stripe, elements, subscriptionId }
   const [payBanner, setPayBanner] = useState(null); // { ok, text }
   const [lang, setLang] = useState("en");
   CUR_LANG = lang;
@@ -1504,11 +1506,11 @@ export default function RigForge() {
   useEffect(() => { setHdrUser(acct()); }, [view]);
   const hdrLogout = () => { try { localStorage.removeItem("mogger_user"); } catch (e) {} setHdrUser(null); };
 
-  // Mount Stripe's embedded checkout box inside the Plans popup.
+  // Mount Stripe Payment Element (native card fields styled to match the app).
   useEffect(() => {
     if (!checkoutPlan) return;
     let cancelled = false;
-    setCheckoutErr(""); setCheckoutLoading(true);
+    setCheckoutErr(""); setCheckoutLoading(true); setCheckoutReady(false);
     (async () => {
       try {
         const u = acct();
@@ -1523,10 +1525,31 @@ export default function RigForge() {
         const Stripe = await loadStripeJs();
         if (cancelled) return;
         const stripe = Stripe(data.publishableKey);
-        const checkout = await stripe.initEmbeddedCheckout({ clientSecret: data.clientSecret });
-        if (cancelled) { try { checkout.destroy(); } catch (e) {} return; }
-        checkoutInstanceRef.current = checkout;
-        checkout.mount("#rf-embedded-checkout");
+        const appearance = {
+          theme: "night",
+          variables: {
+            colorPrimary: "#19e8db",
+            colorBackground: "#0c1119",
+            colorText: "#e2eaf4",
+            colorTextSecondary: "#8aa0b4",
+            colorDanger: "#ff5c72",
+            fontFamily: "'Sora', sans-serif",
+            borderRadius: "10px",
+            spacingUnit: "4px",
+          },
+          rules: {
+            ".Input": { border: "1px solid #1e2a3a", backgroundColor: "#070a0f" },
+            ".Input:focus": { border: "1px solid #19e8db", boxShadow: "0 0 0 3px rgba(25,232,219,0.15)" },
+            ".Label": { color: "#8aa0b4", fontSize: "12px", fontWeight: "600", letterSpacing: "0.06em", textTransform: "uppercase" },
+            ".Error": { color: "#ff5c72" },
+          },
+        };
+        const elements = stripe.elements({ clientSecret: data.clientSecret, appearance });
+        const paymentEl = elements.create("payment", { layout: "tabs" });
+        if (cancelled) return;
+        checkoutInstanceRef.current = { stripe, elements, subscriptionId: data.subscriptionId };
+        paymentEl.on("ready", () => { if (!cancelled) setCheckoutReady(true); });
+        paymentEl.mount("#rf-payment-element");
         setCheckoutLoading(false);
       } catch (e) {
         if (!cancelled) { setCheckoutErr((e && e.message) || "Checkout failed."); setCheckoutLoading(false); }
@@ -1534,26 +1557,38 @@ export default function RigForge() {
     })();
     return () => {
       cancelled = true;
-      if (checkoutInstanceRef.current) { try { checkoutInstanceRef.current.destroy(); } catch (e) {} checkoutInstanceRef.current = null; }
+      checkoutInstanceRef.current = null;
     };
   }, [checkoutPlan]);
 
-  const closePlans = () => { setCheckoutPlan(null); setCheckoutErr(""); setPlansOpen(false); };
+  const closePlans = () => { setCheckoutPlan(null); setCheckoutErr(""); setCheckoutSubmitting(false); setPlansOpen(false); };
 
-  // After the box completes, the customer returns to /?checkout=return&session_id=...
+  const handlePay = async () => {
+    const inst = checkoutInstanceRef.current;
+    if (!inst) return;
+    setCheckoutSubmitting(true); setCheckoutErr("");
+    const origin = window.location.origin;
+    const { error } = await inst.stripe.confirmPayment({
+      elements: inst.elements,
+      confirmParams: { return_url: origin + "/?checkout=return&subscription_id=" + encodeURIComponent(inst.subscriptionId) },
+    });
+    if (error) { setCheckoutErr(error.message || "Payment failed."); setCheckoutSubmitting(false); }
+  };
+
+  // After payment confirms, Stripe redirects back with ?checkout=return&subscription_id=...
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.get("checkout") !== "return") return;
-      const sid = params.get("session_id");
+      const sid = params.get("subscription_id");
       window.history.replaceState(null, "", window.location.pathname);
       if (!sid) return;
       (async () => {
         try {
-          const r = await fetch("/api/create-checkout-session?session_id=" + encodeURIComponent(sid));
+          const r = await fetch("/api/create-checkout-session?subscription_id=" + encodeURIComponent(sid));
           const d = await r.json();
-          if (r.ok && d.status === "complete") setPayBanner({ ok: true, text: "Payment successful — your plan is active. Thank you!" });
-          else if (r.ok && d.status === "open") setPayBanner({ ok: false, text: "Checkout wasn't completed. You can try again anytime." });
+          if (r.ok && d.status === "active") setPayBanner({ ok: true, text: "Payment successful — your plan is active. Thank you!" });
+          else if (r.ok && (d.status === "incomplete" || d.status === "past_due")) setPayBanner({ ok: false, text: "Checkout wasn't completed. You can try again anytime." });
           else setPayBanner({ ok: false, text: "We couldn't confirm the payment. If you were charged, contact support." });
         } catch (e) {
           setPayBanner({ ok: true, text: "Thanks! If your payment went through, your plan is now active." });
@@ -1778,15 +1813,22 @@ export default function RigForge() {
       )}
       {plansOpen && (
         <div className="rf-modal-overlay" onClick={closePlans}>
-          <div className={"rf-plans" + (checkoutPlan ? " rf-plans-checkout" : "")} onClick={(e) => e.stopPropagation()}>
+          <div className="rf-plans" onClick={(e) => e.stopPropagation()}>
             <button className="rf-plans-x" onClick={closePlans} title="Close"><X size={18} /></button>
             {checkoutPlan ? (
               <div className="rf-checkout">
-                <button className="rf-checkout-back" onClick={() => { setCheckoutPlan(null); setCheckoutErr(""); }}><ChevronLeft size={16} /> Back to plans</button>
+                <button className="rf-checkout-back" onClick={() => { setCheckoutPlan(null); setCheckoutErr(""); setCheckoutSubmitting(false); }}><ChevronLeft size={16} /> Back to plans</button>
                 <h2 className="rf-plans-title"><span className="rf-hero-grad">{checkoutPlan.name} — ${checkoutPlan.price}/mo</span></h2>
-                {checkoutLoading && <div className="rf-checkout-loading"><div className="pm-spinner" /> Loading secure checkout…</div>}
+                {checkoutLoading && <div className="rf-checkout-loading"><div className="pm-spinner" /> Setting up payment…</div>}
                 {checkoutErr && <div className="rf-checkout-err">{checkoutErr}</div>}
-                <div className="rf-embedded-box"><div id="rf-embedded-checkout" /></div>
+                <div className="rf-payment-form">
+                  <div id="rf-payment-element" />
+                  {checkoutReady && (
+                    <button className="rf-btn rf-pay-btn" onClick={handlePay} disabled={checkoutSubmitting}>
+                      {checkoutSubmitting ? <><div className="pm-spinner" /> Processing…</> : <>Pay ${checkoutPlan.price}/mo</>}
+                    </button>
+                  )}
+                </div>
                 <p className="rf-checkout-fine">🔒 Secured by Stripe · cancel anytime</p>
               </div>
             ) : (<>
@@ -4903,19 +4945,13 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .rf-plan-cta-free:hover{filter:none;transform:none;}
 @media (max-width:820px){.rf-plans-grid{grid-template-columns:repeat(2,1fr);}}
 @media (max-width:460px){.rf-plans-grid{grid-template-columns:1fr;}}
-.rf-plans-checkout{background:#070a0f!important;border-color:var(--c-border)!important;}
 .rf-checkout-back{display:inline-flex;align-items:center;gap:5px;background:none;border:none;color:var(--c-muted);cursor:pointer;font-family:'Sora';font-size:13.5px;padding:0;margin-bottom:10px;transition:color .15s;}
 .rf-checkout-back:hover{color:var(--c-accent);}
-.rf-embedded-box{margin-top:8px;min-height:120px;background:#070a0f;border:1px solid var(--c-border);border-radius:12px;padding:0;overflow:hidden;}
+.rf-payment-form{display:flex;flex-direction:column;gap:16px;margin-top:12px;}
+.rf-pay-btn{width:100%;justify-content:center;font-size:16px;padding:14px 24px;margin-top:4px;}
+.rf-pay-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none!important;}
 .rf-checkout-fine{text-align:center;color:var(--c-muted);font-size:11.5px;margin:12px 0 0;}
 .rf-checkout-loading{display:flex;align-items:center;gap:10px;justify-content:center;color:var(--c-muted);font-size:14px;padding:24px 0;}
-.rf-light .rf-plans-checkout{background:#fff!important;border-color:#e5e7eb!important;}
-.rf-light .rf-plans-checkout .rf-plans-x{border-color:#e5e7eb;background:rgba(0,0,0,0.04);color:#555;}
-.rf-light .rf-plans-checkout .rf-plans-title{color:#111;}
-.rf-light .rf-checkout-back{color:#666;}
-.rf-light .rf-embedded-box{background:#fff;border-color:#e5e7eb;}
-.rf-light .rf-checkout-fine{color:#888;}
-.rf-light .rf-checkout-loading{color:#666;}
 .rf-checkout-err{margin:8px 0 0;padding:12px 14px;border-radius:12px;background:rgba(255,92,114,0.1);border:1px solid rgba(255,92,114,0.4);color:var(--c-bad);font-size:13.5px;text-align:center;}
 .rf-pay-banner{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:300;display:flex;align-items:center;gap:10px;padding:13px 20px;border-radius:14px;background:linear-gradient(135deg,rgba(70,224,160,0.95),rgba(25,232,219,0.92));color:#04110f;font-family:'Sora';font-weight:600;font-size:14px;box-shadow:0 12px 40px -10px rgba(25,232,219,0.7);animation:rfToast .4s var(--ease-spring);}
 .rf-pay-banner button{background:rgba(4,17,15,0.16);border:none;border-radius:8px;color:#04110f;cursor:pointer;display:grid;place-items:center;width:24px;height:24px;}
