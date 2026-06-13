@@ -4878,7 +4878,7 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .rf-confirm-no{flex:1;padding:11px 16px;border-radius:11px;cursor:pointer;font-family:'Sora';font-weight:600;font-size:14px;color:var(--c-text);background:#161c26;border:1px solid var(--c-border);transition:background .18s,transform .18s;}
 .rf-confirm-no:hover{background:#1e2632;transform:translateY(-1px);}
 .rf-plans-btn{font-weight:600;}
-.rf-plans{position:relative;width:min(940px,100%);max-height:90vh;overflow-y:auto;background:#0c1119;border:1px solid var(--c-border);border-radius:22px;padding:30px 28px 32px;animation:rfPop .45s var(--ease-spring);}
+.rf-plans{position:relative;width:min(940px,100%);max-height:90vh;overflow-y:auto;background:#070a0f;border:1px solid var(--c-border);border-radius:22px;padding:30px 28px 32px;animation:rfPop .45s var(--ease-spring);}
 .rf-plans-x{position:absolute;top:16px;right:16px;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;border:1px solid var(--c-border);background:rgba(255,255,255,0.04);color:var(--c-muted);cursor:pointer;transition:.15s;}
 .rf-plans-x:hover{background:rgba(255,255,255,0.09);color:var(--c-text);}
 .rf-plans-title{font-family:'Chakra Petch';font-size:30px;font-weight:800;text-align:center;margin:0 0 4px;}
