@@ -3083,18 +3083,18 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
   };
   const addRank = () => {
     const nm = rankDraft.trim().slice(0, 24);
-    if (!nm) { setErr(“Enter a rank name first.”); return; }
-    setRanksDraft((prev) => [...prev, { name: nm, color: colorDraft, icon: iconDraft || “⭐” }]);
-    setRankDraft(“”); setColorDraft(“#ff7ae0”); setIconDraft(“⭐”); setErr(“”);
+    if (!nm) { setErr("Enter a rank name first."); return; }
+    setRanksDraft((prev) => [...prev, { name: nm, color: colorDraft, icon: iconDraft || "⭐" }]);
+    setRankDraft(""); setColorDraft("#ff7ae0"); setIconDraft("⭐"); setErr("");
   };
   const removeRank = (i) => setRanksDraft((prev) => prev.filter((_, idx) => idx !== i));
   const saveRank = async (u) => {
-    setMsg(“”); setErr(“”);
-    const payload = ranksDraft.length > 0 ? JSON.stringify(ranksDraft) : “”;
+    setMsg(""); setErr("");
+    const payload = ranksDraft.length > 0 ? JSON.stringify(ranksDraft) : "";
     setBusyId(u.id); const r = await netSetCustomRank(u.id, payload); setBusyId(null);
-    if (!r.ok) { setErr(r.error || “Could not set rank.”); return; }
+    if (!r.ok) { setErr(r.error || "Could not set rank."); return; }
     setRows((prev) => (prev || []).map((x) => x.id === u.id ? { ...x, crank: payload || null } : x));
-    setMsg(ranksDraft.length > 0 ? “Ranks saved (“ + ranksDraft.length + “ badge” + (ranksDraft.length > 1 ? “s” : “”) + “).” : “Custom ranks cleared — back to elo rank.”);
+    setMsg(ranksDraft.length > 0 ? "Ranks saved (" + ranksDraft.length + " badge" + (ranksDraft.length > 1 ? "s" : "") + ")." : "Custom ranks cleared — back to elo rank.");
   };
   if (!authed) {
     return (
@@ -3137,7 +3137,7 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
                   <div className="pm-admin-line"><span className="pm-admin-l" /><button className="pm-admin-save" disabled={busyId === u.id} onClick={() => saveRank(u)}>Save badges</button><button className="pm-admin-save" style={{marginLeft:6,opacity:0.6}} disabled={busyId === u.id} onClick={() => { setRanksDraft([]); }}>Clear all</button></div>
                   <div className="pm-admin-line"><span className="pm-admin-l">New password</span><input className="pm-admin-in" value={pwDraft} onChange={(e) => setPwDraft(e.target.value)} placeholder="set a new one" /><button className="pm-admin-save" disabled={busyId === u.id || !pwDraft} onClick={() => resetPw(u)}>Reset</button></div>
                   <div className="pm-admin-hash"><span className="pm-admin-l">Stored hash</span><code>{u.hash}</code></div>
-                  <p className="pm-admin-hint">Passwords aren't stored — only this one-way hash, so the real password can't be shown. Use “Reset” to set a new one.</p>
+                  <p className="pm-admin-hint">Passwords aren't stored — only this one-way hash, so the real password can't be shown. Use "Reset" to set a new one.</p>
                 </div>
               )}
             </div>
@@ -3998,7 +3998,7 @@ function Picker({ cat, current, useCase, budget, parts, onClose, onPick }) {
           {q && <button className="rf-search-clear" onClick={() => setQ("")} aria-label="Clear"><X size={14} /></button>}
         </div>
         <div className="rf-drawer-list">
-          {shown.length === 0 && <div className="rf-pick-empty">No {tCat(cat).toLowerCase()} matches “{q}”.</div>}
+          {shown.length === 0 && <div className="rf-pick-empty">No {tCat(cat).toLowerCase()} matches "{q}".</div>}
           {shown.map((g, gi) => {
             const expanded = openModel === g.model;
             const _lp = g.variants.filter((v) => !partOOS(v)).map((v) => v.price);
