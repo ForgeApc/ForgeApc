@@ -1519,8 +1519,8 @@ export default function RigForge() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ tier: checkoutPlan.key, email: u && u.email ? u.email : undefined }),
         });
-        const data = await r.json();
-        if (!r.ok || !data.clientSecret || !data.publishableKey) throw new Error(data.error || "Could not start checkout.");
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.clientSecret || !data.publishableKey) throw new Error(data.error || (r.ok ? "Could not start checkout." : "Server error — make sure STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY are set in Vercel."));
         if (cancelled) return;
         const Stripe = await loadStripeJs();
         if (cancelled) return;
