@@ -801,7 +801,10 @@ function ucPerf(cat, part, uc) {
       // ai: datasets are huge — capacity matters most, target 4TB
       if (uc === "ai")
         return part.perf * 0.4 + (Math.min(part.cap, 4000) / 4000) * 100 * 0.6;
-      // gaming / streaming / office: reward capacity up to 2TB (so roomy budgets pick 2TB)
+      // streaming: fast NVMe matters for recording high-bitrate footage — weight speed higher
+      if (uc === "streaming")
+        return part.perf * 0.75 + (Math.min(part.cap, 2000) / 2000) * 100 * 0.25;
+      // gaming / office: reward capacity up to 2TB (so roomy budgets pick 2TB)
       return part.perf * 0.6 + (Math.min(part.cap, 2000) / 2000) * 100 * 0.4;
     default:
       return part.perf; // mobo, psu, case, cooler: use-case agnostic
