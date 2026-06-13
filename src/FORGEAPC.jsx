@@ -699,7 +699,7 @@ const CAT_META = {
 const USE_CASES = {
   gaming:      { label: "Gaming",          tag: "Max FPS",            Icon: Gamepad2,    alloc: { gpu:30, cpu:15, mobo:9, ram:18, storage:10, psu:7, case:6, cooler:5 } },
   content:     { label: "Content Creation",tag: "Video & Photo",      Icon: Clapperboard,alloc: { gpu:18, cpu:22, mobo:10, ram:22, storage:15, psu:6, case:4, cooler:3 } },
-  streaming:   { label: "Streaming",       tag: "Play & Broadcast",   Icon: Radio,       alloc: { gpu:26, cpu:19, mobo:10, ram:18, storage:10, psu:7, case:5, cooler:5 } },
+  streaming:   { label: "Streaming",       tag: "Play & Broadcast",   Icon: Radio,       alloc: { gpu:25, cpu:22, mobo:9, ram:18, storage:9, psu:7, case:5, cooler:5 } },
   workstation: { label: "3D / Workstation",tag: "Render & CAD",       Icon: Boxes,       alloc: { gpu:22, cpu:24, mobo:9, ram:24, storage:10, psu:5, case:3, cooler:3 } },
   ai:          { label: "AI / ML",         tag: "VRAM Hungry",        Icon: BrainCircuit,alloc: { gpu:38, cpu:13, mobo:8, ram:20, storage:8, psu:6, case:4, cooler:3 } },
   office:      { label: "Office / Everyday",tag: "Snappy & Cheap",    Icon: Briefcase,   alloc: { gpu:0, cpu:24, mobo:13, ram:26, storage:20, psu:8, case:6, cooler:3 } },
@@ -762,15 +762,20 @@ function ucPerf(cat, part, uc) {
     case "cpu":
       if (uc === "content" || uc === "workstation" || uc === "ai")
         return part.perf * 0.6 + (Math.min(part.cores, 16) / 16) * 100 * 0.4;
-      // gaming / streaming: large-cache X3D chips punch far above their base rating —
+      // gaming: large-cache X3D chips punch far above their base rating —
       // a 7600X3D out-games a Core Ultra 5 / non-X3D Ryzen despite a lower MT score.
-      // No 100 cap here, so a 9800X3D still edges out a 7800X3D at the very top.
-      if ((uc === "gaming" || uc === "streaming") && /X3D/i.test(part.name || part.model || ""))
+      // X3D cache does NOT help streaming (encoding is multicore/NVENC, not cache-sensitive).
+      if (uc === "gaming" && /X3D/i.test(part.name || part.model || ""))
         return part.perf + 10;
+      // streaming: OBS encoding is heavily multicore — reward core count alongside raw perf
+      if (uc === "streaming")
+        return part.perf * 0.65 + (Math.min(part.cores || 8, 16) / 16) * 100 * 0.35;
       return part.perf;
     case "gpu":
       if (uc === "ai") return part.perf * 0.5 + (Math.min(part.vram, 32) / 32) * 100 * 0.5;
       if (uc === "content") return part.perf * 0.7 + (Math.min(part.vram, 32) / 32) * 100 * 0.3;
+      // streaming: Nvidia NVENC is significantly better than AMD's encoder for broadcast
+      if (uc === "streaming") return /nvidia|rtx|gtx/i.test(part.brand || part.name || "") ? part.perf * 1.12 : part.perf;
       return part.perf;
     case "ram": {
       // value-aware speed: peaks at DDR5-6000 (the CL30 sweet spot). Faster kits
