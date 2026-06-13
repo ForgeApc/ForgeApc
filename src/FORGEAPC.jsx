@@ -3083,7 +3083,7 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
   };
   const addRank = () => {
     const nm = rankDraft.trim().slice(0, 24);
-    if (!nm) { setErr("Enter a rank name first."); return; }
+    if (!nm) { setErr(["Enter a rank name first."].join("")); return; }
     setRanksDraft((prev) => [...prev, { name: nm, color: colorDraft, icon: iconDraft || "⭐" }]);
     setRankDraft(""); setColorDraft("#ff7ae0"); setIconDraft("⭐"); setErr("");
   };
@@ -3094,7 +3094,7 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
     setBusyId(u.id); const r = await netSetCustomRank(u.id, payload); setBusyId(null);
     if (!r.ok) { setErr(r.error || "Could not set rank."); return; }
     setRows((prev) => (prev || []).map((x) => x.id === u.id ? { ...x, crank: payload || null } : x));
-    setMsg(ranksDraft.length > 0 ? "Ranks saved (" + ranksDraft.length + " badge" + (ranksDraft.length > 1 ? "s" : "") + ")." : "Custom ranks cleared — back to elo rank.");
+    setMsg(ranksDraft.length > 0 ? "Ranks saved (" + ranksDraft.length + " badge" + (ranksDraft.length > 1 ? "s" : "") + ")." : "Custom ranks cleared.");
   };
   if (!authed) {
     return (
