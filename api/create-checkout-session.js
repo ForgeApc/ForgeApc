@@ -71,9 +71,10 @@ export default async function handler(req, res) {
       };
       const sub = await stripeFetch("/subscriptions", { method: "POST", form: subForm });
 
-      // confirmation_secret is the client_secret for the Payment Element
+      // confirmation_secret may be an object {client_secret, type} or a plain string
+      const cs = sub?.latest_invoice?.confirmation_secret;
       const clientSecret =
-        sub?.latest_invoice?.confirmation_secret ||
+        (cs && typeof cs === "object" ? cs.client_secret : cs) ||
         sub?.latest_invoice?.payment_intent?.client_secret;
 
       if (!clientSecret) throw new Error("Could not get payment secret from Stripe.");
