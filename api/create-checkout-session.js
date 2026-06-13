@@ -53,6 +53,9 @@ export default async function handler(req, res) {
       if (body.email) custForm.email = body.email;
       const customer = await stripeFetch("/customers", { method: "POST", form: custForm });
 
+      // Create an inline product for this tier, then reference it in price_data
+      const product = await stripeFetch("/products", { method: "POST", form: { name: tier.name } });
+
       // Create subscription with payment_behavior=default_incomplete so it
       // stays unpaid until the frontend confirms the Payment Element
       const subForm = {
@@ -60,7 +63,7 @@ export default async function handler(req, res) {
         "items[0][price_data][currency]": "usd",
         "items[0][price_data][unit_amount]": String(Math.round(tier.dollars * 100)),
         "items[0][price_data][recurring][interval]": "month",
-        "items[0][price_data][product_data][name]": tier.name,
+        "items[0][price_data][product]": product.id,
         payment_behavior: "default_incomplete",
         "payment_settings[save_default_payment_method]": "on_subscription",
         "expand[0]": "latest_invoice",
