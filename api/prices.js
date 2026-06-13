@@ -26,8 +26,8 @@ import { PART_QUERIES } from "../data/part-queries.js";
 const BESTBUY_KEY = process.env.BESTBUY_API_KEY;
 const APIFY_TOKEN = process.env.APIFY_TOKEN;
 // Optional per-store tokens (e.g. two different Apify accounts). Fall back to APIFY_TOKEN.
-const AMAZON_TOKEN = process.env.AMAZON_APIFY_TOKEN || process.env.APIFY_TOKEN;
-const NEWEGG_TOKEN = process.env.NEWEGG_APIFY_TOKEN || process.env.APIFY_TOKEN;
+const AMAZON_TOKEN = process.env.AMAZON_APIFY_TOKEN || process.env.AMAZON_API_TOKEN || process.env.APIFY_TOKEN;
+const NEWEGG_TOKEN = process.env.NEWEGG_APIFY_TOKEN || process.env.NEWEGG_API_TOKEN || process.env.APIFY_TOKEN;
 const AMAZON_ACTOR = process.env.AMAZON_ACTOR_ID;
 const NEWEGG_ACTOR = process.env.NEWEGG_ACTOR_ID;
 
