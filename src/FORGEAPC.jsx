@@ -1983,8 +1983,8 @@ function moggerScore(build, ucKey, budget) {
   const spend = a.total, over = spend > budget, overBy = Math.max(0, spend - budget);
   const perfPct = Math.round(a.fitNorm * 100);
   if (issues.length > 0) return { total: 0, perf: perfPct, value: 0, compat: 0, completeness: Math.round((filled / CATEGORY_ORDER.length) * 100), spend, over, overBy, issues, dead: true };
-  // Engine composite: performance + price/perf value + budget use + cpu/gpu balance
-  const raw = (a.score / 1000) * 0.6 + (a.ppScore / 100) * 0.2 + (a.budgetAdh / 100) * 0.15 + (a.balance / 100) * 0.05;
+  // Engine composite: performance + cpu/gpu balance (value removed per design)
+  const raw = (a.score / 1000) * 0.95 + (a.balance / 100) * 0.05;
   return { total: Math.round(clamp(raw, 0, 1) * 1000), perf: perfPct, value: a.ppScore, compat: 100, completeness: 100, spend, over, overBy, issues: [] };
 }
 
@@ -2020,7 +2020,7 @@ function moggerAI(ucKey, budget, elo) {
   for (const c of order) { const opts = [...moggerOptions(c)].sort((a, b) => a.price - b.price); build[c] = opts.find((o) => ok(c, o)) || opts[0]; }
 
   // 2) Quality scales with elo: weak players aim lower, strong players use the full budget optimally.
-  const cap = budget * (elo >= 2800 ? 0.94 : clamp(0.5 + (elo / 3000) * 0.5, 0.5, 0.94));
+  const cap = budget * clamp(0.82 + (elo / 3000) * 0.15, 0.82, 0.97);
   const cheapestMobo = (sock) => moggerOptions("mobo").filter((m) => m.socket === sock).sort((a, b) => a.price - b.price)[0];
   const cheapestCooler = (cpu) => moggerOptions("cooler").filter((cl) => (!cl.sockets || cl.sockets.includes(cpu.socket)) && (!cl.tdpRating || cl.tdpRating >= cpu.tdp)).sort((a, b) => a.price - b.price)[0];
 
