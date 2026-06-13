@@ -699,7 +699,7 @@ const CAT_META = {
 const USE_CASES = {
   gaming:      { label: "Gaming",          tag: "Max FPS",            Icon: Gamepad2,    alloc: { gpu:34, cpu:16, mobo:8, ram:14, storage:10, psu:7, case:6, cooler:5 } },
   content:     { label: "Content Creation",tag: "Video & Photo",      Icon: Clapperboard,alloc: { gpu:20, cpu:22, mobo:9, ram:22, storage:14, psu:6, case:4, cooler:3 } },
-  streaming:   { label: "Streaming",       tag: "Play & Broadcast",   Icon: Radio,       alloc: { gpu:25, cpu:22, mobo:9, ram:18, storage:9, psu:7, case:5, cooler:5 } },
+  streaming:   { label: "Streaming",       tag: "Play & Broadcast",   Icon: Radio,       alloc: { gpu:27, cpu:22, mobo:9, ram:18, storage:8, psu:7, case:5, cooler:4 } },
   workstation: { label: "3D / Workstation",tag: "Render & CAD",       Icon: Boxes,       alloc: { gpu:26, cpu:23, mobo:8, ram:22, storage:11, psu:5, case:3, cooler:2 } },
   ai:          { label: "AI / ML",         tag: "VRAM Hungry",        Icon: BrainCircuit,alloc: { gpu:40, cpu:12, mobo:7, ram:20, storage:10, psu:6, case:3, cooler:2 } },
   office:      { label: "Office / Everyday",tag: "Snappy & Cheap",    Icon: Briefcase,   alloc: { gpu:0, cpu:24, mobo:13, ram:26, storage:20, psu:8, case:6, cooler:3 } },
@@ -784,7 +784,14 @@ function ucPerf(cat, part, uc) {
       if (uc === "workstation") return part.perf * 0.6 + (Math.min(part.vram, 32) / 32) * 100 * 0.4;
       if (uc === "content") return part.perf * 0.7 + (Math.min(part.vram, 32) / 32) * 100 * 0.3;
       // streaming: Nvidia NVENC is significantly better than AMD's encoder for broadcast
-      if (uc === "streaming") return /nvidia|rtx|gtx/i.test(part.brand || part.name || "") ? part.perf * 1.12 : part.perf;
+      // Also penalize weak GPUs (Arc B570 etc) that can't handle high-bitrate encoding
+      if (uc === "streaming") {
+        const isNvidia = /nvidia|rtx|gtx/i.test(part.brand || part.name || "");
+        const baseScore = isNvidia ? part.perf * 1.4 : part.perf;
+        // Weak GPU penalty: sub-30 perf GPUs lose credibility for streaming
+        if (part.perf < 30) return baseScore * 0.75;
+        return baseScore;
+      }
       return part.perf;
     case "ram": {
       // value-aware speed: peaks at DDR5-6000 (the CL30 sweet spot). Faster kits
