@@ -697,11 +697,11 @@ const CAT_META = {
 
 /* The allocation table — the "secret sauce". % of budget per category. */
 const USE_CASES = {
-  gaming:      { label: "Gaming",          tag: "Max FPS",            Icon: Gamepad2,    alloc: { gpu:30, cpu:15, mobo:9, ram:18, storage:10, psu:7, case:6, cooler:5 } },
-  content:     { label: "Content Creation",tag: "Video & Photo",      Icon: Clapperboard,alloc: { gpu:18, cpu:22, mobo:10, ram:22, storage:15, psu:6, case:4, cooler:3 } },
+  gaming:      { label: "Gaming",          tag: "Max FPS",            Icon: Gamepad2,    alloc: { gpu:34, cpu:16, mobo:8, ram:14, storage:10, psu:7, case:6, cooler:5 } },
+  content:     { label: "Content Creation",tag: "Video & Photo",      Icon: Clapperboard,alloc: { gpu:20, cpu:22, mobo:9, ram:22, storage:14, psu:6, case:4, cooler:3 } },
   streaming:   { label: "Streaming",       tag: "Play & Broadcast",   Icon: Radio,       alloc: { gpu:25, cpu:22, mobo:9, ram:18, storage:9, psu:7, case:5, cooler:5 } },
-  workstation: { label: "3D / Workstation",tag: "Render & CAD",       Icon: Boxes,       alloc: { gpu:22, cpu:24, mobo:9, ram:24, storage:10, psu:5, case:3, cooler:3 } },
-  ai:          { label: "AI / ML",         tag: "VRAM Hungry",        Icon: BrainCircuit,alloc: { gpu:38, cpu:13, mobo:8, ram:20, storage:8, psu:6, case:4, cooler:3 } },
+  workstation: { label: "3D / Workstation",tag: "Render & CAD",       Icon: Boxes,       alloc: { gpu:26, cpu:23, mobo:8, ram:22, storage:11, psu:5, case:3, cooler:2 } },
+  ai:          { label: "AI / ML",         tag: "VRAM Hungry",        Icon: BrainCircuit,alloc: { gpu:40, cpu:12, mobo:7, ram:20, storage:10, psu:6, case:3, cooler:2 } },
   office:      { label: "Office / Everyday",tag: "Snappy & Cheap",    Icon: Briefcase,   alloc: { gpu:0, cpu:24, mobo:13, ram:26, storage:20, psu:8, case:6, cooler:3 } },
 };
 
@@ -760,6 +760,7 @@ function ucPerf(cat, part, uc) {
   const heavyRam = uc === "workstation" || uc === "ai" || uc === "content";
   switch (cat) {
     case "cpu":
+      // content/workstation/ai: multicore rendering/encode/inference — reward cores heavily
       if (uc === "content" || uc === "workstation" || uc === "ai")
         return part.perf * 0.6 + (Math.min(part.cores, 16) / 16) * 100 * 0.4;
       // gaming: large-cache X3D chips punch far above their base rating —
@@ -770,9 +771,14 @@ function ucPerf(cat, part, uc) {
       // streaming: OBS encoding is heavily multicore — reward core count alongside raw perf
       if (uc === "streaming")
         return part.perf * 0.65 + (Math.min(part.cores || 8, 16) / 16) * 100 * 0.35;
+      // office: responsiveness matters, not raw throughput — cap the benefit of overkill chips
+      if (uc === "office")
+        return Math.min(part.perf, 80) * 0.85 + (Math.min(part.cores || 4, 8) / 8) * 100 * 0.15;
       return part.perf;
     case "gpu":
       if (uc === "ai") return part.perf * 0.5 + (Math.min(part.vram, 32) / 32) * 100 * 0.5;
+      // workstation (Blender/CAD/Maya): VRAM is critical for large scenes
+      if (uc === "workstation") return part.perf * 0.6 + (Math.min(part.vram, 32) / 32) * 100 * 0.4;
       if (uc === "content") return part.perf * 0.7 + (Math.min(part.vram, 32) / 32) * 100 * 0.3;
       // streaming: Nvidia NVENC is significantly better than AMD's encoder for broadcast
       if (uc === "streaming") return /nvidia|rtx|gtx/i.test(part.brand || part.name || "") ? part.perf * 1.12 : part.perf;
@@ -789,6 +795,9 @@ function ucPerf(cat, part, uc) {
     case "storage":
       if (uc === "content" || uc === "workstation")
         return part.perf * 0.5 + (Math.min(part.cap, 4000) / 4000) * 100 * 0.5;
+      // ai: datasets are huge — capacity matters most, target 4TB
+      if (uc === "ai")
+        return part.perf * 0.4 + (Math.min(part.cap, 4000) / 4000) * 100 * 0.6;
       // gaming / streaming / office: reward capacity up to 2TB (so roomy budgets pick 2TB)
       return part.perf * 0.6 + (Math.min(part.cap, 2000) / 2000) * 100 * 0.4;
     default:
