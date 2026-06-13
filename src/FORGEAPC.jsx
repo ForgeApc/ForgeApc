@@ -1794,7 +1794,7 @@ export default function RigForge() {
               <p className="rf-plans-sub">Upgrade for more power. Cancel anytime.</p>
               <div className="rf-plans-grid">
                 {[
-                  { key: "free", name: "Free", price: 0, tag: "", perks: ["Unlimited PC builds", "Full PC Mogger access", "Save rigs to this device"] },
+                  { key: "free", name: "Free", price: 0, tag: "", perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device"] },
                   { key: "plus", name: "Plus", price: 2, tag: "", perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", "Custom rank color"] },
                   { key: "pro", name: "Pro", price: 5, tag: "Popular", perks: ["Everything in Plus", "Custom rank icon", "Priority price updates", "Early access to features"] },
                   { key: "max", name: "Max", price: 8, tag: "", perks: ["Everything in Pro", "Exclusive supporter badge", "Beta features first", "Support the developer"] },
@@ -2412,7 +2412,7 @@ function MoggerResult({ round, you, opp, oppName, oppElo, myElo, myCrank, eloMsg
   const saveSide = async (which) => {
     if (!onSaveBuild) return;
     const ucLabel = USE_CASES[round.useCase].label;
-    if (which === "you") { await onSaveBuild(you, round.useCase, round.budget, ucLabel + " — Mogger"); setSavedYou(true); }
+    if (which === "you") { await onSaveBuild(you, round.useCase, round.budget, ucLabel + " — Duels"); setSavedYou(true); }
     else { await onSaveBuild(opp, round.useCase, round.budget, oppName + "'s " + ucLabel); setSavedOpp(true); }
   };
   useEffect(() => {
@@ -3176,7 +3176,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
       {screen === "menu" && (
         <div className="pm-menu">
           <div className="pm-account">{user ? <><span className="pm-acct-name">{user.name}</span><RankBadge rank={moggerRank(user.elo, user.crank)} /><span className="pm-acct-elo">{user.elo} elo</span><button className="pm-acct-btn" onClick={() => persist(null)}>Log out</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in / Sign up</button>}</div>
-          <div className="pm-mtitle">PC <span className="rf-accent">MOGGER</span></div>
+          <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
           <p className="pm-tag">Build the best PC for the challenge. AI judges. One winner.</p>
           <div className="pm-mode-grid">
             <button className="pm-mode" onClick={() => { setMode("ai"); setScreen("diff"); }}><span className="pm-mode-icon"><Bot size={24} /></span><span className="pm-mode-name">Play vs AI</span><span className="pm-mode-sub">Ranked or practice</span></button>
@@ -3338,7 +3338,7 @@ function Home({ saved, loading, onNew, onOpen, onDelete, priceInfo, onMogger }) 
             </div>
             {onMogger && (
               <div className="rf-cta-card">
-                <button className="rf-btn rf-btn-lg rf-mogger-cta" onClick={onMogger}><Gamepad2 size={18} /> Play PC Mogger</button>
+                <button className="rf-btn rf-btn-lg rf-mogger-cta" onClick={onMogger}><Gamepad2 size={18} /> Play PC Duels</button>
                 <span className="rf-cta-desc">A head-to-head build-off game — assemble the best PC for a budget and use case, then beat players or AI to climb the elo leaderboard.</span>
               </div>
             )}
