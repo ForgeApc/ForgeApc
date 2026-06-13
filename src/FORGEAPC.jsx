@@ -1544,7 +1544,8 @@ export default function RigForge() {
             ".Error": { color: "#ff5c72" },
           },
         };
-        const elements = stripe.elements({ clientSecret: data.clientSecret, appearance });
+        const fonts = [{ cssSrc: "https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" }];
+        const elements = stripe.elements({ clientSecret: data.clientSecret, appearance, fonts });
         const paymentEl = elements.create("payment", { layout: "tabs" });
         if (cancelled) return;
         checkoutInstanceRef.current = { stripe, elements, subscriptionId: data.subscriptionId };
