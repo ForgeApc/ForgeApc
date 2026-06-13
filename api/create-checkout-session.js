@@ -19,7 +19,7 @@ const TIERS = {
 async function stripeFetch(path, { method = "GET", form } = {}) {
   const opts = {
     method,
-    headers: { Authorization: "Bearer " + SECRET, "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { Authorization: "Bearer " + SECRET, "Content-Type": "application/x-www-form-urlencoded", "Stripe-Version": "2023-10-16" },
   };
   if (form) opts.body = new URLSearchParams(form).toString();
   const r    = await fetch(STRIPE_API + path, opts);
