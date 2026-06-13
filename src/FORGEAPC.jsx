@@ -1535,18 +1535,25 @@ export default function RigForge() {
             colorDanger: "#ff5c72",
             fontFamily: "'Chakra Petch', sans-serif",
             borderRadius: "10px",
-            spacingUnit: "8px",
+            spacingUnit: "5px",
           },
           rules: {
-            ".Input": { border: "1px solid #1e2a3a", backgroundColor: "#070a0f" },
-            ".Input:focus": { border: "1px solid #19e8db", boxShadow: "0 0 0 3px rgba(25,232,219,0.15)" },
-            ".Label": { color: "#8aa0b4", fontSize: "12px", fontWeight: "600", letterSpacing: "0.06em", textTransform: "uppercase" },
-            ".Error": { color: "#ff5c72" },
+            ".Input": { border: "1px solid #1e2a3a", backgroundColor: "#070a0f", padding: "8px 12px", fontSize: "13px" },
+            ".Input:focus": { border: "1px solid #19e8db", boxShadow: "0 0 0 2px rgba(25,232,219,0.12)" },
+            ".Label": { color: "#8aa0b4", fontSize: "11px", fontWeight: "600", letterSpacing: "0.06em", textTransform: "uppercase" },
+            ".Error": { color: "#ff5c72", fontSize: "11px" },
+            ".Tab": { border: "1px solid #1e2a3a", backgroundColor: "#070a0f", padding: "8px 12px" },
+            ".Tab:hover": { border: "1px solid #19e8db" },
+            ".Tab--selected": { border: "1px solid #19e8db", backgroundColor: "rgba(25,232,219,0.06)" },
+            ".AccordionItem": { border: "1px solid #1e2a3a", borderRadius: "10px", backgroundColor: "#0c1119" },
           },
         };
         const fonts = [{ cssSrc: "https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" }];
         const elements = stripe.elements({ clientSecret: data.clientSecret, appearance, fonts });
-        const paymentEl = elements.create("payment", { layout: "tabs" });
+        const paymentEl = elements.create("payment", {
+          layout: { type: "accordion", defaultCollapsed: false, radios: false, spacedAccordionItems: false },
+          fields: { billingDetails: { address: "never", phone: "never", name: "auto" } },
+        });
         if (cancelled) return;
         checkoutInstanceRef.current = { stripe, elements, subscriptionId: data.subscriptionId };
         paymentEl.on("ready", () => { if (!cancelled) setCheckoutReady(true); });
@@ -4948,8 +4955,8 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 @media (max-width:460px){.rf-plans-grid{grid-template-columns:1fr;}}
 .rf-checkout-back{display:inline-flex;align-items:center;gap:5px;background:none;border:none;color:var(--c-muted);cursor:pointer;font-family:'Sora';font-size:13.5px;padding:0;margin-bottom:10px;transition:color .15s;}
 .rf-checkout-back:hover{color:var(--c-accent);}
-.rf-payment-form{display:flex;flex-direction:column;gap:16px;margin-top:12px;}
-.rf-pay-btn{width:100%;justify-content:center;font-size:16px;padding:14px 24px;margin-top:4px;}
+.rf-payment-form{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+.rf-pay-btn{width:100%;justify-content:center;font-size:14px;padding:11px 24px;margin-top:4px;}
 .rf-pay-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none!important;}
 .rf-checkout-fine{text-align:center;color:var(--c-muted);font-size:11.5px;margin:12px 0 0;}
 .rf-checkout-loading{display:flex;align-items:center;gap:10px;justify-content:center;color:var(--c-muted);font-size:14px;padding:24px 0;}
