@@ -1759,6 +1759,9 @@ export default function RigForge() {
               {hdrUser.name === "Rayaan" && (
                 <button className="rf-ghost rf-admin-btn" onClick={() => setView("mogger-admin")} title="Admin panel">⚙️ Admin</button>
               )}
+              {["kareem","nik","jahan"].includes(hdrUser.name.toLowerCase()) && (
+                <button className="rf-ghost rf-admin-btn" onClick={() => setView("mogger-coadmin")} title="Co-Admin panel">🛡️ Co-Admin</button>
+              )}
               <div className="rf-acct-chip">
                 <span className="rf-acct-name">{hdrUser.name}</span>
                 <RankBadges elo={hdrUser.elo} custom={hdrUser.crank} />
@@ -1876,6 +1879,7 @@ export default function RigForge() {
         )}
         {view === "mogger" && <MoggerGame onExit={() => setView("home")} onSaveBuild={saveExternalBuild} />}
         {view === "mogger-admin" && <MoggerAdmin onBack={() => setView("home")} user={hdrUser} />}
+        {view === "mogger-coadmin" && <MoggerCoAdmin onBack={() => setView("home")} bypass={true} />}
         {view === "survey" && <Survey onPick={chooseUseCase} />}
         {view === "budget" && (
           <BudgetStep useCase={useCase} budget={budget} setBudget={setBudget} onBack={() => setView("survey")} onAuto={generateAuto} onManual={startManual} />
@@ -3018,8 +3022,8 @@ const DIFFS = [{ k: "easy", label: "Easy", elo: 250 }, { k: "medium", label: "Me
 const ADMIN_PASS = "Admin2014"; // change this to your own secret
 const COADMIN_PASS = "Coadmin2014"; // co-admin password — limited access
 
-function MoggerCoAdmin({ onBack }) {
-  const [authed, setAuthed] = useState(false);
+function MoggerCoAdmin({ onBack, bypass }) {
+  const [authed, setAuthed] = useState(!!bypass);
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
   const tryAuth = () => { if (pw === COADMIN_PASS) { setAuthed(true); } else setErr("Wrong co-admin password."); };
