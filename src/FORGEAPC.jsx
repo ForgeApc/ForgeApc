@@ -2050,6 +2050,7 @@ function moggerAI(ucKey, budget, elo) {
     improved = false;
     let best = null;
     for (const c of order) {
+      if (c === "psu") continue; // PSU is sized in fixValid — don't upgrade for "perf"
       const w = W[c] || 0.02, cur = build[c];
       for (const o of moggerOptions(c)) {
         if (!ok(c, o) || !cur || up(c, o) <= up(c, cur)) continue;
@@ -2078,7 +2079,9 @@ function moggerAI(ucKey, budget, elo) {
   // 4) Ensure cooler/PSU adequate, then trim under budget.
   const fixValid = () => {
     if (build.cpu) { const cl = cheapestCooler(build.cpu); if (cl && (!build.cooler || (build.cooler.tdpRating && build.cooler.tdpRating < build.cpu.tdp) || (build.cooler.sockets && !build.cooler.sockets.includes(build.cpu.socket)))) build.cooler = cl; }
-    const d = requiredWatts(build) * 1.25; const psu = moggerOptions("psu").filter((p) => p.watt && p.watt >= d).sort((a, b) => a.price - b.price)[0];
+    const d = requiredWatts(build) * 1.25; const dMax = d * 1.45;
+    const psuPool = moggerOptions("psu").filter((p) => p.watt && p.watt >= d && p.watt <= dMax);
+    const psu = (psuPool.length ? psuPool : moggerOptions("psu").filter((p) => p.watt && p.watt >= d)).sort((a, b) => a.price - b.price)[0];
     if (psu && (!build.psu || (build.psu.watt && build.psu.watt < d))) build.psu = psu;
   };
   fixValid();
