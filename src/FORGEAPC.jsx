@@ -1535,7 +1535,7 @@ export default function RigForge() {
             colorDanger: "#ff5c72",
             fontFamily: "'Chakra Petch', sans-serif",
             borderRadius: "10px",
-            spacingUnit: "4px",
+            spacingUnit: "8px",
           },
           rules: {
             ".Input": { border: "1px solid #1e2a3a", backgroundColor: "#070a0f" },
