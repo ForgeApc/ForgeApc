@@ -768,9 +768,12 @@ function ucPerf(cat, part, uc) {
       // X3D cache does NOT help streaming (encoding is multicore/NVENC, not cache-sensitive).
       if (uc === "gaming" && /X3D/i.test(part.name || part.model || ""))
         return part.perf + 10;
-      // streaming: OBS encoding is heavily multicore — reward core count alongside raw perf
-      if (uc === "streaming")
-        return part.perf * 0.65 + (Math.min(part.cores || 8, 16) / 16) * 100 * 0.35;
+      // streaming: OBS encoding is heavily multicore — reward core count alongside raw perf.
+      // X3D cache still helps the gaming side of streaming, so give a small bonus.
+      if (uc === "streaming") {
+        const x3dBonus = /X3D/i.test(part.name || part.model || "") ? 5 : 0;
+        return part.perf * 0.65 + (Math.min(part.cores || 8, 16) / 16) * 100 * 0.35 + x3dBonus;
+      }
       // office: responsiveness matters, not raw throughput — cap the benefit of overkill chips
       if (uc === "office")
         return Math.min(part.perf, 80) * 0.85 + (Math.min(part.cores || 4, 8) / 8) * 100 * 0.15;
