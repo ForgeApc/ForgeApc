@@ -433,105 +433,7 @@ function generateVerdict(parts, a, useCaseKey, budget) {
 /* ----------------------------- AUTO-ASSEMBLE ----------------------------- */
 // Greedy, compatibility-aware, budget-aware. Picks in dependency order.
 function assembleBuild(useCaseKey, budget) {
-  const alloc = USE_CASES[useCaseKey].alloc;
-  const target = Object.fromEntries(CATEGORY_ORDER.map((c) => [c, (budget * (alloc[c] || 0)) / 100]));
-  const parts = {};
-  let spent = 0;
-  // Auto-Forge only uses in-stock parts (those with a live price). If a whole
-  // category has nothing live, fall back to the full pool so a build still completes.
-  const inStock = (pool) => { const f = pool.filter((p) => !partOOS(p)); return f.length ? f : pool; };
-
-  const pick = (cat, pool, band) => {
-    const remaining = budget - spent;
-    const cheapest = Math.min(...pool.map((p) => p.price));
-    const cap = Math.max(band * 1.15, Math.min(remaining, band * 1.15), cheapest);
-    let affordable = pool.filter((p) => p.price <= Math.max(cap, cheapest));
-    if (affordable.length === 0) affordable = pool.filter((p) => p.price === cheapest);
-    // best (use-case-aware) score; tie -> cheaper (better value); then higher perf
-    affordable.sort((x, y) => {
-      const sx = partScore({ ...x, cat }, band, useCaseKey);
-      const sy = partScore({ ...y, cat }, band, useCaseKey);
-      return sy - sx || x.price - y.price || ucPerf(cat, y, useCaseKey) - ucPerf(cat, x, useCaseKey);
-    });
-    let chosen;
-    if (cat === "cpu" || cat === "gpu") {
-      // CPU & GPU matter most — take the highest match score the budget allows.
-      chosen = affordable[0];
-    } else {
-      // Supporting parts: value knee — among options within ~7% of the best
-      // performance in range, take the cheapest (don't overpay for a marginal gain).
-      const topUc = Math.max(...affordable.map((p) => ucPerf(cat, p, useCaseKey)));
-      const near = affordable.filter((p) => ucPerf(cat, p, useCaseKey) >= topUc * 0.93);
-      near.sort((a, b) => a.price - b.price);
-      chosen = near[0] || affordable[0];
-    }
-    parts[cat] = chosen;
-    spent += chosen.price;
-    return chosen;
-  };
-
-  const cpu = pick("cpu", inStock(CATALOG.cpu), target.cpu);
-  pick("mobo", inStock(CATALOG.mobo.filter((m) => m.socket === cpu.socket)), target.mobo);
-  const mobo = parts.mobo;
-  pick("ram", inStock(CATALOG.ram.filter((r) => r.ramType === mobo.ramType && r.cap <= mobo.maxRam)), target.ram);
-  pick("cooler", inStock(CATALOG.cooler.filter((c) => c.sockets.includes(cpu.socket) && c.tdpRating >= cpu.tdp)), target.cooler);
-  pick("storage", inStock(CATALOG.storage.filter((s) => (s.iface === "M.2" ? mobo.m2 >= 1 : true))), target.storage);
-  if (alloc.gpu > 0) pick("gpu", inStock(CATALOG.gpu), target.gpu);
-
-  // PSU sized to the build
-  const need = requiredWatts(parts);
-  let psuPool = inStock(CATALOG.psu.filter((p) => p.watt >= need * 1.25));
-  if (psuPool.length === 0) psuPool = inStock(CATALOG.psu);
-  pick("psu", psuPool, target.psu);
-
-  // Case fitting the chosen mobo / gpu / air cooler
-  let casePool = inStock(CATALOG.case.filter(
-    (cs) =>
-      cs.forms.includes(mobo.form) &&
-      (!parts.gpu || parts.gpu.len <= cs.maxGpu) &&
-      (parts.cooler.type !== "air" || parts.cooler.height <= cs.maxCool)
-  ));
-  if (casePool.length === 0) casePool = inStock(CATALOG.case.filter((cs) => cs.forms.includes(mobo.form)));
-  if (casePool.length === 0) casePool = inStock(CATALOG.case);
-  pick("case", casePool, target.case);
-
-  // ---- reallocate leftover budget to the highest build-impact upgrades ----
-  // After buying value parts, spend what's left where it helps the build most per
-  // dollar (usually the CPU/GPU/RAM) instead of leaving money on the table.
-  const totalCost = () => Object.values(parts).reduce((s, p) => s + (p ? p.price : 0), 0);
-  const upgradeOnce = () => {
-    let best = null;
-    for (const cat of CATEGORY_ORDER) {
-      // PSU is sized by wattage, not perf — never burn leftover budget chasing a bigger PSU.
-      if (cat === "psu") continue;
-      const cur = parts[cat];
-      if (!cur) continue;
-      const w = (alloc[cat] || 0) / 100; // how much this category matters for the use case
-      if (w <= 0) continue;
-      const maxp = ucMaxPerf(cat, useCaseKey) || 1;
-      const ceil = VALUE_CEILING[cat]; // diminishing-returns price cap (e.g. mobo $250)
-      for (const cand of inStock(CATALOG[cat])) {
-        const extra = cand.price - cur.price;
-        if (extra <= 0) continue;
-        // Don't push a capped category (e.g. motherboard) past its value ceiling — that money
-        // belongs on the CPU/GPU/RAM. Only allow upgrades that stay within the ceiling.
-        if (ceil && cand.price > ceil && cand.price > cur.price) continue;
-        const rawGain = ucPerf(cat, cand, useCaseKey) - ucPerf(cat, cur, useCaseKey);
-        if (rawGain <= 0) continue;
-        if (totalCost() - cur.price + cand.price > budget) continue;
-        if (checkCompat({ ...parts, [cat]: cand }).issues.length > 0) continue;
-        const gain = (rawGain / maxp) * w; // contribution to overall performance
-        const eff = gain / extra;          // build-impact per dollar
-        if (!best || eff > best.eff || (Math.abs(eff - best.eff) < 1e-9 && gain > best.gain)) best = { cat, cand, eff, gain };
-      }
-    }
-    if (best) { parts[best.cat] = best.cand; return true; }
-    return false;
-  };
-  let guard = 0;
-  while (upgradeOnce() && guard++ < 60) {}
-
-  return parts;
+  return moggerAI(useCaseKey, budget, 3000);
 }
 
 /* ----------------------------- STORAGE WRAPPER ----------------------------- */
@@ -1387,7 +1289,7 @@ function moggerScore(build, ucKey, budget) {
 //  - only the lowest levels (elo < 400) can build something incompatible, at 5%
 function moggerAI(ucKey, budget, elo) {
   elo = (typeof elo === "number" && isFinite(elo)) ? clamp(elo, 0, 3000) : 600;
-  const pMistake = Math.max(0.0005, 0.13 * Math.pow(1 - elo / 3000, 2));
+  const pMistake = elo >= 3000 ? 0 : Math.max(0.0005, 0.13 * Math.pow(1 - elo / 3000, 2));
   const pIncompat = elo < 400 ? 0.05 : 0;
   const W = USE_CASES[ucKey].alloc;
   const build = {};
@@ -1414,7 +1316,7 @@ function moggerAI(ucKey, budget, elo) {
   for (const c of order) { const opts = [...moggerOptions(c)].sort((a, b) => a.price - b.price); build[c] = opts.find((o) => ok(c, o)) || opts[0]; }
 
   // 2) Quality scales with elo: weak players aim lower, strong players use the full budget optimally.
-  const cap = budget * clamp(0.82 + (elo / 3000) * 0.15, 0.82, 0.97);
+  const cap = elo >= 3000 ? budget : budget * clamp(0.82 + (elo / 3000) * 0.15, 0.82, 0.97);
   const cheapestMobo = (sock) => moggerOptions("mobo").filter((m) => m.socket === sock).sort((a, b) => a.price - b.price)[0];
   const cheapestCooler = (cpu) => moggerOptions("cooler").filter((cl) => (!cl.sockets || cl.sockets.includes(cpu.socket)) && (!cl.tdpRating || cl.tdpRating >= cpu.tdp)).sort((a, b) => a.price - b.price)[0];
 
