@@ -1190,7 +1190,7 @@ export default function RigForge() {
             onRegen={generateAuto} onSave={() => setSavingOpen(true)}
             onShare={hdrUser ? async (title) => {
               const a = analysis;
-              await netPostCommunity(hdrUser.id, hdrUser.name, { title, useCase: useCase.key, budget, total: a.spend, perfScore: a.perf, parts });
+              await netPostCommunity(hdrUser.id, hdrUser.name, { title, useCase, budget, total: a.spend, perfScore: a.perf, parts });
             } : null}
             onShareLogin={() => setHdrAuth(true)}
           />
@@ -2786,6 +2786,14 @@ function CommunityBuilds({ user, onLogin, onBack }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [deleting, setDeleting] = useState(null);
+  // share modal state
+  const [shareOpen, setShareOpen] = useState(false);
+  const [myBuilds, setMyBuilds] = useState([]);
+  const [myBuildsLoading, setMyBuildsLoading] = useState(false);
+  const [pickedBuild, setPickedBuild] = useState(null);
+  const [shareTitle, setShareTitle] = useState("");
+  const [shareStatus, setShareStatus] = useState(null);
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2796,6 +2804,39 @@ function CommunityBuilds({ user, onLogin, onBack }) {
 
   useEffect(() => { load(); }, [load]);
 
+  const openShare = async () => {
+    setShareOpen(true);
+    setPickedBuild(null);
+    setShareTitle("");
+    setShareStatus(null);
+    setSearch("");
+    setMyBuildsLoading(true);
+    const data = await netListBuilds(user.id);
+    setMyBuilds(data);
+    setMyBuildsLoading(false);
+  };
+
+  const doPost = async () => {
+    if (!pickedBuild || !shareTitle.trim()) return;
+    setShareStatus("posting");
+    const b = pickedBuild;
+    const analysis = moggerScore(b.parts || {}, b.useCase, b.budget);
+    const res = await netPostCommunity(user.id, user.name, {
+      title: shareTitle.trim(),
+      useCase: b.useCase,
+      budget: b.budget,
+      total: b.total || analysis.spend,
+      perfScore: b.overallScore || analysis.perf,
+      parts: b.parts || {},
+    });
+    if (res.ok) {
+      setShareStatus("done");
+      setTimeout(() => { setShareOpen(false); load(); }, 1200);
+    } else {
+      setShareStatus("error:" + (res.error || "unknown"));
+    }
+  };
+
   const handleDelete = async (id) => {
     setDeleting(id);
     await netDeleteCommunity(id, user.id);
@@ -2805,6 +2846,7 @@ function CommunityBuilds({ user, onLogin, onBack }) {
 
   const filtered = filter === "all" ? builds : builds.filter(b => b.use_case === filter);
   const ucKeys = [...new Set(builds.map(b => b.use_case).filter(Boolean))];
+  const filteredMyBuilds = myBuilds.filter(b => !search || (b.name || "").toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="rf-fade rf-community">
@@ -2813,7 +2855,9 @@ function CommunityBuilds({ user, onLogin, onBack }) {
           <h2 style={{margin:0}}><Globe size={18} style={{verticalAlign:"middle",marginRight:"6px"}} />Community Builds</h2>
           <p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Builds shared by the FORGEAPC community</p>
         </div>
-        {!user && (
+        {user ? (
+          <button className="rf-btn" onClick={openShare}><Plus size={15} /> Share a build</button>
+        ) : (
           <button className="rf-btn" onClick={onLogin}><Users size={15} /> Log in to share</button>
         )}
       </div>
@@ -2872,6 +2916,60 @@ function CommunityBuilds({ user, onLogin, onBack }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Share modal — pick a saved build */}
+      {shareOpen && (
+        <div className="rf-modal-wrap" onClick={() => setShareOpen(false)}>
+          <div className="rf-modal" style={{maxWidth:"480px",maxHeight:"80vh",display:"flex",flexDirection:"column"}} onClick={e => e.stopPropagation()}>
+            <div className="rf-modal-head"><Upload size={16} /> Share a Build to Community</div>
+
+            {!pickedBuild ? (
+              <>
+                <p className="rf-muted" style={{fontSize:"0.85rem",marginBottom:"0.75rem"}}>Pick one of your saved builds to share.</p>
+                <div style={{position:"relative",marginBottom:"0.75rem"}}>
+                  <Search size={14} style={{position:"absolute",left:"10px",top:"50%",transform:"translateY(-50%)",color:"var(--c-muted)"}} />
+                  <input className="rf-input" style={{paddingLeft:"32px"}} placeholder="Search your builds…" value={search} onChange={e => setSearch(e.target.value)} autoFocus />
+                </div>
+                <div style={{overflowY:"auto",flex:1,display:"flex",flexDirection:"column",gap:"8px"}}>
+                  {myBuildsLoading ? (
+                    <p className="rf-muted" style={{fontSize:"0.85rem"}}>Loading your builds…</p>
+                  ) : filteredMyBuilds.length === 0 ? (
+                    <p className="rf-muted" style={{fontSize:"0.85rem"}}>{myBuilds.length === 0 ? "No saved builds found. Save a build first." : "No builds match your search."}</p>
+                  ) : filteredMyBuilds.map(b => {
+                    const UC = b.useCase && USE_CASES[b.useCase];
+                    return (
+                      <div key={b.id} className="rf-community-pick-row" onClick={() => { setPickedBuild(b); setShareTitle(b.name || ""); }}>
+                        <div style={{display:"flex",alignItems:"center",gap:"8px",minWidth:0}}>
+                          {UC && <UC.Icon size={14} style={{color:"var(--c-accent)",flexShrink:0}} />}
+                          <span style={{fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.name}</span>
+                        </div>
+                        <span className="rf-muted" style={{fontSize:"0.8rem",flexShrink:0}}>{fmt(b.total || 0)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="rf-community-pick-row" style={{marginBottom:"0.75rem",cursor:"default"}}>
+                  {pickedBuild.useCase && USE_CASES[pickedBuild.useCase] && React.createElement(USE_CASES[pickedBuild.useCase].Icon, {size:14, style:{color:"var(--c-accent)"}})}
+                  <span style={{fontWeight:600}}>{pickedBuild.name}</span>
+                  <button className="rf-ghost" style={{marginLeft:"auto",fontSize:"0.8rem",padding:"2px 8px"}} onClick={() => setPickedBuild(null)}>Change</button>
+                </div>
+                <p className="rf-muted" style={{fontSize:"0.85rem",marginBottom:"0.5rem"}}>Give your post a title:</p>
+                <input className="rf-input" placeholder="e.g. Budget Gaming Beast $1500" value={shareTitle} onChange={e => setShareTitle(e.target.value)} maxLength={80} onKeyDown={e => e.key === "Enter" && doPost()} autoFocus />
+                {shareStatus === "done" && <p style={{color:"var(--c-accent)",marginTop:"0.4rem",fontSize:"0.85rem"}}>Posted!</p>}
+                {shareStatus && shareStatus.startsWith("error") && <p style={{color:"var(--c-bad)",marginTop:"0.4rem",fontSize:"0.85rem"}}>Error — {shareStatus.replace("error:","")}</p>}
+              </>
+            )}
+
+            <div className="rf-modal-row" style={{marginTop:"1rem"}}>
+              <button className="rf-ghost" onClick={() => setShareOpen(false)}>Cancel</button>
+              {pickedBuild && <button className="rf-btn" onClick={doPost} disabled={!shareTitle.trim() || shareStatus === "posting" || shareStatus === "done"}><Upload size={15} /> {shareStatus === "posting" ? "Posting…" : "Post"}</button>}
+            </div>
+          </div>
         </div>
       )}
     </div>
