@@ -258,6 +258,63 @@ function decodeBuild(str) {
   try { return JSON.parse(decodeURIComponent(atob(str))); } catch(e) { return null; }
 }
 
+// ---- Batch 1: Performance & Thermals helpers ----
+function thermalEstimate(parts) {
+  const cpuTdp = parts.cpu?.tdp || 0;
+  const coolerRating = parts.cooler?.tdpRating || 65;
+  const isAio = /aio|liquid|water/i.test((parts.cooler?.type || "") + (parts.cooler?.name || ""));
+  let cpuLoad = cpuTdp > 0 ? Math.min(95, 40 + Math.round((cpuTdp / coolerRating) * 50)) : null;
+  if (cpuLoad && isAio) cpuLoad = Math.max(40, cpuLoad - 8);
+  const gpuTdp = parts.gpu?.tdp || 0;
+  const gpuLoad = gpuTdp > 0 ? (gpuTdp > 300 ? 84 : gpuTdp > 200 ? 77 : 68) : null;
+  return { cpuLoad, gpuLoad, isAio };
+}
+function vrReadiness(parts) {
+  const checks = [
+    { label: "CPU (6+ cores)", ok: (parts.cpu?.cores || 0) >= 6, detail: parts.cpu ? `${parts.cpu.cores} cores` : "No CPU" },
+    { label: "RAM (16GB+)", ok: (parts.ram?.cap || 0) >= 16, detail: parts.ram ? `${parts.ram.cap}GB` : "No RAM" },
+    { label: "GPU (8GB+ VRAM)", ok: (parts.gpu?.vram || 0) >= 8, detail: parts.gpu ? `${parts.gpu.vram}GB VRAM` : "No GPU" },
+  ];
+  const pass = checks.every(c => c.ok);
+  const vram = parts.gpu?.vram || 0;
+  return { pass, checks, tier: pass ? (vram >= 12 ? "VR Ultra" : "VR Ready") : "Not VR Ready" };
+}
+function gaming4K(parts) {
+  const vram = parts.gpu?.vram || 0, perf = parts.gpu?.perf || 0;
+  if (!parts.gpu) return { tier: "No GPU", color: "var(--c-muted)", ready: false };
+  if (vram >= 16 && perf >= 85) return { tier: "4K Ultra", color: "var(--c-good)", ready: true };
+  if (vram >= 12 && perf >= 70) return { tier: "4K High", color: "var(--c-accent)", ready: true };
+  if (vram >= 10 && perf >= 55) return { tier: "4K Medium", color: "var(--c-warn)", ready: true };
+  if (vram >= 8 && perf >= 40) return { tier: "1440p Best", color: "var(--c-accent2)", ready: false };
+  return { tier: "1080p", color: "var(--c-muted)", ready: false };
+}
+function overclockSim(parts) {
+  if (!parts.cpu) return null;
+  const cpu = parts.cpu;
+  const isUnlocked = /\bK\b|\bKF\b|\bKS\b|\bX\b|\bXT\b|\bX3D\b/i.test(cpu.name || "");
+  const coolerOk = (parts.cooler?.tdpRating || 0) >= (cpu.tdp || 0) * 1.15;
+  const ramType = parts.ram?.ramType || "DDR4";
+  const ramSpeed = parts.ram?.speed || 3200;
+  const ramTarget = ramType === "DDR5" ? Math.min(7200, ramSpeed + 800) : Math.min(4000, ramSpeed + 400);
+  const ramGain = Math.round(((ramTarget - ramSpeed) / ramSpeed) * 100 * 0.4);
+  const cpuGain = isUnlocked && coolerOk ? "3–8% performance gain possible with manual OC" : "CPU or cooler limits overclocking headroom";
+  return { isUnlocked, coolerOk, cpuGain, ramSpeed, ramTarget, ramGain };
+}
+function memBandwidth(parts) {
+  if (!parts.ram) return null;
+  const speed = parts.ram.speed || 3200, type = parts.ram.ramType || "DDR4";
+  const bw = Math.round(speed * 2 * 2 / 1000 * 10) / 10;
+  return { bw, type, speed, tier: bw > 120 ? "Excellent" : bw > 80 ? "Good" : bw > 50 ? "Average" : "Low" };
+}
+function storageTier(parts) {
+  if (!parts.storage) return null;
+  const iface = parts.storage.iface || "", kind = parts.storage.kind || "SATA";
+  if (/Gen\s?5|PCIe\s?5/i.test(iface)) return { tier: "PCIe 5.0 NVMe", speed: "~14,000 MB/s", color: "var(--c-good)", gameLoad: "Under 1 sec" };
+  if (/Gen\s?4|PCIe\s?4/i.test(iface)) return { tier: "PCIe 4.0 NVMe", speed: "~7,000 MB/s", color: "var(--c-accent)", gameLoad: "1–2 sec" };
+  if (/Gen\s?3|PCIe\s?3|NVMe/i.test(iface) || kind === "NVMe") return { tier: "PCIe 3.0 NVMe", speed: "~3,500 MB/s", color: "var(--c-accent2)", gameLoad: "2–4 sec" };
+  return { tier: "SATA SSD", speed: "~550 MB/s", color: "var(--c-warn)", gameLoad: "5–10 sec" };
+}
+
 // Newer GPUs are preferred — older cards are often out of stock or used-only.
 function modernityFactor(part) {
   if (part.cat !== "gpu") return 1;
@@ -1161,6 +1218,7 @@ export default function RigForge() {
                 <button className="rf-lang-opt" onClick={() => { setView("parts"); setMoreOpen(false); }}><PackageSearch size={14} /> Parts</button>
                 <button className="rf-lang-opt" onClick={() => { setView("compare"); setMoreOpen(false); }}><Columns2 size={14} /> Compare</button>
                 <button className="rf-lang-opt" onClick={() => { setView("calendar"); setMoreOpen(false); }}><LayoutGrid size={14} /> Launches</button>
+                <button className="rf-lang-opt" onClick={() => { setView("analyze"); setMoreOpen(false); }}><Zap size={14} /> Analyze Build</button>
               </div>
             )}
           </div>
@@ -1292,6 +1350,7 @@ export default function RigForge() {
         {view === "parts" && <PartsExplorer onBack={() => setView("home")} />}
         {view === "compare" && <CompareBuilds saved={saved} onBack={() => setView("home")} />}
         {view === "calendar" && <LaunchCalendar />}
+        {view === "analyze" && <AnalyzeView parts={parts} analysis={analysis} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} />}
         {view === "mogger" && <MoggerGame onExit={() => setView("home")} onSaveBuild={saveExternalBuild} />}
         {view === "mogger-admin" && <MoggerAdmin onBack={() => setView("home")} user={hdrUser} />}
         {view === "mogger-coadmin" && <MoggerCoAdmin onBack={() => setView("home")} bypass={true} />}
@@ -1311,6 +1370,7 @@ export default function RigForge() {
             } : null}
             onShareLogin={() => setHdrAuth(true)}
             on3D={() => setView3D(true)}
+            onAnalyze={() => setView("analyze")}
             onPower={() => setPowerOpen(true)}
             onShareLink={() => {
               const enc = encodeBuild(useCase, budget, parts);
@@ -3415,6 +3475,142 @@ function LaunchCalendar() {
   );
 }
 
+/* ----------------------------- ANALYZE VIEW ----------------------------- */
+function AnalyzeView({ parts, analysis, useCase, onBack }) {
+  if (!parts || !analysis) return (
+    <div className="rf-fade rf-community">
+      <div className="rf-section-head" style={{marginBottom:"1rem"}}>
+        <h2 style={{margin:0}}>🔬 Build Analysis</h2>
+        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+      </div>
+      <p className="rf-muted">Build a PC first to see your analysis.</p>
+    </div>
+  );
+  const thermal = thermalEstimate(parts);
+  const vr = vrReadiness(parts);
+  const fk = gaming4K(parts);
+  const oc = overclockSim(parts);
+  const mem = memBandwidth(parts);
+  const stor = storageTier(parts);
+
+  const TempBar = ({ val, max = 100 }) => {
+    const pct = Math.min(100, (val / max) * 100);
+    const col = val > 85 ? "var(--c-bad)" : val > 75 ? "var(--c-warn)" : "var(--c-good)";
+    return <div className="rf-budget-bar" style={{margin:"4px 0 8px"}}><div className="rf-budget-fill" style={{width:pct+"%",background:col}}/></div>;
+  };
+
+  return (
+    <div className="rf-fade rf-community">
+      <div className="rf-section-head" style={{marginBottom:"1.5rem"}}>
+        <div>
+          <h2 style={{margin:0}}>🔬 Build Analysis</h2>
+          <p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Deep performance metrics for your current build</p>
+        </div>
+        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(290px,1fr))",gap:"14px"}}>
+
+        {/* Thermals */}
+        <div className="rf-pe-card">
+          <div className="rf-analyze-title">🌡️ Thermal Estimate</div>
+          {thermal.cpuLoad !== null ? (
+            <>
+              <div className="rf-analyze-row"><span className="rf-muted">CPU under load</span><span style={{color:thermal.cpuLoad>85?"var(--c-bad)":thermal.cpuLoad>75?"var(--c-warn)":"var(--c-good)",fontWeight:700}}>{thermal.cpuLoad}°C</span></div>
+              <TempBar val={thermal.cpuLoad} />
+              {thermal.gpuLoad !== null && <>
+                <div className="rf-analyze-row"><span className="rf-muted">GPU under load</span><span style={{color:thermal.gpuLoad>85?"var(--c-bad)":thermal.gpuLoad>78?"var(--c-warn)":"var(--c-good)",fontWeight:700}}>{thermal.gpuLoad}°C</span></div>
+                <TempBar val={thermal.gpuLoad} />
+              </>}
+              {thermal.isAio && <p className="rf-muted" style={{fontSize:"0.78rem",margin:"4px 0 0"}}>AIO gives ~8°C advantage over air</p>}
+            </>
+          ) : <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add CPU + cooler to estimate temps</p>}
+        </div>
+
+        {/* VR Readiness */}
+        <div className="rf-pe-card">
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+            <div className="rf-analyze-title" style={{margin:0}}>🥽 VR Readiness</div>
+            <span style={{fontSize:"0.8rem",fontWeight:700,color:vr.pass?"var(--c-good)":"var(--c-bad)"}}>{vr.tier}</span>
+          </div>
+          {vr.checks.map(c => (
+            <div key={c.label} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid var(--c-border)"}}>
+              <span style={{fontSize:"0.84rem"}}>{c.ok?"✅":"❌"} {c.label}</span>
+              <span className="rf-muted" style={{fontSize:"0.8rem"}}>{c.detail}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* 4K Check */}
+        <div className="rf-pe-card">
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+            <div className="rf-analyze-title" style={{margin:0}}>🎮 Resolution Tier</div>
+            <span style={{fontSize:"0.82rem",fontWeight:700,color:fk.color}}>{fk.tier}</span>
+          </div>
+          {parts.gpu ? (
+            <>
+              <div className="rf-analyze-row"><span className="rf-muted">VRAM</span><span>{parts.gpu.vram}GB</span></div>
+              <div className="rf-analyze-row"><span className="rf-muted">GPU perf score</span><span>{parts.gpu.perf}/100</span></div>
+              <div style={{marginTop:"10px",padding:"8px",borderRadius:"8px",background:"rgba(255,255,255,0.04)",fontSize:"0.8rem",color:"var(--c-muted)"}}>
+                {fk.ready ? `GPU can handle ${fk.tier}` : `Best at ${fk.tier} — upgrade GPU for 4K`}
+              </div>
+            </>
+          ) : <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add a GPU to check resolution tier</p>}
+        </div>
+
+        {/* Overclock Sim */}
+        <div className="rf-pe-card">
+          <div className="rf-analyze-title">⚡ Overclock Potential</div>
+          {oc ? (
+            <>
+              <div style={{display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"10px"}}>
+                <span className="rf-badge" style={{borderColor:oc.isUnlocked?"var(--c-good)":"var(--c-muted)",color:oc.isUnlocked?"var(--c-good)":"var(--c-muted)"}}>{oc.isUnlocked?"✓ Unlocked CPU":"✗ Locked CPU"}</span>
+                <span className="rf-badge" style={{borderColor:oc.coolerOk?"var(--c-good)":"var(--c-warn)",color:oc.coolerOk?"var(--c-good)":"var(--c-warn)"}}>{oc.coolerOk?"✓ Cooler OK":"⚠ Weak Cooler"}</span>
+              </div>
+              <p style={{fontSize:"0.83rem",color:"var(--c-muted)",margin:"0 0 6px"}}>CPU: {oc.cpuGain}</p>
+              {parts.ram && <p style={{fontSize:"0.83rem",color:"var(--c-muted)",margin:0}}>RAM XMP: {oc.ramSpeed} → {oc.ramTarget} MT/s <span style={{color:"var(--c-good)"}}>+{oc.ramGain}% est.</span></p>}
+            </>
+          ) : <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add a CPU to check OC potential</p>}
+        </div>
+
+        {/* Memory Bandwidth */}
+        <div className="rf-pe-card">
+          <div className="rf-analyze-title">🧠 Memory Bandwidth</div>
+          {mem ? (
+            <>
+              <div style={{fontSize:"2rem",fontWeight:700,color:"var(--c-accent)",fontFamily:"'JetBrains Mono'"}}>{mem.bw}<span style={{fontSize:"1rem",color:"var(--c-muted)",marginLeft:"4px"}}>GB/s</span></div>
+              <div className="rf-analyze-row" style={{marginTop:"8px"}}>
+                <span className="rf-muted">{mem.type} @ {mem.speed} MT/s (dual ch.)</span>
+                <span style={{fontWeight:700,color:mem.tier==="Excellent"?"var(--c-good)":mem.tier==="Good"?"var(--c-accent)":"var(--c-warn)"}}>{mem.tier}</span>
+              </div>
+              <p className="rf-muted" style={{fontSize:"0.76rem",marginTop:"6px"}}>Theoretical peak — 128-bit dual-channel bus</p>
+            </>
+          ) : <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add RAM to calculate bandwidth</p>}
+        </div>
+
+        {/* Storage Speed */}
+        <div className="rf-pe-card">
+          <div className="rf-analyze-title">💾 Storage Speed</div>
+          {stor ? (
+            <>
+              <div className="rf-analyze-row" style={{marginBottom:"10px"}}>
+                <span style={{fontWeight:700,color:stor.color}}>{stor.tier}</span>
+                <span className="rf-muted" style={{fontSize:"0.82rem"}}>{stor.speed}</span>
+              </div>
+              <div style={{padding:"10px",borderRadius:"8px",background:"rgba(255,255,255,0.04)"}}>
+                <div style={{fontSize:"0.78rem",color:"var(--c-muted)",marginBottom:"4px"}}>Game load time estimate</div>
+                <div style={{fontWeight:700,fontSize:"1.1rem",color:stor.color}}>{stor.gameLoad}</div>
+              </div>
+              <p className="rf-muted" style={{fontSize:"0.76rem",marginTop:"8px"}}>NVMe is 10–50× faster than HDD. SATA SSD is 5–10× faster.</p>
+            </>
+          ) : <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add storage to see speed tier</p>}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 /* ----------------------------- SURVEY ----------------------------- */
 function Survey({ onPick }) {
   const [sel, setSel] = useState([]);
@@ -3511,7 +3707,7 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
 }
 
 /* ----------------------------- RESULTS ----------------------------- */
-function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline }) {
+function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline, onAnalyze }) {
   const UC = USE_CASES[useCase];
   const a = analysis;
   const [shareOpen, setShareOpen] = useState(false);
@@ -3538,6 +3734,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
         <div className="rf-results-actions">
           <button className="rf-ghost" onClick={onRegen}><Sparkles size={15} /> Auto-forge</button>
           <button className="rf-ghost" onClick={on3D}><LayoutGrid size={15} /> 3D View</button>
+          <button className="rf-ghost" onClick={onAnalyze}><Zap size={15} /> Analyze</button>
           {onShare ? (
             <button className="rf-ghost" onClick={() => { setShareTitle(""); setShareStatus(null); setShareOpen(true); }}><Globe size={15} /> Share</button>
           ) : (
