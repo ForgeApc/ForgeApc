@@ -1316,6 +1316,7 @@ export default function RigForge() {
                 <button className="rf-lang-opt" onClick={() => { setView("compare"); setMoreOpen(false); }}><Columns2 size={14} /> Compare</button>
                 <button className="rf-lang-opt" onClick={() => { setView("calendar"); setMoreOpen(false); }}><LayoutGrid size={14} /> Launches</button>
                 <button className="rf-lang-opt" onClick={() => { setView("analyze"); setMoreOpen(false); }}><Zap size={14} /> Analyze Build</button>
+                <button className="rf-lang-opt" onClick={() => { setView("tools"); setMoreOpen(false); }}><DollarSign size={14} /> Cost Tools</button>
               </div>
             )}
           </div>
@@ -1448,6 +1449,7 @@ export default function RigForge() {
         {view === "compare" && <CompareBuilds saved={saved} onBack={() => setView("home")} />}
         {view === "calendar" && <LaunchCalendar />}
         {view === "analyze" && <AnalyzeView parts={parts} analysis={analysis} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} />}
+        {view === "tools" && <ToolsView parts={parts} analysis={analysis} useCase={useCase} budget={budget} onBack={() => setView(parts ? "results" : "home")} />}
         {view === "mogger" && <MoggerGame onExit={() => setView("home")} onSaveBuild={saveExternalBuild} />}
         {view === "mogger-admin" && <MoggerAdmin onBack={() => setView("home")} user={hdrUser} />}
         {view === "mogger-coadmin" && <MoggerCoAdmin onBack={() => setView("home")} bypass={true} />}
@@ -1468,6 +1470,7 @@ export default function RigForge() {
             onShareLogin={() => setHdrAuth(true)}
             on3D={() => setView3D(true)}
             onAnalyze={() => setView("analyze")}
+            onTools={() => setView("tools")}
             onPower={() => setPowerOpen(true)}
             onShareLink={() => {
               const enc = encodeBuild(useCase, budget, parts);
@@ -3572,6 +3575,276 @@ function LaunchCalendar() {
   );
 }
 
+/* ----------------------------- TOOLS VIEW (Batches 3 & 4) ----------------------------- */
+const SALE_DATES = [
+  { name: "Amazon Prime Day", date: "Mid-July 2026", tip: "Best time for RAM and SSDs." },
+  { name: "Back to School", date: "Aug 2026", tip: "Monitors and budget CPUs often drop." },
+  { name: "Black Friday", date: "Nov 28, 2026", tip: "Historically the best GPU deals of the year." },
+  { name: "Cyber Monday", date: "Dec 1, 2026", tip: "Online-only. Great for full build bundles." },
+  { name: "New Year Sales", date: "Jan 2027", tip: "Newegg and B&H run post-holiday clearances." },
+  { name: "CES Launch Window", date: "Jan 2027", tip: "New GPU/CPU launches drive last-gen prices down." },
+];
+
+function ToolsView({ parts, analysis, useCase, budget, onBack }) {
+  const total = parts ? CATEGORY_ORDER.reduce((s,c) => s + (parts[c]?.price || 0), 0) : 0;
+  const [payMonths, setPayMonths] = useState(12);
+  const [payInterest, setPayInterest] = useState(0);
+  const [listCopied, setListCopied] = useState(false);
+
+  // 14 — budget breakdown
+  const breakdown = parts ? CATEGORY_ORDER.filter(c => parts[c]).map(c => ({
+    cat: tCat(c), price: parts[c].price, pct: Math.round((parts[c].price / total) * 100),
+  })) : [];
+  const COLORS = ["var(--c-accent)","var(--c-accent2)","var(--c-good)","var(--c-warn)","var(--c-bad)","#ff9f43","#a29bfe","#fd79a8"];
+
+  // 15 — lifespan value
+  const lifespan = total > 0 ? {
+    yr3: (total / (365*3)).toFixed(2),
+    yr5: (total / (365*5)).toFixed(2),
+    yr7: (total / (365*7)).toFixed(2),
+  } : null;
+
+  // 16 — upgrade cost advisor: next-tier part per category
+  const upgradeTips = parts ? CATEGORY_ORDER.filter(c => parts[c]).map(c => {
+    const cur = parts[c];
+    const nextTier = CATALOG[c].filter(p => p.price > cur.price && p.perf > (cur.perf || 0) && p.price <= cur.price * 1.6).sort((a,b) => a.price - b.price)[0];
+    if (!nextTier) return null;
+    return { cat: tCat(c), curName: cur.name, nextName: nextTier.name, curPrice: cur.price, nextPrice: nextTier.price, diff: nextTier.price - cur.price, perfGain: nextTier.perf - (cur.perf||0) };
+  }).filter(Boolean) : [];
+
+  // 17 — resale estimate (3-year retention rates)
+  const retention = { cpu:0.50, gpu:0.45, ram:0.35, storage:0.30, mobo:0.30, psu:0.60, case:0.55, cooler:0.50 };
+  const resale = parts ? CATEGORY_ORDER.filter(c => parts[c]).map(c => ({
+    cat: tCat(c), cost: parts[c].price, est: Math.round(parts[c].price * (retention[c]||0.4)),
+  })) : [];
+  const resaleTotal = resale.reduce((s,r) => s+r.est, 0);
+
+  // 18 — used vs new
+  const usedSavings = total > 0 ? Math.round(total * 0.25) : 0;
+  const usedBestParts = parts ? CATEGORY_ORDER.filter(c => parts[c] && ["gpu","cpu","ram"].includes(c)).map(c => ({
+    cat: tCat(c), saving: Math.round((parts[c].price||0)*0.28),
+  })) : [];
+
+  // 19 — payment plan
+  const monthlyPayment = (total, months, apr) => {
+    if (apr === 0) return (total / months).toFixed(2);
+    const r = apr / 100 / 12;
+    return (total * r / (1 - Math.pow(1+r, -months))).toFixed(2);
+  };
+  const pmtOptions = [6, 12, 24, 36];
+  const totalWithInterest = payInterest > 0
+    ? (parseFloat(monthlyPayment(total, payMonths, payInterest)) * payMonths).toFixed(2)
+    : total.toFixed(2);
+
+  // 28 — shopping list
+  const shoppingList = parts ? CATEGORY_ORDER.filter(c => parts[c]).map(c =>
+    `${tCat(c)}: ${parts[c].name} — $${parts[c].price}`
+  ).join("\n") + `\n\nTotal: $${total}` : "";
+
+  const copyList = () => {
+    navigator.clipboard.writeText(shoppingList).then(() => {
+      setListCopied(true);
+      setTimeout(() => setListCopied(false), 2000);
+    });
+  };
+
+  const amazonSearch = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}`;
+  const neweggSearch = (name) => `https://www.newegg.com/p/pl?d=${encodeURIComponent(name)}`;
+
+  return (
+    <div className="rf-fade rf-community">
+      <div className="rf-section-head" style={{marginBottom:"1.5rem"}}>
+        <div>
+          <h2 style={{margin:0}}>💰 Cost Tools</h2>
+          <p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Budget breakdown, lifespan, resale, payment plans & shopping</p>
+        </div>
+        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+      </div>
+
+      {!parts && <p className="rf-muted">Build a PC first to use the cost tools.</p>}
+
+      {parts && (
+        <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
+
+          {/* 14 — Budget Breakdown */}
+          <div className="rf-pe-card">
+            <div className="rf-analyze-title">📊 Budget Breakdown</div>
+            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+              {breakdown.map((b,i) => (
+                <div key={b.cat}>
+                  <div className="rf-analyze-row" style={{marginBottom:"3px"}}>
+                    <span style={{fontSize:"0.84rem"}}>{b.cat}</span>
+                    <span style={{fontSize:"0.84rem",fontWeight:600}}>${b.price} <span className="rf-muted">({b.pct}%)</span></span>
+                  </div>
+                  <div style={{height:"8px",borderRadius:"4px",background:"var(--c-panel-2)",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:b.pct+"%",borderRadius:"4px",background:COLORS[i%COLORS.length],transition:"width .4s var(--ease)"}}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="rf-analyze-row" style={{marginTop:"12px",borderTop:"1px solid var(--c-border)",paddingTop:"8px"}}>
+              <span style={{fontWeight:700}}>Total</span>
+              <span style={{fontWeight:700,color:"var(--c-accent)"}}>${total}</span>
+            </div>
+          </div>
+
+          {/* 15 — Part Lifespan Value */}
+          <div className="rf-pe-card">
+            <div className="rf-analyze-title">⏳ Lifespan Value (cost per day)</div>
+            {lifespan ? (
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px"}}>
+                {[["3 Years",lifespan.yr3],["5 Years",lifespan.yr5],["7 Years",lifespan.yr7]].map(([label,val])=>(
+                  <div key={label} style={{textAlign:"center",padding:"12px",borderRadius:"10px",background:"rgba(255,255,255,0.04)"}}>
+                    <div style={{fontSize:"1.3rem",fontWeight:700,color:"var(--c-accent)",fontFamily:"'JetBrains Mono'"}}>${val}</div>
+                    <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginTop:"3px"}}>per day over {label}</div>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="rf-muted">No parts selected</p>}
+            <p className="rf-muted" style={{fontSize:"0.75rem",marginTop:"8px"}}>Based on a total build cost of ${total}. Excludes electricity and maintenance.</p>
+          </div>
+
+          {/* 16 — Upgrade Cost Advisor */}
+          <div className="rf-pe-card">
+            <div className="rf-analyze-title">🔼 Upgrade Cost Advisor</div>
+            {upgradeTips.length === 0
+              ? <p className="rf-muted" style={{fontSize:"0.85rem"}}>You're at or near the top tier in each category.</p>
+              : upgradeTips.slice(0,4).map(u => (
+                <div key={u.cat} style={{padding:"8px 0",borderBottom:"1px solid var(--c-border)"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:"2px"}}>
+                    <span style={{fontSize:"0.83rem",fontWeight:600}}>{u.cat}</span>
+                    <span style={{fontSize:"0.83rem",color:"var(--c-warn)"}}>+${u.diff} for +{u.perfGain} perf pts</span>
+                  </div>
+                  <div style={{fontSize:"0.77rem",color:"var(--c-muted)"}}>{u.curName} → {u.nextName}</div>
+                </div>
+              ))
+            }
+          </div>
+
+          {/* 17 — Resale Value Estimator */}
+          <div className="rf-pe-card">
+            <div className="rf-analyze-title">📉 Resale Value (3-Year Estimate)</div>
+            <div style={{display:"flex",flexDirection:"column",gap:"5px"}}>
+              {resale.map(r => (
+                <div key={r.cat} className="rf-analyze-row">
+                  <span style={{fontSize:"0.83rem"}}>{r.cat}</span>
+                  <span style={{fontSize:"0.83rem"}}><span className="rf-muted">${r.cost}</span> → <span style={{color:"var(--c-good)"}}>${r.est}</span></span>
+                </div>
+              ))}
+            </div>
+            <div className="rf-analyze-row" style={{marginTop:"10px",borderTop:"1px solid var(--c-border)",paddingTop:"8px"}}>
+              <span style={{fontWeight:600}}>Estimated resale total</span>
+              <span style={{fontWeight:700,color:"var(--c-good)"}}>${resaleTotal} <span className="rf-muted" style={{fontWeight:400}}>({Math.round((resaleTotal/total)*100)}% retained)</span></span>
+            </div>
+          </div>
+
+          {/* 18 — Used vs New */}
+          <div className="rf-pe-card">
+            <div className="rf-analyze-title">🛒 Used vs New Savings</div>
+            <div style={{display:"flex",gap:"12px",marginBottom:"12px"}}>
+              <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(255,255,255,0.04)",textAlign:"center"}}>
+                <div style={{fontSize:"0.75rem",color:"var(--c-muted)",marginBottom:"4px"}}>New build</div>
+                <div style={{fontSize:"1.3rem",fontWeight:700}}>${total}</div>
+              </div>
+              <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(70,224,160,0.08)",border:"1px solid rgba(70,224,160,0.2)",textAlign:"center"}}>
+                <div style={{fontSize:"0.75rem",color:"var(--c-muted)",marginBottom:"4px"}}>Used estimate</div>
+                <div style={{fontSize:"1.3rem",fontWeight:700,color:"var(--c-good)"}}>${total - usedSavings}</div>
+              </div>
+            </div>
+            <p style={{fontSize:"0.83rem",color:"var(--c-muted)",margin:"0 0 8px"}}>Buying used saves roughly <strong style={{color:"var(--c-good)"}}>${usedSavings}</strong> (~25%). Best used deals:</p>
+            {usedBestParts.map(p => (
+              <div key={p.cat} className="rf-analyze-row">
+                <span style={{fontSize:"0.82rem"}}>{p.cat}</span>
+                <span style={{fontSize:"0.82rem",color:"var(--c-good)"}}>~${p.saving} savings</span>
+              </div>
+            ))}
+            <p className="rf-muted" style={{fontSize:"0.75rem",marginTop:"8px"}}>Check eBay, Facebook Marketplace, r/hardwareswap for used prices.</p>
+          </div>
+
+          {/* 19 — Payment Plan Builder */}
+          <div className="rf-pe-card">
+            <div className="rf-analyze-title">💳 Payment Plan Builder</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"12px"}}>
+              <div>
+                <div style={{fontSize:"0.75rem",color:"var(--c-muted)",marginBottom:"5px"}}>Term</div>
+                <div style={{display:"flex",gap:"5px",flexWrap:"wrap"}}>
+                  {pmtOptions.map(m => (
+                    <button key={m} className={"rf-pill"+(payMonths===m?" active":"")} onClick={()=>setPayMonths(m)}>{m}mo</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize:"0.75rem",color:"var(--c-muted)",marginBottom:"5px"}}>APR %</div>
+                <input className="rf-input" type="number" min={0} max={30} step={0.5} value={payInterest}
+                  onChange={e=>setPayInterest(parseFloat(e.target.value)||0)}
+                  style={{padding:"6px 10px",fontSize:"0.85rem",width:"100%"}} />
+              </div>
+            </div>
+            <div style={{display:"flex",gap:"12px"}}>
+              <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(25,232,219,0.07)",border:"1px solid rgba(25,232,219,0.2)",textAlign:"center"}}>
+                <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginBottom:"4px"}}>Monthly payment</div>
+                <div style={{fontSize:"1.6rem",fontWeight:700,color:"var(--c-accent)",fontFamily:"'JetBrains Mono'"}}>${monthlyPayment(total,payMonths,payInterest)}</div>
+              </div>
+              {payInterest > 0 && (
+                <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(255,92,114,0.07)",textAlign:"center"}}>
+                  <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginBottom:"4px"}}>Total with interest</div>
+                  <div style={{fontSize:"1.3rem",fontWeight:700,color:"var(--c-bad)"}}>${totalWithInterest}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 23 — Seasonal Sale Tips */}
+          <div className="rf-pe-card">
+            <div className="rf-analyze-title">📅 Best Times to Buy</div>
+            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+              {SALE_DATES.map((s,i) => (
+                <div key={i} style={{padding:"8px 10px",borderRadius:"8px",background:"rgba(255,255,255,0.03)",border:"1px solid var(--c-border)"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:"2px"}}>
+                    <span style={{fontWeight:600,fontSize:"0.84rem"}}>{s.name}</span>
+                    <span style={{fontSize:"0.78rem",color:"var(--c-accent)",fontFamily:"'JetBrains Mono'"}}>{s.date}</span>
+                  </div>
+                  <div style={{fontSize:"0.77rem",color:"var(--c-muted)"}}>{s.tip}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 27/28 — Shopping List */}
+          <div className="rf-pe-card">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+              <div className="rf-analyze-title" style={{margin:0}}>🛍️ Shopping List</div>
+              <div style={{display:"flex",gap:"8px"}}>
+                <button className="rf-ghost rf-sm-btn" onClick={copyList}>{listCopied ? <><Check size={12}/> Copied!</> : <><PackageSearch size={12}/> Copy list</>}</button>
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+              {CATEGORY_ORDER.filter(c => parts[c]).map(c => (
+                <div key={c} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 8px",borderRadius:"8px",background:"rgba(255,255,255,0.03)"}}>
+                  <div>
+                    <div style={{fontSize:"0.78rem",color:"var(--c-muted)"}}>{tCat(c)}</div>
+                    <div style={{fontSize:"0.84rem"}}>{parts[c].name}</div>
+                  </div>
+                  <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
+                    <span style={{fontWeight:600,fontSize:"0.84rem"}}>${parts[c].price}</span>
+                    <a href={amazonSearch(parts[c].name)} target="_blank" rel="noopener noreferrer" style={{fontSize:"0.72rem",color:"var(--c-accent)",border:"1px solid rgba(25,232,219,0.3)",borderRadius:"6px",padding:"2px 7px",textDecoration:"none"}}>Amazon</a>
+                    <a href={neweggSearch(parts[c].name)} target="_blank" rel="noopener noreferrer" style={{fontSize:"0.72rem",color:"var(--c-accent2)",border:"1px solid rgba(124,92,255,0.3)",borderRadius:"6px",padding:"2px 7px",textDecoration:"none"}}>Newegg</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="rf-analyze-row" style={{marginTop:"10px",borderTop:"1px solid var(--c-border)",paddingTop:"8px"}}>
+              <span style={{fontWeight:700}}>Build Total</span>
+              <span style={{fontWeight:700,color:"var(--c-accent)"}}>${total}</span>
+            </div>
+          </div>
+
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ----------------------------- ANALYZE VIEW ----------------------------- */
 function AnalyzeView({ parts, analysis, useCase, onBack }) {
   if (!parts || !analysis) return (
@@ -3928,7 +4201,7 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
 }
 
 /* ----------------------------- RESULTS ----------------------------- */
-function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline, onAnalyze }) {
+function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline, onAnalyze, onTools }) {
   const UC = USE_CASES[useCase];
   const a = analysis;
   const [shareOpen, setShareOpen] = useState(false);
@@ -3956,6 +4229,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           <button className="rf-ghost" onClick={onRegen}><Sparkles size={15} /> Auto-forge</button>
           <button className="rf-ghost" onClick={on3D}><LayoutGrid size={15} /> 3D View</button>
           <button className="rf-ghost" onClick={onAnalyze}><Zap size={15} /> Analyze</button>
+          <button className="rf-ghost" onClick={onTools}><DollarSign size={15} /> Cost Tools</button>
           {onShare ? (
             <button className="rf-ghost" onClick={() => { setShareTitle(""); setShareStatus(null); setShareOpen(true); }}><Globe size={15} /> Share</button>
           ) : (
