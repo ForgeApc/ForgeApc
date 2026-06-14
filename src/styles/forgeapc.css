@@ -986,3 +986,20 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   .rf-pe-grid{grid-template-columns:1fr;}
   .rf-header-right .rf-ghost.rf-plans-btn span{display:none;}
 }
+
+/* ---- Build meta row (badges, bottleneck, actions) ---- */
+.rf-build-meta{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;}
+.rf-build-badges{display:flex;flex-wrap:wrap;gap:6px;}
+.rf-badge{border:1px solid;border-radius:999px;padding:3px 10px;font-size:0.76rem;font-weight:600;}
+.rf-bottleneck{background:rgba(255,92,114,0.1);border:1px solid rgba(255,92,114,0.3);border-radius:8px;padding:8px 12px;font-size:0.82rem;color:var(--c-warn);display:flex;align-items:center;gap:6px;}
+.rf-build-actions-row{display:flex;gap:8px;flex-wrap:wrap;}
+.rf-sm-btn{font-size:0.78rem !important;padding:5px 10px !important;display:flex;align-items:center;gap:5px;}
+
+/* ---- Power modal ---- */
+.rf-power-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center;margin-bottom:1rem;}
+.rf-power-result{display:flex;gap:20px;flex-wrap:wrap;background:var(--c-panel);border-radius:8px;padding:14px;}
+.rf-power-result div{display:flex;flex-direction:column;gap:2px;}
+.rf-power-result strong{font-size:1.1rem;}
+
+/* ---- Notes textarea ---- */
+.rf-input[rows]{font-family:inherit;line-height:1.5;}

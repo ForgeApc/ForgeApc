@@ -205,6 +205,59 @@ function affordableMaxPerf(cat, band, useCase) {
 // so the part's score is reduced (but it is NOT flagged over budget).
 const VALUE_CEILING = { mobo: 250 };
 
+// ---- Bottleneck detection ----
+function detectBottleneck(parts) {
+  if (!parts.cpu || !parts.gpu) return null;
+  const cpuP = parts.cpu.perf || 50, gpuP = parts.gpu.perf || 50;
+  const ratio = gpuP / cpuP;
+  if (ratio > 2.8) return { type: "cpu", msg: `CPU bottleneck — your ${parts.cpu.name} may hold back the ${parts.gpu.name}. Consider a faster CPU.` };
+  if (ratio < 0.45) return { type: "gpu", msg: `GPU bottleneck — your ${parts.gpu.name} may hold back the ${parts.cpu.name}. Consider a faster GPU.` };
+  return null;
+}
+
+// ---- Noise rating ----
+function noiseRating(parts) {
+  if (!parts.cooler) return { label: "Unknown", color: "#7c8798" };
+  const t = (parts.cooler.type || "").toLowerCase();
+  if (t === "aio" || /aio|liquid|water/i.test(parts.cooler.name || "")) return { label: "Quiet", color: "#46e0a0" };
+  if (t === "air" || /air/i.test(parts.cooler.name || "")) {
+    const tdp = parts.cooler.tdpRating || 0;
+    if (tdp >= 280) return { label: "Moderate", color: "#ffc24b" };
+    return { label: "Quiet", color: "#46e0a0" };
+  }
+  return { label: "Moderate", color: "#ffc24b" };
+}
+
+// ---- Build badges ----
+function buildBadges(parts, analysis, useCase) {
+  const badges = [];
+  const perf = analysis.score || 0, pp = analysis.ppScore || 0;
+  const total = analysis.total || 0;
+  if (perf > 900) badges.push({ label: "Overkill", icon: "💀", color: "#ff5c72" });
+  if (pp > 80 && total < 1200) badges.push({ label: "Budget King", icon: "👑", color: "#ffc24b" });
+  if (pp > 85) badges.push({ label: "Value Champ", icon: "💰", color: "#46e0a0" });
+  if (perf > 750 && noiseRating(parts).label === "Quiet") badges.push({ label: "Silent Beast", icon: "🤫", color: "#7c5cff" });
+  if (useCase === "gaming" && perf > 800) badges.push({ label: "Frame Monster", icon: "🎮", color: "#19e8db" });
+  if (useCase === "ai" && (parts.gpu?.vram || 0) >= 24) badges.push({ label: "AI Ready", icon: "🧠", color: "#7c5cff" });
+  if (useCase === "workstation" && perf > 700) badges.push({ label: "Pro Rig", icon: "🏆", color: "#19e8db" });
+  if (analysis.compat && !analysis.compat.pass) badges.push({ label: "Needs Fixes", icon: "⚠️", color: "#ff5c72" });
+  return badges;
+}
+
+// ---- Power cost estimate ----
+function powerCostMonthly(parts, kwhRate = 0.13, hoursPerDay = 6) {
+  const watts = requiredWatts(parts) * 0.75; // avg load ~75%
+  return (watts / 1000) * hoursPerDay * 30 * kwhRate;
+}
+
+// ---- Build share link (encode/decode) ----
+function encodeBuild(useCase, budget, parts) {
+  try { return btoa(encodeURIComponent(JSON.stringify({ useCase, budget, parts }))); } catch(e) { return null; }
+}
+function decodeBuild(str) {
+  try { return JSON.parse(decodeURIComponent(atob(str))); } catch(e) { return null; }
+}
+
 // Newer GPUs are preferred — older cards are often out of stock or used-only.
 function modernityFactor(part) {
   if (part.cat !== "gpu") return 1;
@@ -640,6 +693,11 @@ export default function RigForge() {
   const [nameDraft, setNameDraft] = useState("");
   const [savingOpen, setSavingOpen] = useState(false);
   const [view3D, setView3D] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [powerOpen, setPowerOpen] = useState(false);
+  const [kwhRate, setKwhRate] = useState(0.13);
+  const [hoursDay, setHoursDay] = useState(6);
+  const [shareCopied, setShareCopied] = useState(false);
   const [toast, setToast] = useState(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [isFs, setIsFs] = useState(false);
@@ -915,6 +973,41 @@ export default function RigForge() {
   useEffect(() => { refreshSaved(); }, [refreshSaved]);
   useEffect(() => { if (view === "home") refreshSaved(); }, [view, refreshSaved]);
 
+  // Load shared build from URL hash
+  useEffect(() => {
+    try {
+      const hash = window.location.hash.replace("#share=", "");
+      if (hash && hash.length > 10) {
+        const d = decodeBuild(hash);
+        if (d && d.parts && d.useCase) {
+          setUseCase(ensureUseCase(d.useCase));
+          setBudget(d.budget || 1500);
+          setParts(d.parts);
+          setView("results");
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      }
+    } catch(e) {}
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "h") setView("home");
+      if (e.key === "n") startSurvey();
+      if (e.key === "c") setView("community");
+      if (e.key === "p") setView("parts");
+      if (e.key === "x") setView("compare");
+      if (e.key === "m") setView("mogger");
+      if (e.key === "s" && view === "results") setSavingOpen(true);
+      if (e.key === "a" && view === "results") generateAuto();
+      if (e.key === "Escape") { setSavingOpen(false); setPowerOpen(false); setView3D(false); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [view]);
+
   const analysis = useMemo(
     () => (parts && useCase ? analyzeBuild(parts, useCase, budget) : null),
     [parts, useCase, budget]
@@ -997,6 +1090,7 @@ export default function RigForge() {
     const build = {
       id: "b" + Date.now(),
       name: nameDraft.trim() || `${USE_CASES[useCase].label} Build`,
+      note: noteDraft.trim(),
       useCase, budget, parts,
       total: a.total, overallScore: a.score, ppScore: a.ppScore, // frozen on save
       verdict: generateVerdict(parts, a, useCase, budget),
@@ -1005,7 +1099,7 @@ export default function RigForge() {
     };
     await sSet("build:" + build.id, build);
     const u = acct(); if (u && u.id) await netSyncBuild(u.id, build);
-    setSavingOpen(false); setNameDraft("");
+    setSavingOpen(false); setNameDraft(""); setNoteDraft("");
     await refreshSaved();
     flash(u ? "Build saved to your account" : "Build saved to your rigs");
     setView("home");
@@ -1052,6 +1146,7 @@ export default function RigForge() {
           )}
           <button className="rf-ghost rf-plans-btn" onClick={() => setView("community")}><Users size={15} /> Community</button>
           <button className="rf-ghost rf-plans-btn" onClick={() => setView("parts")}><PackageSearch size={15} /> Parts</button>
+          <button className="rf-ghost rf-plans-btn" onClick={() => setView("calendar")}><LayoutGrid size={15} /> Launches</button>
           <button className="rf-ghost rf-plans-btn" onClick={() => setView("compare")}><Columns2 size={15} /> Compare</button>
           <button className="rf-ghost rf-plans-btn" onClick={() => setPlansOpen(true)}><Sparkles size={15} /> Plans</button>
           {hdrUser ? (
@@ -1180,6 +1275,7 @@ export default function RigForge() {
         {view === "community" && <CommunityBuilds user={hdrUser} onLogin={() => setHdrAuth(true)} onBack={() => setView("home")} />}
         {view === "parts" && <PartsExplorer onBack={() => setView("home")} />}
         {view === "compare" && <CompareBuilds saved={saved} onBack={() => setView("home")} />}
+        {view === "calendar" && <LaunchCalendar />}
         {view === "mogger" && <MoggerGame onExit={() => setView("home")} onSaveBuild={saveExternalBuild} />}
         {view === "mogger-admin" && <MoggerAdmin onBack={() => setView("home")} user={hdrUser} />}
         {view === "mogger-coadmin" && <MoggerCoAdmin onBack={() => setView("home")} bypass={true} />}
@@ -1199,6 +1295,12 @@ export default function RigForge() {
             } : null}
             onShareLogin={() => setHdrAuth(true)}
             on3D={() => setView3D(true)}
+            onPower={() => setPowerOpen(true)}
+            onShareLink={() => {
+              const enc = encodeBuild(useCase, budget, parts);
+              if (enc) { navigator.clipboard.writeText(window.location.origin + window.location.pathname + "#share=" + enc); setShareCopied(true); setTimeout(() => setShareCopied(false), 2500); }
+            }}
+            shareCopied={shareCopied}
           />
         )}
       </main>
@@ -1235,10 +1337,37 @@ export default function RigForge() {
               onChange={(e) => setNameDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && saveBuild()}
             />
+            <textarea
+              className="rf-input" value={noteDraft} rows={2}
+              placeholder="Add a note (optional)…"
+              onChange={(e) => setNoteDraft(e.target.value)}
+              style={{resize:"vertical",marginTop:"8px"}}
+            />
             <div className="rf-modal-actions">
               <button className="rf-ghost" onClick={() => setSavingOpen(false)}>Cancel</button>
               <button className="rf-btn" onClick={saveBuild}><Save size={16} /> {t("saveRig")}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {powerOpen && parts && (
+        <div className="rf-modal-wrap" onClick={() => setPowerOpen(false)}>
+          <div className="rf-modal" onClick={e => e.stopPropagation()}>
+            <div className="rf-modal-head">⚡ Power Cost Estimator</div>
+            <div className="rf-power-grid">
+              <label className="rf-muted" style={{fontSize:"0.83rem"}}>Electricity rate ($/kWh)</label>
+              <input className="rf-input" type="number" step="0.01" min="0.01" max="1" value={kwhRate} onChange={e => setKwhRate(Number(e.target.value))} />
+              <label className="rf-muted" style={{fontSize:"0.83rem"}}>Hours used per day</label>
+              <input className="rf-input" type="number" step="1" min="1" max="24" value={hoursDay} onChange={e => setHoursDay(Number(e.target.value))} />
+            </div>
+            <div className="rf-power-result">
+              <div><span className="rf-muted" style={{fontSize:"0.85rem"}}>Est. load</span><strong>{Math.round(requiredWatts(parts) * 0.75)}W</strong></div>
+              <div><span className="rf-muted" style={{fontSize:"0.85rem"}}>Monthly cost</span><strong style={{color:"var(--c-accent)",fontSize:"1.4rem"}}>${powerCostMonthly(parts, kwhRate, hoursDay).toFixed(2)}</strong></div>
+              <div><span className="rf-muted" style={{fontSize:"0.85rem"}}>Yearly cost</span><strong>${(powerCostMonthly(parts, kwhRate, hoursDay) * 12).toFixed(2)}</strong></div>
+            </div>
+            <p className="rf-muted" style={{fontSize:"0.75rem",marginTop:"0.5rem"}}>Estimate based on 75% average load, {hoursDay}h/day at ${kwhRate}/kWh.</p>
+            <div className="rf-modal-row"><button className="rf-btn" onClick={() => setPowerOpen(false)}>Done</button></div>
           </div>
         </div>
       )}
@@ -3223,6 +3352,53 @@ function CompareBuilds({ saved, onBack }) {
   );
 }
 
+/* ----------------------------- LAUNCH CALENDAR ----------------------------- */
+const LAUNCHES = [
+  { date: "2026-07", cat: "GPU",  name: "NVIDIA RTX 5090 Ti",         status: "rumored",   note: "Flagship Ada refresh" },
+  { date: "2026-Q3", cat: "GPU",  name: "AMD RX 9080 XT",             status: "rumored",   note: "RDNA 4 high-end" },
+  { date: "2026-08", cat: "CPU",  name: "AMD Ryzen 9000X3D series",   status: "confirmed", note: "3D V-Cache on Zen 5" },
+  { date: "2026-Q3", cat: "CPU",  name: "Intel Arrow Lake Refresh",   status: "rumored",   note: "Core Ultra 300 lineup" },
+  { date: "2026-09", cat: "GPU",  name: "NVIDIA RTX 5070 Super",      status: "rumored",   note: "Mid-range Blackwell" },
+  { date: "2026-Q4", cat: "GPU",  name: "AMD RX 9060 XT",            status: "rumored",   note: "Budget RDNA 4" },
+  { date: "2026-Q4", cat: "CPU",  name: "AMD Ryzen Threadripper 7000",status: "confirmed", note: "HEDT / workstation" },
+  { date: "2027-Q1", cat: "GPU",  name: "NVIDIA RTX 6000 series",    status: "rumored",   note: "Next-gen Rubin arch" },
+  { date: "2027-Q1", cat: "CPU",  name: "AMD Zen 6 (Medusa)",        status: "rumored",   note: "Next-gen consumer CPU" },
+  { date: "2027-Q2", cat: "CPU",  name: "Intel Nova Lake",            status: "rumored",   note: "Post-Arrow Lake desktop" },
+];
+
+function LaunchCalendar() {
+  const [filter, setFilter] = useState("All");
+  const shown = filter === "All" ? LAUNCHES : LAUNCHES.filter(l => l.cat === filter);
+  const statusColor = s => s === "confirmed" ? "var(--c-good)" : s === "rumored" ? "var(--c-warn)" : "var(--c-muted)";
+  return (
+    <div className="rf-fade rf-community">
+      <div className="rf-section-head" style={{marginBottom:"1rem"}}>
+        <div>
+          <h2 style={{margin:0}}>🗓 Upcoming Launches</h2>
+          <p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Rumored and confirmed GPU / CPU release dates</p>
+        </div>
+      </div>
+      <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
+        {["All","GPU","CPU"].map(f => <button key={f} className={"rf-pill"+(filter===f?" active":"")} onClick={()=>setFilter(f)}>{f}</button>)}
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+        {shown.map((l,i) => (
+          <div key={i} className="rf-pe-card" style={{flexDirection:"row",alignItems:"center",gap:"14px"}}>
+            <div style={{fontFamily:"'JetBrains Mono'",fontSize:"0.78rem",color:"var(--c-muted)",minWidth:"70px"}}>{l.date}</div>
+            <span className="rf-pill" style={{fontSize:"0.72rem",padding:"2px 8px",borderColor: l.cat==="GPU"?"var(--c-accent2)":"var(--c-accent)",color: l.cat==="GPU"?"var(--c-accent2)":"var(--c-accent)"}}>{l.cat}</span>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:600,fontSize:"0.88rem"}}>{l.name}</div>
+              <div className="rf-muted" style={{fontSize:"0.76rem"}}>{l.note}</div>
+            </div>
+            <span style={{fontSize:"0.76rem",color:statusColor(l.status),textTransform:"capitalize"}}>{l.status}</span>
+          </div>
+        ))}
+      </div>
+      <p className="rf-muted" style={{fontSize:"0.75rem",marginTop:"1.5rem"}}>Dates are estimates based on public leaks and announcements. Subject to change.</p>
+    </div>
+  );
+}
+
 /* ----------------------------- SURVEY ----------------------------- */
 function Survey({ onPick }) {
   const [sel, setSel] = useState([]);
@@ -3319,7 +3495,7 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
 }
 
 /* ----------------------------- RESULTS ----------------------------- */
-function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, isOnline }) {
+function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline }) {
   const UC = USE_CASES[useCase];
   const a = analysis;
   const [shareOpen, setShareOpen] = useState(false);
@@ -3419,6 +3595,26 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           )}
         </div>
       </div>
+
+      {/* badges + bottleneck + noise + actions row */}
+      {(() => {
+        const badges = buildBadges(parts, a, useCase);
+        const bn = detectBottleneck(parts);
+        const noise = noiseRating(parts);
+        return (
+          <div className="rf-build-meta">
+            <div className="rf-build-badges">
+              {badges.map(b => <span key={b.label} className="rf-badge" style={{borderColor:b.color,color:b.color}}>{b.icon} {b.label}</span>)}
+              <span className="rf-badge" style={{borderColor:noise.color,color:noise.color}}>🔊 {noise.label}</span>
+            </div>
+            {bn && <div className="rf-bottleneck"><AlertTriangle size={13} /> {bn.msg}</div>}
+            <div className="rf-build-actions-row">
+              <button className="rf-ghost rf-sm-btn" onClick={onPower}>⚡ Power cost</button>
+              <button className="rf-ghost rf-sm-btn" onClick={onShareLink}>{shareCopied ? <><Check size={12} /> Copied!</> : <><Globe size={12} /> Share link</>}</button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* part list */}
       <div className="rf-parts">
