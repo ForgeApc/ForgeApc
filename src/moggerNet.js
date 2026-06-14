@@ -160,3 +160,41 @@ export async function deleteBuildCloud(userId, buildId) {
   try { await supabase.from("mogger_builds").delete().eq("user_id", userId).eq("build_id", buildId); } catch (e) { /* ignore */ }
 }
 
+// ---- community builds (table: community_builds) ----
+export async function listCommunityBuilds(limit = 50) {
+  try {
+    const { data, error } = await supabase
+      .from("community_builds")
+      .select("id,user_name,title,use_case,budget,total,perf_score,parts,created_at")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) return [];
+    return data || [];
+  } catch (e) { return []; }
+}
+
+export async function postCommunityBuild(userId, userName, { title, useCase, budget, total, perfScore, parts }) {
+  try {
+    const { error } = await supabase.from("community_builds").insert({
+      user_id: userId,
+      user_name: userName,
+      title,
+      use_case: useCase,
+      budget,
+      total,
+      perf_score: perfScore,
+      parts,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e) { return { ok: false, error: "Could not post build." }; }
+}
+
+export async function deleteCommunityBuild(id, userId) {
+  try {
+    const { error } = await supabase.from("community_builds").delete().eq("id", id).eq("user_id", userId);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e) { return { ok: false, error: "Could not delete." }; }
+}
+
