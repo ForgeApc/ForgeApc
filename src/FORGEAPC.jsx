@@ -3,10 +3,10 @@ import {
   Cpu, CircuitBoard, MemoryStick, HardDrive, Power, Box, Fan, MonitorPlay,
   Gamepad2, Clapperboard, Radio, Boxes, BrainCircuit, Briefcase,
   Sparkles, Save, Plus, Trash2, Check, X, AlertTriangle, ChevronRight,
-  ChevronLeft, Zap, DollarSign, RotateCcw, ShieldCheck, ShieldAlert, Repeat2, Wrench, Send, Bot, MessageCircle, Maximize, Minimize, Settings, Sun, Moon, Search, Users, Upload, Globe
+  ChevronLeft, Zap, DollarSign, RotateCcw, ShieldCheck, ShieldAlert, Repeat2, Wrench, Send, Bot, MessageCircle, Maximize, Minimize, Settings, Sun, Moon, Search, Users, Upload, Globe, Columns2, PackageSearch, LayoutGrid
 } from "lucide-react";
 import { MEDIA, MEDIA_NE } from "../data/part-media.js";
-import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity } from "./moggerNet.js";
+import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity } from "./moggerNet.js";
 /* ----------------------------- i18n ----------------------------- */
 const LANGS = [{"code": "en", "name": "English"}, {"code": "es", "name": "Español"}, {"code": "zh", "name": "中文"}, {"code": "hi", "name": "हिन्दी"}, {"code": "ar", "name": "العربية"}, {"code": "pt", "name": "Português"}, {"code": "fr", "name": "Français"}, {"code": "ru", "name": "Русский"}, {"code": "ja", "name": "日本語"}, {"code": "de", "name": "Deutsch"}];
 const I18N = {"en": {"myRigs": "My Rigs", "settings": "Settings", "appearance": "Appearance", "language": "Language", "theme": "Theme", "dark": "Dark", "light": "Light", "back": "Back", "saveRig": "Save rig", "select": "Select", "selected": "Selected", "moreInfo": "More info", "hideInfo": "Hide info", "autoForge": "Auto-Forge", "buildYourself": "Build It Yourself", "yourBuild": "Your build", "budgetQ": "What's your budget?", "useCaseQ": "What will this PC be for?", "livePrices": "Live prices", "samplePrices": "sample prices", "updated": "updated", "componentsDb": "components in the database", "overBudgetCat": "Over your {x} budget", "performance": "PERFORMANCE", "pricePerf": "PRICE / PERF", "pros": "PROS", "cons": "CONS"}, "es": {"myRigs": "Mis Equipos", "settings": "Ajustes", "appearance": "Apariencia", "language": "Idioma", "theme": "Tema", "dark": "Oscuro", "light": "Claro", "back": "Atrás", "saveRig": "Guardar", "select": "Elegir", "selected": "Elegido", "moreInfo": "Más info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Hazlo tú mismo", "yourBuild": "Tu equipo", "budgetQ": "¿Cuál es tu presupuesto?", "useCaseQ": "¿Para qué será este PC?", "livePrices": "Precios en vivo", "samplePrices": "precios de muestra", "updated": "actualizado", "componentsDb": "componentes en la base de datos", "overBudgetCat": "Supera tu presupuesto de {x}", "performance": "RENDIMIENTO", "pricePerf": "PRECIO / REND", "pros": "PROS", "cons": "CONTRAS"}, "zh": {"myRigs": "我的配置", "settings": "设置", "appearance": "外观", "language": "语言", "theme": "主题", "dark": "深色", "light": "浅色", "back": "返回", "saveRig": "保存配置", "select": "选择", "selected": "已选", "moreInfo": "更多信息", "hideInfo": "隐藏", "autoForge": "自动配置", "buildYourself": "自己组装", "yourBuild": "你的配置", "budgetQ": "你的预算是多少？", "useCaseQ": "这台电脑用来做什么？", "livePrices": "实时价格", "samplePrices": "示例价格", "updated": "更新于", "componentsDb": "个组件已入库", "overBudgetCat": "超出{x}预算", "performance": "性能", "pricePerf": "性价比", "pros": "优点", "cons": "缺点"}, "hi": {"myRigs": "मेरे रिग", "settings": "सेटिंग्स", "appearance": "रूप", "language": "भाषा", "theme": "थीम", "dark": "गहरा", "light": "हल्का", "back": "वापस", "saveRig": "सहेजें", "select": "चुनें", "selected": "चयनित", "moreInfo": "और जानकारी", "hideInfo": "छिपाएं", "autoForge": "ऑटो-फोर्ज", "buildYourself": "खुद बनाएं", "yourBuild": "आपका बिल्ड", "budgetQ": "आपका बजट क्या है?", "useCaseQ": "यह पीसी किसलिए होगा?", "livePrices": "लाइव कीमतें", "samplePrices": "नमूना कीमतें", "updated": "अपडेट", "componentsDb": "घटक डेटाबेस में", "overBudgetCat": "{x} बजट से अधिक", "performance": "प्रदर्शन", "pricePerf": "मूल्य/प्रदर्शन", "pros": "फायदे", "cons": "नुकसान"}, "ar": {"myRigs": "أجهزتي", "settings": "الإعدادات", "appearance": "المظهر", "language": "اللغة", "theme": "السمة", "dark": "داكن", "light": "فاتح", "back": "رجوع", "saveRig": "حفظ", "select": "اختيار", "selected": "محدد", "moreInfo": "المزيد", "hideInfo": "إخفاء", "autoForge": "تجميع تلقائي", "buildYourself": "اصنعه بنفسك", "yourBuild": "تجميعتك", "budgetQ": "ما هي ميزانيتك؟", "useCaseQ": "لأي غرض هذا الحاسوب؟", "livePrices": "أسعار حية", "samplePrices": "أسعار تجريبية", "updated": "محدّث", "componentsDb": "مكوّن في قاعدة البيانات", "overBudgetCat": "يتجاوز ميزانية {x}", "performance": "الأداء", "pricePerf": "السعر/الأداء", "pros": "الإيجابيات", "cons": "السلبيات"}, "pt": {"myRigs": "Meus PCs", "settings": "Configurações", "appearance": "Aparência", "language": "Idioma", "theme": "Tema", "dark": "Escuro", "light": "Claro", "back": "Voltar", "saveRig": "Salvar", "select": "Selecionar", "selected": "Selecionado", "moreInfo": "Mais info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Faça você mesmo", "yourBuild": "Sua build", "budgetQ": "Qual é o seu orçamento?", "useCaseQ": "Para que será este PC?", "livePrices": "Preços ao vivo", "samplePrices": "preços de exemplo", "updated": "atualizado", "componentsDb": "componentes no banco de dados", "overBudgetCat": "Acima do orçamento de {x}", "performance": "DESEMPENHO", "pricePerf": "PREÇO / DESEMP", "pros": "PRÓS", "cons": "CONTRAS"}, "fr": {"myRigs": "Mes Configs", "settings": "Réglages", "appearance": "Apparence", "language": "Langue", "theme": "Thème", "dark": "Sombre", "light": "Clair", "back": "Retour", "saveRig": "Enregistrer", "select": "Choisir", "selected": "Choisi", "moreInfo": "Plus d'infos", "hideInfo": "Masquer", "autoForge": "Auto-Forge", "buildYourself": "Faites-le vous-même", "yourBuild": "Votre config", "budgetQ": "Quel est votre budget ?", "useCaseQ": "À quoi servira ce PC ?", "livePrices": "Prix en direct", "samplePrices": "prix indicatifs", "updated": "mis à jour", "componentsDb": "composants dans la base", "overBudgetCat": "Au-dessus du budget {x}", "performance": "PERFORMANCE", "pricePerf": "PRIX / PERF", "pros": "ATOUTS", "cons": "INCONVÉNIENTS"}, "ru": {"myRigs": "Мои сборки", "settings": "Настройки", "appearance": "Вид", "language": "Язык", "theme": "Тема", "dark": "Тёмная", "light": "Светлая", "back": "Назад", "saveRig": "Сохранить", "select": "Выбрать", "selected": "Выбрано", "moreInfo": "Подробнее", "hideInfo": "Скрыть", "autoForge": "Авто-сборка", "buildYourself": "Собрать самому", "yourBuild": "Ваша сборка", "budgetQ": "Каков ваш бюджет?", "useCaseQ": "Для чего этот ПК?", "livePrices": "Цены в реальном времени", "samplePrices": "примерные цены", "updated": "обновлено", "componentsDb": "компонентов в базе", "overBudgetCat": "Сверх бюджета на {x}", "performance": "ПРОИЗВОДИТ.", "pricePerf": "ЦЕНА/КАЧ.", "pros": "ПЛЮСЫ", "cons": "МИНУСЫ"}, "ja": {"myRigs": "マイ構成", "settings": "設定", "appearance": "外観", "language": "言語", "theme": "テーマ", "dark": "ダーク", "light": "ライト", "back": "戻る", "saveRig": "保存", "select": "選択", "selected": "選択済", "moreInfo": "詳細", "hideInfo": "隠す", "autoForge": "自動構成", "buildYourself": "自分で組む", "yourBuild": "あなたの構成", "budgetQ": "予算はいくらですか？", "useCaseQ": "このPCの用途は？", "livePrices": "ライブ価格", "samplePrices": "サンプル価格", "updated": "更新", "componentsDb": "個のパーツを収録", "overBudgetCat": "{x}予算オーバー", "performance": "性能", "pricePerf": "価格性能", "pros": "長所", "cons": "短所"}, "de": {"myRigs": "Meine Builds", "settings": "Einstellungen", "appearance": "Darstellung", "language": "Sprache", "theme": "Thema", "dark": "Dunkel", "light": "Hell", "back": "Zurück", "saveRig": "Speichern", "select": "Wählen", "selected": "Gewählt", "moreInfo": "Mehr Info", "hideInfo": "Verbergen", "autoForge": "Auto-Forge", "buildYourself": "Selbst bauen", "yourBuild": "Dein Build", "budgetQ": "Wie hoch ist dein Budget?", "useCaseQ": "Wofür ist dieser PC?", "livePrices": "Live-Preise", "samplePrices": "Beispielpreise", "updated": "aktualisiert", "componentsDb": "Komponenten in der Datenbank", "overBudgetCat": "Über dem {x}-Budget", "performance": "LEISTUNG", "pricePerf": "PREIS / LEIST", "pros": "VORTEILE", "cons": "NACHTEILE"}};
@@ -639,6 +639,7 @@ export default function RigForge() {
   const [loadingSaved, setLoadingSaved] = useState(true);
   const [nameDraft, setNameDraft] = useState("");
   const [savingOpen, setSavingOpen] = useState(false);
+  const [view3D, setView3D] = useState(false);
   const [toast, setToast] = useState(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [isFs, setIsFs] = useState(false);
@@ -1050,6 +1051,8 @@ export default function RigForge() {
             </button>
           )}
           <button className="rf-ghost rf-plans-btn" onClick={() => setView("community")}><Users size={15} /> Community</button>
+          <button className="rf-ghost rf-plans-btn" onClick={() => setView("parts")}><PackageSearch size={15} /> Parts</button>
+          <button className="rf-ghost rf-plans-btn" onClick={() => setView("compare")}><Columns2 size={15} /> Compare</button>
           <button className="rf-ghost rf-plans-btn" onClick={() => setPlansOpen(true)}><Sparkles size={15} /> Plans</button>
           {hdrUser ? (
             <>
@@ -1175,6 +1178,8 @@ export default function RigForge() {
           <Home saved={saved} loading={loadingSaved} onNew={startSurvey} onOpen={openSaved} onDelete={deleteBuild} priceInfo={priceInfo} onMogger={() => setView("mogger")} />
         )}
         {view === "community" && <CommunityBuilds user={hdrUser} onLogin={() => setHdrAuth(true)} onBack={() => setView("home")} />}
+        {view === "parts" && <PartsExplorer onBack={() => setView("home")} />}
+        {view === "compare" && <CompareBuilds saved={saved} onBack={() => setView("home")} />}
         {view === "mogger" && <MoggerGame onExit={() => setView("home")} onSaveBuild={saveExternalBuild} />}
         {view === "mogger-admin" && <MoggerAdmin onBack={() => setView("home")} user={hdrUser} />}
         {view === "mogger-coadmin" && <MoggerCoAdmin onBack={() => setView("home")} bypass={true} />}
@@ -1193,6 +1198,7 @@ export default function RigForge() {
               await netPostCommunity(hdrUser.id, hdrUser.name, { title, useCase, budget, total: a.spend, perfScore: a.perf, parts });
             } : null}
             onShareLogin={() => setHdrAuth(true)}
+            on3D={() => setView3D(true)}
           />
         )}
       </main>
@@ -1202,6 +1208,20 @@ export default function RigForge() {
           cat={picker} current={parts[picker]} useCase={useCase} budget={budget} parts={parts}
           onClose={() => setPicker(null)} onPick={(p) => swapPart(picker, p)}
         />
+      )}
+
+      {view3D && parts && (
+        <div className="rf-modal-wrap rf-3d-wrap" onClick={() => setView3D(false)}>
+          <div className="rf-modal rf-3d-modal" onClick={e => e.stopPropagation()}>
+            <div className="rf-modal-head" style={{justifyContent:"space-between"}}>
+              <span>3D Build Preview</span>
+              <button className="rf-icon-btn" onClick={() => setView3D(false)}><X size={16} /></button>
+            </div>
+            <React.Suspense fallback={<div style={{height:"420px",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--c-muted)"}}>Loading 3D viewer…</div>}>
+              <BuildViewer3D parts={parts} useCase={useCase} />
+            </React.Suspense>
+          </div>
+        </div>
       )}
 
       {savingOpen && (
@@ -2816,9 +2836,12 @@ function CommunityBuilds({ user, onLogin, onBack }) {
     setMyBuildsLoading(false);
   };
 
+  const FREE_TIER_LIMIT = 5;
   const doPost = async () => {
     if (!pickedBuild || !shareTitle.trim()) return;
     setShareStatus("posting");
+    const existing = await netCountCommunity(user.id);
+    if (existing >= FREE_TIER_LIMIT) { setShareStatus("limit"); return; }
     const b = pickedBuild;
     const analysis = moggerScore(b.parts || {}, b.useCase, b.budget);
     const res = await netPostCommunity(user.id, user.name, {
@@ -2962,6 +2985,7 @@ function CommunityBuilds({ user, onLogin, onBack }) {
                 <input className="rf-input" placeholder="e.g. Budget Gaming Beast $1500" value={shareTitle} onChange={e => setShareTitle(e.target.value)} maxLength={80} onKeyDown={e => e.key === "Enter" && doPost()} autoFocus />
                 {shareStatus === "done" && <p style={{color:"var(--c-accent)",marginTop:"0.4rem",fontSize:"0.85rem"}}>Posted!</p>}
                 {shareStatus && shareStatus.startsWith("error") && <p style={{color:"var(--c-bad)",marginTop:"0.4rem",fontSize:"0.85rem"}}>Error — {shareStatus.replace("error:","")}</p>}
+                {shareStatus === "limit" && <p style={{color:"var(--c-warn)",marginTop:"0.4rem",fontSize:"0.85rem"}}>Free tier limit: max 5 posts. Delete one to share another.</p>}
               </>
             )}
 
@@ -2970,6 +2994,229 @@ function CommunityBuilds({ user, onLogin, onBack }) {
               {pickedBuild && <button className="rf-btn" onClick={doPost} disabled={!shareTitle.trim() || shareStatus === "posting" || shareStatus === "done"}><Upload size={15} /> {shareStatus === "posting" ? "Posting…" : "Post"}</button>}
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ----------------------------- 3D BUILD VIEWER ----------------------------- */
+const BuildViewer3D = React.lazy(() => import("./BuildViewer3D.jsx"));
+
+/* ----------------------------- PARTS EXPLORER ----------------------------- */
+function PartsExplorer({ onBack }) {
+  const [cat, setCat] = useState("gpu");
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("perf");
+  const [maxPrice, setMaxPrice] = useState(2000);
+
+  const pool = (CATALOG[cat] || []).filter(p => {
+    if (search && !(p.name || "").toLowerCase().includes(search.toLowerCase()) && !(p.brand || "").toLowerCase().includes(search.toLowerCase())) return false;
+    if (p.price > maxPrice) return false;
+    return true;
+  }).slice().sort((a, b) => {
+    if (sortBy === "price") return a.price - b.price;
+    if (sortBy === "priceDesc") return b.price - a.price;
+    return (b.perf || 0) - (a.perf || 0);
+  });
+
+  const maxInCat = Math.max(...(CATALOG[cat] || []).map(p => p.price || 0), 500);
+
+  return (
+    <div className="rf-fade rf-parts-explorer">
+      <div className="rf-section-head" style={{marginBottom:"1rem"}}>
+        <div>
+          <h2 style={{margin:0}}><PackageSearch size={18} style={{verticalAlign:"middle",marginRight:"6px"}} />Parts Explorer</h2>
+          <p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Browse all {Object.values(CATALOG).flat().length} parts in the database</p>
+        </div>
+      </div>
+
+      {/* Category tabs */}
+      <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
+        {CATEGORY_ORDER.filter(c => CATALOG[c]?.length).map(c => (
+          <button key={c} className={"rf-pill" + (cat === c ? " active" : "")} onClick={() => { setCat(c); setMaxPrice(Math.max(...(CATALOG[c]||[]).map(p=>p.price||0),500)); setSearch(""); }}>{tCat(c)}</button>
+        ))}
+      </div>
+
+      {/* Filters row */}
+      <div className="rf-pe-filters">
+        <div style={{position:"relative",flex:1}}>
+          <Search size={14} style={{position:"absolute",left:"10px",top:"50%",transform:"translateY(-50%)",color:"var(--c-muted)"}} />
+          <input className="rf-input" style={{paddingLeft:"32px",marginBottom:0}} placeholder={`Search ${tCat(cat)}s…`} value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <select className="rf-input" style={{width:"auto",marginBottom:0}} value={sortBy} onChange={e => setSortBy(e.target.value)}>
+          <option value="perf">Sort: Performance</option>
+          <option value="price">Sort: Price ↑</option>
+          <option value="priceDesc">Sort: Price ↓</option>
+        </select>
+        <div className="rf-pe-price-wrap">
+          <span className="rf-muted" style={{fontSize:"0.8rem",whiteSpace:"nowrap"}}>Max: {fmt(maxPrice)}</span>
+          <input type="range" min={0} max={maxInCat} step={10} value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} className="rf-slider" />
+        </div>
+      </div>
+
+      <div className="rf-muted" style={{fontSize:"0.8rem",marginBottom:"0.75rem"}}>{pool.length} parts shown</div>
+
+      <div className="rf-pe-grid">
+        {pool.map((p, i) => {
+          const score = Math.round(ucPerf(cat, p, cat === "gpu" ? "gaming" : cat === "cpu" ? "gaming" : cat));
+          return (
+            <div key={p.id || i} className="rf-pe-card">
+              <div className="rf-pe-name">{p.name}</div>
+              {p.brand && <div className="rf-muted" style={{fontSize:"0.75rem"}}>{p.brand}</div>}
+              <div className="rf-pe-specs">
+                {cat === "cpu" && p.cores && <span>{p.cores}c</span>}
+                {cat === "gpu" && p.vram && <span>{p.vram}GB VRAM</span>}
+                {cat === "ram" && p.cap && <span>{p.cap}GB</span>}
+                {cat === "storage" && p.cap && <span>{p.cap}GB</span>}
+                {cat === "psu" && p.watt && <span>{p.watt}W</span>}
+                {p.perf != null && <span className="rf-pe-perf" style={{color: scoreColor(p.perf)}}>{p.perf} perf</span>}
+              </div>
+              <div className="rf-pe-bottom">
+                <span className="rf-pe-price">{fmt(p.price)}</span>
+                {p.perf != null && <div className="rf-pe-bar"><div style={{width: clamp(p.perf,0,100)+"%", background: scoreColor(p.perf), height:"100%", borderRadius:"2px"}} /></div>}
+              </div>
+            </div>
+          );
+        })}
+        {pool.length === 0 && <p className="rf-muted">No parts match your filters.</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------- COMPARE BUILDS ----------------------------- */
+function CompareBuilds({ saved, onBack }) {
+  const [pickA, setPickA] = useState(null);
+  const [pickB, setPickB] = useState(null);
+  const [search, setSearch] = useState("");
+
+  const filtered = saved.filter(b => !search || (b.name||"").toLowerCase().includes(search.toLowerCase()));
+
+  const scoreA = pickA ? moggerScore(pickA.parts||{}, pickA.useCase, pickA.budget) : null;
+  const scoreB = pickB ? moggerScore(pickB.parts||{}, pickB.useCase, pickB.budget) : null;
+
+  const winner = (va, vb) => {
+    if (va == null || vb == null) return null;
+    if (va > vb) return "a";
+    if (vb > va) return "b";
+    return "tie";
+  };
+
+  const BuildPicker = ({ value, onChange, label }) => (
+    <div className="rf-compare-picker">
+      <div className="rf-compare-slot-label">{label}</div>
+      {value ? (
+        <div className="rf-compare-chosen">
+          <div style={{fontWeight:600,fontSize:"0.9rem"}}>{value.name}</div>
+          <div className="rf-muted" style={{fontSize:"0.78rem"}}>{tUC(value.useCase)} · {fmt(value.budget)}</div>
+          <button className="rf-ghost" style={{fontSize:"0.78rem",padding:"3px 8px",marginTop:"4px"}} onClick={() => onChange(null)}>Change</button>
+        </div>
+      ) : (
+        <div className="rf-compare-empty">
+          <p className="rf-muted" style={{fontSize:"0.85rem",marginBottom:"0.5rem"}}>Pick a saved build</p>
+          <div style={{position:"relative",marginBottom:"0.5rem"}}>
+            <Search size={13} style={{position:"absolute",left:"8px",top:"50%",transform:"translateY(-50%)",color:"var(--c-muted)"}} />
+            <input className="rf-input" style={{paddingLeft:"28px",marginBottom:0,fontSize:"0.82rem"}} placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <div style={{maxHeight:"160px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"5px"}}>
+            {filtered.length === 0 && <p className="rf-muted" style={{fontSize:"0.8rem"}}>No saved builds found.</p>}
+            {filtered.map(b => (
+              <div key={b.id} className="rf-community-pick-row" style={{fontSize:"0.82rem"}} onClick={() => onChange(b)}>
+                <span style={{fontWeight:600}}>{b.name}</span>
+                <span className="rf-muted" style={{marginLeft:"auto",fontSize:"0.76rem"}}>{fmt(b.total||0)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="rf-fade rf-compare">
+      <div className="rf-section-head" style={{marginBottom:"1.25rem"}}>
+        <div>
+          <h2 style={{margin:0}}><Columns2 size={18} style={{verticalAlign:"middle",marginRight:"6px"}} />Compare Builds</h2>
+          <p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Pick two saved builds to compare side by side</p>
+        </div>
+      </div>
+
+      <div className="rf-compare-pickers">
+        <BuildPicker value={pickA} onChange={setPickA} label="Build A" />
+        <div className="rf-compare-vs">VS</div>
+        <BuildPicker value={pickB} onChange={setPickB} label="Build B" />
+      </div>
+
+      {pickA && pickB && (
+        <div className="rf-compare-table">
+          {/* Header */}
+          <div className="rf-compare-row rf-compare-head">
+            <div className="rf-compare-cat"></div>
+            <div className={"rf-compare-cell" + (winner(scoreA?.total, scoreB?.total) === "a" ? " win" : "")}>{pickA.name}</div>
+            <div className={"rf-compare-cell" + (winner(scoreA?.total, scoreB?.total) === "b" ? " win" : "")}>{pickB.name}</div>
+          </div>
+
+          {/* Overall scores */}
+          <div className="rf-compare-row rf-compare-score-row">
+            <div className="rf-compare-cat">Overall</div>
+            <div className={"rf-compare-cell" + (winner(scoreA?.total, scoreB?.total) === "a" ? " win" : "")}>
+              <span style={{color:scoreColor((scoreA?.total||0)/10),fontWeight:700,fontSize:"1.1rem"}}>{scoreA?.total || "—"}</span>
+            </div>
+            <div className={"rf-compare-cell" + (winner(scoreA?.total, scoreB?.total) === "b" ? " win" : "")}>
+              <span style={{color:scoreColor((scoreB?.total||0)/10),fontWeight:700,fontSize:"1.1rem"}}>{scoreB?.total || "—"}</span>
+            </div>
+          </div>
+          <div className="rf-compare-row">
+            <div className="rf-compare-cat">Performance</div>
+            <div className={"rf-compare-cell" + (winner(scoreA?.perf, scoreB?.perf) === "a" ? " win" : "")}>{scoreA?.perf ?? "—"}</div>
+            <div className={"rf-compare-cell" + (winner(scoreA?.perf, scoreB?.perf) === "b" ? " win" : "")}>{scoreB?.perf ?? "—"}</div>
+          </div>
+          <div className="rf-compare-row">
+            <div className="rf-compare-cat">Price/Perf</div>
+            <div className={"rf-compare-cell" + (winner(scoreA?.ppScore, scoreB?.ppScore) === "a" ? " win" : "")}>{scoreA?.ppScore ?? "—"}</div>
+            <div className={"rf-compare-cell" + (winner(scoreA?.ppScore, scoreB?.ppScore) === "b" ? " win" : "")}>{scoreB?.ppScore ?? "—"}</div>
+          </div>
+          <div className="rf-compare-row">
+            <div className="rf-compare-cat">Spent</div>
+            <div className={"rf-compare-cell" + (winner(scoreB?.spend, scoreA?.spend) === "b" ? " win" : "")}>{fmt(scoreA?.spend || 0)}</div>
+            <div className={"rf-compare-cell" + (winner(scoreB?.spend, scoreA?.spend) === "a" ? " win" : "")}>{fmt(scoreB?.spend || 0)}</div>
+          </div>
+
+          {/* Per-part comparison */}
+          <div className="rf-compare-row rf-compare-section-head">
+            <div className="rf-compare-cat">Component</div>
+            <div className="rf-compare-cell">{pickA.name}</div>
+            <div className="rf-compare-cell">{pickB.name}</div>
+          </div>
+          {CATEGORY_ORDER.map(c => {
+            const pa = pickA.parts?.[c];
+            const pb = pickB.parts?.[c];
+            if (!pa && !pb) return null;
+            const perfA = pa ? ucPerf(c, pa, pickA.useCase) : 0;
+            const perfB = pb ? ucPerf(c, pb, pickB.useCase) : 0;
+            const w = winner(perfA, perfB);
+            return (
+              <div key={c} className="rf-compare-row">
+                <div className="rf-compare-cat">{tCat(c)}</div>
+                <div className={"rf-compare-cell" + (w === "a" ? " win" : "")}>
+                  <div style={{fontWeight:500,fontSize:"0.82rem"}}>{pa ? (pa.name||"—") : <span className="rf-muted">None</span>}</div>
+                  {pa && <div className="rf-muted" style={{fontSize:"0.74rem"}}>{fmt(pa.price)} · {Math.round(perfA)} perf</div>}
+                </div>
+                <div className={"rf-compare-cell" + (w === "b" ? " win" : "")}>
+                  <div style={{fontWeight:500,fontSize:"0.82rem"}}>{pb ? (pb.name||"—") : <span className="rf-muted">None</span>}</div>
+                  {pb && <div className="rf-muted" style={{fontSize:"0.74rem"}}>{fmt(pb.price)} · {Math.round(perfB)} perf</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {(!pickA || !pickB) && (
+        <div className="rf-empty" style={{marginTop:"2rem"}}>
+          <Columns2 size={30} className="rf-muted" />
+          <p className="rf-muted">Select two builds above to see the comparison</p>
         </div>
       )}
     </div>
@@ -3072,7 +3319,7 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
 }
 
 /* ----------------------------- RESULTS ----------------------------- */
-function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, isOnline }) {
+function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, isOnline }) {
   const UC = USE_CASES[useCase];
   const a = analysis;
   const [shareOpen, setShareOpen] = useState(false);
@@ -3098,6 +3345,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
         </div>
         <div className="rf-results-actions">
           <button className="rf-ghost" onClick={onRegen}><Sparkles size={15} /> Auto-forge</button>
+          <button className="rf-ghost" onClick={on3D}><LayoutGrid size={15} /> 3D View</button>
           {onShare ? (
             <button className="rf-ghost" onClick={() => { setShareTitle(""); setShareStatus(null); setShareOpen(true); }}><Globe size={15} /> Share</button>
           ) : (
@@ -3115,6 +3363,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
             <input className="rf-input" placeholder="e.g. Budget 4K Gaming Beast" value={shareTitle} onChange={e => setShareTitle(e.target.value)} maxLength={80} onKeyDown={e => e.key === "Enter" && doShare()} autoFocus />
             {shareStatus === "done" && <p style={{color:"var(--c-accent)",marginTop:"0.5rem"}}>Posted to Community!</p>}
             {shareStatus === "error" && <p style={{color:"var(--c-bad)",marginTop:"0.5rem"}}>Something went wrong — try again.</p>}
+            {shareStatus === "limit" && <p style={{color:"var(--c-warn)",marginTop:"0.5rem"}}>Free tier limit: max 5 community builds. Delete one to post another.</p>}
             <div className="rf-modal-row">
               <button className="rf-ghost" onClick={() => setShareOpen(false)}>Cancel</button>
               <button className="rf-btn" onClick={doShare} disabled={shareStatus === "posting" || shareStatus === "done"}><Upload size={15} /> {shareStatus === "posting" ? "Posting…" : "Post"}</button>

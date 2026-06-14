@@ -173,6 +173,13 @@ export async function listCommunityBuilds(limit = 50) {
   } catch (e) { return []; }
 }
 
+export async function countCommunityBuilds(userId) {
+  try {
+    const { count } = await supabase.from("community_builds").select("id", { count: "exact", head: true }).eq("user_id", userId);
+    return count || 0;
+  } catch (e) { return 0; }
+}
+
 export async function postCommunityBuild(userId, userName, { title, useCase, budget, total, perfScore, parts }) {
   try {
     const { error } = await supabase.from("community_builds").insert({
