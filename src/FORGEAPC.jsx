@@ -712,6 +712,7 @@ export default function RigForge() {
   }, []);
   const [theme, setTheme] = useState("dark"); // default dark mode
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState("appearance");
   const [hdrUser, setHdrUser] = useState(() => { try { const s = localStorage.getItem("mogger_user"); return s ? JSON.parse(s) : null; } catch (e) { return null; } });
   const [hdrAuth, setHdrAuth] = useState(false);
@@ -743,6 +744,12 @@ export default function RigForge() {
     document.addEventListener("click", h);
     return () => document.removeEventListener("click", h);
   }, [settingsOpen]);
+  useEffect(() => {
+    if (!moreOpen) return;
+    const h = () => setMoreOpen(false);
+    document.addEventListener("click", h);
+    return () => document.removeEventListener("click", h);
+  }, [moreOpen]);
 
   useEffect(() => {
     const h = () => setIsFs(!!document.fullscreenElement);
@@ -1144,10 +1151,19 @@ export default function RigForge() {
               <ChevronLeft size={16} /> {t("myRigs")}
             </button>
           )}
-          <button className="rf-ghost rf-plans-btn" onClick={() => setView("community")}><Users size={15} /> Community</button>
-          <button className="rf-ghost rf-plans-btn" onClick={() => setView("parts")}><PackageSearch size={15} /> Parts</button>
-          <button className="rf-ghost rf-plans-btn" onClick={() => setView("calendar")}><LayoutGrid size={15} /> Launches</button>
-          <button className="rf-ghost rf-plans-btn" onClick={() => setView("compare")}><Columns2 size={15} /> Compare</button>
+          <div className="rf-settings-wrap" style={{position:"relative"}}>
+            <button className="rf-ghost rf-plans-btn" onClick={(e) => { e.stopPropagation(); setMoreOpen(o => !o); setSettingsOpen(false); }}>
+              ☰ More
+            </button>
+            {moreOpen && (
+              <div className="rf-settings-menu" style={{minWidth:"160px",right:0,top:"calc(100% + 6px)"}} onClick={(e) => e.stopPropagation()}>
+                <button className="rf-lang-opt" onClick={() => { setView("community"); setMoreOpen(false); }}><Users size={14} /> Community</button>
+                <button className="rf-lang-opt" onClick={() => { setView("parts"); setMoreOpen(false); }}><PackageSearch size={14} /> Parts</button>
+                <button className="rf-lang-opt" onClick={() => { setView("compare"); setMoreOpen(false); }}><Columns2 size={14} /> Compare</button>
+                <button className="rf-lang-opt" onClick={() => { setView("calendar"); setMoreOpen(false); }}><LayoutGrid size={14} /> Launches</button>
+              </div>
+            )}
+          </div>
           <button className="rf-ghost rf-plans-btn" onClick={() => setPlansOpen(true)}><Sparkles size={15} /> Plans</button>
           {hdrUser ? (
             <>
