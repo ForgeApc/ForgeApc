@@ -315,6 +315,103 @@ function storageTier(parts) {
   return { tier: "SATA SSD", speed: "~550 MB/s", color: "var(--c-warn)", gameLoad: "5–10 sec" };
 }
 
+// ---- Batch 2: Compatibility & Warnings helpers ----
+function deprecationAlerts(parts) {
+  const alerts = [];
+  if (parts.ram?.ramType === "DDR4") alerts.push({ sev:"warn", text:"DDR4 is end-of-life — DDR5 platforms offer better longevity and upgrade path." });
+  if (parts.cpu?.socket === "AM4") alerts.push({ sev:"warn", text:"AM4 socket is discontinued. No future AMD CPUs will support it." });
+  if (parts.cpu?.socket === "LGA1200") alerts.push({ sev:"bad", text:"LGA1200 (10th/11th Gen Intel) is end-of-life with no upgrade path." });
+  if (parts.cpu?.socket === "LGA1700") alerts.push({ sev:"info", text:"LGA1700 (12th–14th Gen Intel) is succeeded by LGA1851. No future Intel CPUs will support it." });
+  if (parts.storage?.kind === "SATA" && !/HDD/i.test(parts.storage?.name || "")) alerts.push({ sev:"info", text:"SATA SSD is 10× slower than NVMe — consider an M.2 NVMe drive." });
+  return alerts;
+}
+function powerDeliveryCheck(parts) {
+  const required = requiredWatts(parts);
+  const psuWatt = parts.psu?.watt || 0;
+  const margin = psuWatt - required;
+  const spikeRequired = Math.round(required * 1.25); // GPU/CPU boost spikes ~125%
+  const spikeOk = psuWatt >= spikeRequired;
+  return { required, psuWatt, margin, spikeRequired, spikeOk,
+    status: !parts.psu ? "none" : margin < 0 ? "bad" : margin < 80 ? "tight" : "ok" };
+}
+function displayOutputCheck(parts) {
+  if (!parts.gpu) {
+    if (parts.cpu?.igpu) return { ports: ["1× HDMI (from iGPU)", "1× DisplayPort (varies by mobo)"], note: "Ports depend on your motherboard rear I/O." };
+    return { ports: [], note: "No GPU or iGPU — no display output." };
+  }
+  const isNv = /nvidia|rtx|gtx/i.test((parts.gpu.brand || "") + (parts.gpu.name || ""));
+  const isArc = /intel|arc/i.test(parts.gpu.brand || "");
+  const vram = parts.gpu.vram || 0;
+  const perf = parts.gpu.perf || 0;
+  const ports = perf >= 50
+    ? ["3× DisplayPort 1.4a", "1× HDMI 2.1"]
+    : isArc
+    ? ["3× Thunderbolt 4/DP", "1× HDMI 2.1"]
+    : ["2× DisplayPort 1.4", "1× HDMI 2.0"];
+  const note = vram >= 16 ? "Supports 4K @ 144Hz or 8K display." : perf >= 40 ? "Supports 1440p @ 165Hz or 4K @ 60Hz." : "Supports 1080p or 1440p displays.";
+  return { ports, note };
+}
+function biosCompatWarning(parts) {
+  const warns = [];
+  if (!parts.cpu || !parts.mobo) return warns;
+  const cpuSocket = parts.cpu.socket, moboSocket = parts.mobo.socket;
+  if (cpuSocket !== moboSocket) return warns; // compat checker already flags this
+  // Flag new CPUs that may need a BIOS update on older boards
+  if (cpuSocket === "LGA1700") {
+    const is12th = /i[3579]-12[0-9]{3}/i.test(parts.cpu.name || "");
+    const is13th = /i[3579]-13[0-9]{3}/i.test(parts.cpu.name || "");
+    const is14th = /i[3579]-14[0-9]{3}/i.test(parts.cpu.name || "");
+    const moboName = parts.mobo.name || "";
+    const isB660 = /B660|H670|H610/i.test(moboName);
+    if (is14th && isB660) warns.push("14th Gen on B660/H670 may need a BIOS update before first boot.");
+    if (is13th && isB660) warns.push("13th Gen on B660 may require a BIOS flash for compatibility.");
+  }
+  if (cpuSocket === "AM5") {
+    const isZen5 = /9[5-9][0-9]{2}X|9600X|9700X|9800X|9900X|9950X/i.test(parts.cpu.name || "");
+    const moboName = parts.mobo.name || "";
+    const isA620 = /A620/i.test(moboName);
+    if (isZen5 && isA620) warns.push("Zen 5 CPUs on A620 boards may need a BIOS update — check manufacturer site.");
+  }
+  if (warns.length === 0 && (parts.cpu.perf || 0) >= 85) warns.push("High-end CPU — verify mobo BIOS supports this model before ordering.");
+  return warns;
+}
+function usbPortEstimate(parts) {
+  if (!parts.mobo) return null;
+  const form = parts.mobo.form || "ATX";
+  const price = parts.mobo.price || 0;
+  const tier = price >= 300 ? "high" : price >= 150 ? "mid" : "budget";
+  const map = {
+    high:   { usb2: 4, usb3: 4, usb32: 2, usbc: 2, total: 12 },
+    mid:    { usb2: 4, usb3: 4, usb32: 1, usbc: 1, total: 10 },
+    budget: { usb2: 4, usb3: 2, usb32: 0, usbc: 1, total: 7  },
+  };
+  const itxReduction = form === "ITX" ? 2 : 0;
+  const p = { ...map[tier] };
+  p.total = Math.max(4, p.total - itxReduction);
+  p.usb3 = Math.max(0, p.usb3 - (form === "ITX" ? 1 : 0));
+  return { ...p, tier, form };
+}
+function cableManagementList(parts) {
+  const list = [];
+  if (!parts.psu) return list;
+  list.push("24-pin ATX (motherboard main power)");
+  if (parts.cpu) {
+    const socket = parts.cpu.socket || "";
+    list.push(["LGA1851","LGA1700"].includes(socket) ? "8+4 pin EPS (CPU)" : "8-pin EPS (CPU)");
+  }
+  if (parts.gpu) {
+    const tdp = parts.gpu.tdp || 0;
+    if (tdp >= 450) list.push("16-pin (600W) adapter or 4× 8-pin PCIe (GPU)");
+    else if (tdp >= 300) list.push("3× 8-pin PCIe (GPU)");
+    else if (tdp >= 200) list.push("2× 8-pin PCIe (GPU)");
+    else list.push("1× 8-pin PCIe (GPU)");
+  }
+  if (parts.storage) list.push("1× SATA power (storage) or M.2 — no cable needed");
+  list.push("Case fan connectors (from motherboard headers)");
+  if (/modular/i.test(parts.psu?.name || "")) list.push("✓ Modular PSU — only run cables you need");
+  return list;
+}
+
 // Newer GPUs are preferred — older cards are often out of stock or used-only.
 function modernityFactor(part) {
   if (part.cat !== "gpu") return 1;
@@ -3605,6 +3702,130 @@ function AnalyzeView({ parts, analysis, useCase, onBack }) {
             </>
           ) : <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add storage to see speed tier</p>}
         </div>
+
+        {/* Deprecation Alerts */}
+        {(() => {
+          const alerts = deprecationAlerts(parts);
+          return (
+            <div className="rf-pe-card">
+              <div className="rf-analyze-title">⚠️ Deprecation Alerts</div>
+              {alerts.length === 0
+                ? <p style={{color:"var(--c-good)",fontSize:"0.85rem"}}>✅ No deprecated platforms detected</p>
+                : alerts.map((a,i) => (
+                  <div key={i} style={{display:"flex",gap:"8px",padding:"7px 10px",borderRadius:"8px",marginBottom:"6px",
+                    background: a.sev==="bad"?"rgba(255,92,114,0.08)":a.sev==="warn"?"rgba(255,194,75,0.08)":"rgba(25,232,219,0.06)",
+                    border:`1px solid ${a.sev==="bad"?"rgba(255,92,114,0.3)":a.sev==="warn"?"rgba(255,194,75,0.3)":"rgba(25,232,219,0.2)"}`}}>
+                    <span style={{fontSize:"0.82rem",color:a.sev==="bad"?"var(--c-bad)":a.sev==="warn"?"var(--c-warn)":"var(--c-muted)"}}>{a.text}</span>
+                  </div>
+                ))
+              }
+            </div>
+          );
+        })()}
+
+        {/* Power Delivery Validator */}
+        {(() => {
+          const pwr = powerDeliveryCheck(parts);
+          return (
+            <div className="rf-pe-card">
+              <div className="rf-analyze-title">🔌 Power Delivery</div>
+              {pwr.status === "none"
+                ? <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add a PSU to validate power delivery</p>
+                : <>
+                  <div className="rf-analyze-row"><span className="rf-muted">System draw (est.)</span><span>{pwr.required}W</span></div>
+                  <div className="rf-analyze-row"><span className="rf-muted">PSU rated</span><span>{pwr.psuWatt}W</span></div>
+                  <div className="rf-analyze-row"><span className="rf-muted">Boost spike (125%)</span><span style={{color:pwr.spikeOk?"var(--c-good)":"var(--c-bad)"}}>{pwr.spikeRequired}W {pwr.spikeOk?"✓":"✗"}</span></div>
+                  <div style={{marginTop:"8px",padding:"8px 10px",borderRadius:"8px",
+                    background:pwr.status==="bad"?"rgba(255,92,114,0.1)":pwr.status==="tight"?"rgba(255,194,75,0.08)":"rgba(70,224,160,0.08)",
+                    border:`1px solid ${pwr.status==="bad"?"rgba(255,92,114,0.3)":pwr.status==="tight"?"rgba(255,194,75,0.3)":"rgba(70,224,160,0.2)"}`}}>
+                    <span style={{fontSize:"0.82rem",color:pwr.status==="bad"?"var(--c-bad)":pwr.status==="tight"?"var(--c-warn)":"var(--c-good)"}}>
+                      {pwr.status==="bad" ? `⚠ PSU underpowered — ${Math.abs(pwr.margin)}W short` : pwr.status==="tight" ? `⚠ Tight headroom (${pwr.margin}W)` : `✓ ${pwr.margin}W headroom — solid`}
+                    </span>
+                  </div>
+                </>
+              }
+            </div>
+          );
+        })()}
+
+        {/* Display Output Check */}
+        {(() => {
+          const disp = displayOutputCheck(parts);
+          return (
+            <div className="rf-pe-card">
+              <div className="rf-analyze-title">🖥️ Display Outputs</div>
+              {disp.ports.length === 0
+                ? <p className="rf-muted" style={{fontSize:"0.85rem"}}>No display outputs detected</p>
+                : <>
+                  {disp.ports.map((p,i) => <div key={i} style={{fontSize:"0.84rem",padding:"5px 0",borderBottom:"1px solid var(--c-border)"}}>{p}</div>)}
+                  <p className="rf-muted" style={{fontSize:"0.78rem",marginTop:"8px"}}>{disp.note}</p>
+                </>
+              }
+            </div>
+          );
+        })()}
+
+        {/* BIOS Compat */}
+        {(() => {
+          const bios = biosCompatWarning(parts);
+          return (
+            <div className="rf-pe-card">
+              <div className="rf-analyze-title">🔧 BIOS Compatibility</div>
+              {!parts.cpu || !parts.mobo
+                ? <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add CPU + motherboard to check BIOS compat</p>
+                : bios.length === 0
+                ? <p style={{color:"var(--c-good)",fontSize:"0.85rem"}}>✅ No BIOS issues detected for this combination</p>
+                : bios.map((w,i) => (
+                  <div key={i} style={{padding:"7px 10px",borderRadius:"8px",marginBottom:"6px",background:"rgba(255,194,75,0.08)",border:"1px solid rgba(255,194,75,0.3)"}}>
+                    <span style={{fontSize:"0.82rem",color:"var(--c-warn)"}}>⚠ {w}</span>
+                  </div>
+                ))
+              }
+            </div>
+          );
+        })()}
+
+        {/* USB Port Estimate */}
+        {(() => {
+          const usb = usbPortEstimate(parts);
+          return (
+            <div className="rf-pe-card">
+              <div className="rf-analyze-title">🔌 USB Port Estimate</div>
+              {!usb
+                ? <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add a motherboard to estimate USB ports</p>
+                : <>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"8px"}}>
+                    {[["USB 2.0",usb.usb2],["USB 3.2 Gen1",usb.usb3],["USB 3.2 Gen2",usb.usb32],["USB-C",usb.usbc]].map(([label,n])=>(
+                      <div key={label} style={{padding:"8px",borderRadius:"8px",background:"rgba(255,255,255,0.04)",textAlign:"center"}}>
+                        <div style={{fontWeight:700,fontSize:"1.2rem",color:"var(--c-accent)"}}>{n}</div>
+                        <div style={{fontSize:"0.72rem",color:"var(--c-muted)"}}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="rf-muted" style={{fontSize:"0.76rem"}}>~{usb.total} rear ports estimated ({usb.form}, {usb.tier}-end board). Exact count varies by model.</p>
+                </>
+              }
+            </div>
+          );
+        })()}
+
+        {/* Cable Management */}
+        {(() => {
+          const cables = cableManagementList(parts);
+          return (
+            <div className="rf-pe-card">
+              <div className="rf-analyze-title">🪢 Cable Management Guide</div>
+              {cables.length === 0
+                ? <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add a PSU to generate cable list</p>
+                : cables.map((c,i) => (
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:"8px",padding:"6px 0",borderBottom:"1px solid var(--c-border)",fontSize:"0.84rem"}}>
+                    <span style={{color:"var(--c-accent)",fontSize:"0.7rem"}}>▸</span>{c}
+                  </div>
+                ))
+              }
+            </div>
+          );
+        })()}
 
       </div>
     </div>
