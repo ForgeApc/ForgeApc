@@ -1,8 +1,8 @@
 {
   "framework": "vite",
-  "buildCommand": "vite build",
+  "buildCommand": "node ./node_modules/vite/bin/vite.js build",
   "outputDirectory": "dist",
-  "installCommand": "npm install",
+  "installCommand": "npm install --legacy-peer-deps",
   "rewrites": [
     { "source": "/match-coverage", "destination": "/match-coverage.html" },
     { "source": "/prices", "destination": "/prices.html" },
