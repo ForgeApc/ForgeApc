@@ -315,6 +315,101 @@ function storageTier(parts) {
   return { tier: "SATA SSD", speed: "~550 MB/s", color: "var(--c-warn)", gameLoad: "5–10 sec" };
 }
 
+// ---- Batch 5: 10 new More-menu features ----
+const FPS_GAMES = [
+  { name:"Cyberpunk 2077", demand:1.0, icon:"🤖" },
+  { name:"Fortnite (Epic)", demand:0.45, icon:"🏗️" },
+  { name:"Warzone (High)", demand:0.65, icon:"🪖" },
+  { name:"Elden Ring", demand:0.70, icon:"⚔️" },
+  { name:"Baldur's Gate 3", demand:0.60, icon:"🐉" },
+  { name:"GTA V (Max)", demand:0.55, icon:"🚗" },
+  { name:"Starfield (High)", demand:0.85, icon:"🚀" },
+  { name:"CS2 (High)", demand:0.28, icon:"🔫" },
+  { name:"Valorant", demand:0.22, icon:"🎯" },
+  { name:"Minecraft RTX", demand:0.75, icon:"⛏️" },
+];
+function fpsEstimate(gpuPerf, demand, resMult) {
+  const base = (gpuPerf / 100) * 300;
+  return Math.max(1, Math.round(base / demand / Math.sqrt(resMult)));
+}
+const GAME_SPECS = [
+  { name:"Cyberpunk 2077 (Ultra RT)", minCores:8, minRam:16, minVram:12, recCores:12, recRam:32, recVram:24 },
+  { name:"Warzone (High)", minCores:6, minRam:16, minVram:8, recCores:8, recRam:32, recVram:12 },
+  { name:"MS Flight Sim 2024", minCores:6, minRam:32, minVram:8, recCores:12, recRam:64, recVram:16 },
+  { name:"Baldur's Gate 3 (Ultra)", minCores:8, minRam:16, minVram:8, recCores:12, recRam:32, recVram:12 },
+  { name:"Starfield (High)", minCores:6, minRam:16, minVram:8, recCores:8, recRam:32, recVram:12 },
+  { name:"CS2 (High)", minCores:4, minRam:8, minVram:4, recCores:6, recRam:16, recVram:8 },
+  { name:"Fortnite (Epic)", minCores:4, minRam:8, minVram:4, recCores:8, recRam:16, recVram:8 },
+  { name:"Elden Ring (Max)", minCores:4, minRam:12, minVram:6, recCores:8, recRam:16, recVram:8 },
+];
+function buildReportCard(parts, analysis, useCase) {
+  const UC = USE_CASES[useCase];
+  const spend = analysis?.spend || 1;
+  return Object.fromEntries(CATEGORY_ORDER.map(cat => {
+    if (!parts[cat]) return [cat, { grade:"—", color:"var(--c-muted)", score:0 }];
+    const band = ((UC.alloc[cat] || 0) / 100) * spend;
+    const sc = partScore({ ...parts[cat], cat }, band, useCase);
+    const grade = sc >= 85 ? "A" : sc >= 70 ? "B" : sc >= 55 ? "C" : sc >= 40 ? "D" : "F";
+    const color = sc >= 85 ? "var(--c-good)" : sc >= 70 ? "var(--c-accent)" : sc >= 55 ? "var(--c-warn)" : "var(--c-bad)";
+    return [cat, { grade, color, score: sc }];
+  }));
+}
+function buildTierRating(analysis) {
+  const s = analysis?.score || 0;
+  if (s >= 950) return { tier:"S+", label:"Legendary", color:"#ff6b6b", desc:"A once-in-a-generation machine." };
+  if (s >= 850) return { tier:"S",  label:"Elite",     color:"#ffd700", desc:"Top 1% builds. Handles absolutely anything." };
+  if (s >= 700) return { tier:"A",  label:"High-End",  color:"var(--c-good)", desc:"Excellent for demanding workloads." };
+  if (s >= 550) return { tier:"B",  label:"Mid-Range", color:"var(--c-accent)", desc:"Great for most games and tasks." };
+  if (s >= 400) return { tier:"C",  label:"Entry",     color:"var(--c-warn)", desc:"Solid for everyday use." };
+  return             { tier:"D",  label:"Budget",    color:"var(--c-bad)", desc:"Light use only — upgrade key parts." };
+}
+function smartTips(parts, analysis, useCase) {
+  const tips = [];
+  const bn = detectBottleneck(parts);
+  if (bn) tips.push({ icon:"⚡", text: bn.msg });
+  if ((parts.ram?.cap||0) <= 16 && ["workstation","content","ai"].includes(useCase))
+    tips.push({ icon:"🧠", text:`16GB RAM is tight for ${USE_CASES[useCase].label}. Upgrading to 32GB+ helps significantly.` });
+  if ((parts.gpu?.vram||0) <= 8 && useCase === "ai")
+    tips.push({ icon:"🤖", text:"8GB VRAM is very limiting for AI/ML. 24GB+ is recommended for local model inference." });
+  if (!parts.cooler && (parts.cpu?.tdp||0) >= 105)
+    tips.push({ icon:"🌡️", text:`${parts.cpu.tdp}W CPU needs a proper cooler — stock/no cooler risks thermal throttling.` });
+  const pwr = parts.psu ? (parts.psu.watt - requiredWatts(parts)) : 999;
+  if (pwr < 50 && parts.psu) tips.push({ icon:"🔌", text:`PSU has only ${pwr}W headroom — consider a higher-wattage unit.` });
+  if (parts.storage?.kind === "SATA")
+    tips.push({ icon:"💾", text:"SATA SSD is much slower than NVMe — upgrading to M.2 NVMe gives 10× faster load times." });
+  if ((analysis?.ppScore||0) < 50)
+    tips.push({ icon:"💰", text:"Price/performance is below average. Some part swaps could give much better value." });
+  if (parts.ram?.ramType === "DDR4" && ["AM5","LGA1851"].includes(parts.cpu?.socket||""))
+    tips.push({ icon:"⚠️", text:"DDR4 with an AM5/LGA1851 CPU is unusual — double-check mobo compatibility." });
+  if (tips.length === 0) tips.push({ icon:"✅", text:"Your build is well-optimized! No major issues found." });
+  return tips;
+}
+function powerBreakdown(parts) {
+  const items = [
+    { label:"CPU",   watts: parts.cpu?.tdp || 0 },
+    { label:"GPU",   watts: parts.gpu?.tdp || 0 },
+    { label:"RAM",   watts: (parts.ram?.cap||0) >= 64 ? 15 : 8 },
+    { label:"Storage", watts: parts.storage ? 6 : 0 },
+    { label:"Motherboard", watts: parts.mobo ? 35 : 0 },
+    { label:"Fans",  watts: 12 },
+    { label:"Other", watts: 18 },
+  ].filter(i => i.watts > 0);
+  return { items, total: items.reduce((s,i)=>s+i.watts,0) };
+}
+const PERIPHERAL_SETS = {
+  gaming:     { monitor:["240Hz 1080p (competitive)","165Hz 1440p (sweet spot)","144Hz 4K (premium)"], mouse:["Logitech G Pro X Superlight 2","Razer DeathAdder V3","Zowie EC2-C"], kb:["Wooting 60HE","SteelSeries Apex Pro","Ducky One 3"] },
+  content:    { monitor:["4K 60Hz IPS (colour accurate)","1440p 144Hz wide-gamut","Dual 1080p setup"],   mouse:["Logitech MX Master 3S","Razer Pro Click","Microsoft Arc Mouse"], kb:["Logitech MX Keys","Keychron K8 Pro","Apple Magic Keyboard"] },
+  workstation:{ monitor:["32″ 4K IPS (calibrated)","Ultrawide 3440×1440","Dual 27″ 4K"],              mouse:["Logitech MX Master 3S","Kensington Expert Mouse","3M AKT850LE Ergo"], kb:["Logitech MX Keys","Kinesis Advantage 360","Das Keyboard 4 Pro"] },
+  streaming:  { monitor:["1440p 144Hz (play + stream)","27″ 1080p 240Hz","Dual 1080p capture setup"], mouse:["Logitech G502 X Plus","Razer Basilisk V3","SteelSeries Rival 650"], kb:["SteelSeries Apex Pro","Razer BlackWidow V4","Corsair K100 RGB"] },
+  ai:         { monitor:["32″ 4K IPS","Dual 27″ 1440p","Ultrawide 3440×1440"],                        mouse:["Logitech MX Master 3S","Microsoft Precision Mouse","Logitech MX Anywhere 3"], kb:["Keychron Q1 Pro","Logitech MX Keys","ZSA Moonlander"] },
+  office:     { monitor:["24″ 1080p IPS","27″ 1440p","Dual 24″ 1080p"],                               mouse:["Logitech M750","Microsoft Precision Mouse","Logitech MX Anywhere 3"],        kb:["Logitech K380","Keychron K3 Pro","Microsoft Sculpt Ergo"] },
+};
+const ERA_BUILDS = [
+  { year:"2022", budget:2000, desc:"RTX 3070 + i5-12600K + 16GB DDR4 + 1TB NVMe", score:72, note:"PCIe 4.0 era, DDR4, ~$2000" },
+  { year:"2024", budget:2000, desc:"RTX 4070 Super + R7 7800X3D + 32GB DDR5 + 2TB NVMe", score:88, note:"AM5 platform, DDR5, ~$2000" },
+  { year:"2026", budget:2000, desc:"RTX 5070 / RX 9070 + R7 9800X3D + 32GB DDR5 + 2TB NVMe", score:96, note:"Current gen — plus AI-era RAM shortage premium" },
+];
+
 // ---- Batch 2: Compatibility & Warnings helpers ----
 function deprecationAlerts(parts) {
   const alerts = [];
@@ -1310,13 +1405,18 @@ export default function RigForge() {
               ☰ More
             </button>
             {moreOpen && (
-              <div className="rf-settings-menu" style={{minWidth:"160px",right:0,top:"calc(100% + 6px)"}} onClick={(e) => e.stopPropagation()}>
+              <div className="rf-settings-menu rf-more-menu" style={{minWidth:"180px",right:0,top:"calc(100% + 6px)"}} onClick={(e) => e.stopPropagation()}>
                 <button className="rf-lang-opt" onClick={() => { setView("community"); setMoreOpen(false); }}><Users size={14} /> Community</button>
                 <button className="rf-lang-opt" onClick={() => { setView("parts"); setMoreOpen(false); }}><PackageSearch size={14} /> Parts</button>
                 <button className="rf-lang-opt" onClick={() => { setView("compare"); setMoreOpen(false); }}><Columns2 size={14} /> Compare</button>
                 <button className="rf-lang-opt" onClick={() => { setView("calendar"); setMoreOpen(false); }}><LayoutGrid size={14} /> Launches</button>
                 <button className="rf-lang-opt" onClick={() => { setView("analyze"); setMoreOpen(false); }}><Zap size={14} /> Analyze Build</button>
                 <button className="rf-lang-opt" onClick={() => { setView("tools"); setMoreOpen(false); }}><DollarSign size={14} /> Cost Tools</button>
+                <div style={{height:"1px",background:"var(--c-border)",margin:"4px 0"}}/>
+                <button className="rf-lang-opt" onClick={() => { setView("fps-games"); setMoreOpen(false); }}>🎮 FPS &amp; Games</button>
+                <button className="rf-lang-opt" onClick={() => { setView("build-stats"); setMoreOpen(false); }}>🏆 Build Stats</button>
+                <button className="rf-lang-opt" onClick={() => { setView("power-peripherals"); setMoreOpen(false); }}>🔋 Power &amp; Peripherals</button>
+                <button className="rf-lang-opt" onClick={() => { setView("export-more"); setMoreOpen(false); }}>📁 Export &amp; More</button>
               </div>
             )}
           </div>
@@ -1450,6 +1550,10 @@ export default function RigForge() {
         {view === "calendar" && <LaunchCalendar />}
         {view === "analyze" && <AnalyzeView parts={parts} analysis={analysis} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} />}
         {view === "tools" && <ToolsView parts={parts} analysis={analysis} useCase={useCase} budget={budget} onBack={() => setView(parts ? "results" : "home")} />}
+        {view === "fps-games" && <FpsGamesView parts={parts} onBack={() => setView(parts ? "results" : "home")} />}
+        {view === "build-stats" && <BuildStatsView parts={parts} analysis={analysis} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} />}
+        {view === "power-peripherals" && <PowerPeripheralsView parts={parts} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} />}
+        {view === "export-more" && <ExportMoreView parts={parts} analysis={analysis} useCase={useCase} budget={budget} onBack={() => setView(parts ? "results" : "home")} />}
         {view === "mogger" && <MoggerGame onExit={() => setView("home")} onSaveBuild={saveExternalBuild} />}
         {view === "mogger-admin" && <MoggerAdmin onBack={() => setView("home")} user={hdrUser} />}
         {view === "mogger-coadmin" && <MoggerCoAdmin onBack={() => setView("home")} bypass={true} />}
@@ -3839,6 +3943,301 @@ function ToolsView({ parts, analysis, useCase, budget, onBack }) {
             </div>
           </div>
 
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- FPS & Games view ---- */
+function FpsGamesView({ parts, onBack }) {
+  const [tab, setTab] = useState("fps");
+  const gpuPerf = parts?.gpu?.perf || 0;
+  const cores = parts?.cpu?.cores || 0;
+  const ram = parts?.ram?.cap || 0;
+  const vram = parts?.gpu?.vram || 0;
+  const gameCheck = (spec) => {
+    const meetsMin = cores >= spec.minCores && ram >= spec.minRam && vram >= spec.minVram;
+    const meetsRec = cores >= spec.recCores && ram >= spec.recRam && vram >= spec.recVram;
+    return meetsRec ? "recommended" : meetsMin ? "minimum" : "below";
+  };
+  return (
+    <div className="rf-fade rf-community">
+      <div className="rf-section-head" style={{marginBottom:"1.2rem"}}>
+        <div><h2 style={{margin:0}}>🎮 FPS & Game Checker</h2><p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Estimated FPS and game compatibility for your build</p></div>
+        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+      </div>
+      <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
+        {["fps","games"].map(t=><button key={t} className={"rf-pill"+(tab===t?" active":"")} onClick={()=>setTab(t)}>{t==="fps"?"⚡ FPS Estimator":"✅ Game Checker"}</button>)}
+      </div>
+      {!parts?.gpu && <p className="rf-muted">Add a GPU to see estimates.</p>}
+      {parts?.gpu && tab === "fps" && (
+        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"2fr repeat(3,1fr)",gap:"0",background:"var(--c-panel)",borderRadius:"10px",overflow:"hidden",fontSize:"0.78rem",fontWeight:700,color:"var(--c-muted)",border:"1px solid var(--c-border)"}}>
+            {["Game","1080p","1440p","4K"].map(h=><div key={h} style={{padding:"8px 10px",borderBottom:"1px solid var(--c-border)"}}>{h}</div>)}
+            {FPS_GAMES.map(g=>{
+              const f1=fpsEstimate(gpuPerf,g.demand,1), f2=fpsEstimate(gpuPerf,g.demand,2), f4=fpsEstimate(gpuPerf,g.demand,4);
+              const col=fps=>fps>=144?"var(--c-good)":fps>=60?"var(--c-accent)":fps>=30?"var(--c-warn)":"var(--c-bad)";
+              return [
+                <div key={g.name+"n"} style={{padding:"8px 10px",fontSize:"0.84rem",display:"flex",gap:"6px",alignItems:"center"}}><span>{g.icon}</span>{g.name}</div>,
+                ...[f1,f2,f4].map((f,i)=><div key={g.name+i} style={{padding:"8px 10px",fontWeight:700,color:col(f),fontFamily:"'JetBrains Mono'"}}>{f}</div>)
+              ];
+            })}
+          </div>
+          <p className="rf-muted" style={{fontSize:"0.75rem"}}>Estimates based on GPU perf score. Actual FPS varies by driver, settings, and CPU pairing.</p>
+        </div>
+      )}
+      {parts?.gpu && tab === "games" && (
+        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+          {GAME_SPECS.map(spec=>{
+            const status=gameCheck(spec);
+            const color=status==="recommended"?"var(--c-good)":status==="minimum"?"var(--c-warn)":"var(--c-bad)";
+            const label=status==="recommended"?"✓ Recommended":"minimum"?"⚠ Minimum only":"✗ Below minimum";
+            return (
+              <div key={spec.name} style={{padding:"10px 12px",borderRadius:"10px",background:"var(--c-panel)",border:`1px solid ${color}33`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontWeight:600,fontSize:"0.86rem"}}>{spec.name}</div>
+                  <div style={{fontSize:"0.76rem",color:"var(--c-muted)",marginTop:"2px"}}>Min: {spec.minCores}c / {spec.minRam}GB / {spec.minVram}GB VRAM · Rec: {spec.recCores}c / {spec.recRam}GB / {spec.recVram}GB</div>
+                </div>
+                <span style={{fontSize:"0.78rem",fontWeight:700,color,whiteSpace:"nowrap",marginLeft:"12px"}}>{label}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- Build Stats view ---- */
+function BuildStatsView({ parts, analysis, useCase, onBack }) {
+  const [tab, setTab] = useState("card");
+  const tier = analysis ? buildTierRating(analysis) : null;
+  const card = parts && analysis ? buildReportCard(parts, analysis, useCase) : null;
+  const tips = parts && analysis ? smartTips(parts, analysis, useCase) : [];
+  return (
+    <div className="rf-fade rf-community">
+      <div className="rf-section-head" style={{marginBottom:"1.2rem"}}>
+        <div><h2 style={{margin:0}}>🏆 Build Stats</h2><p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Tier rating, component grades and smart tips</p></div>
+        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+      </div>
+      {(!parts||!analysis) && <p className="rf-muted">Build a PC first to see stats.</p>}
+      {parts && analysis && <>
+        <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
+          {["card","tier","tips"].map(t=><button key={t} className={"rf-pill"+(tab===t?" active":"")} onClick={()=>setTab(t)}>{t==="card"?"📊 Report Card":t==="tier"?"🏆 Build Tier":"💡 Smart Tips"}</button>)}
+        </div>
+        {tab==="card" && (
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px"}}>
+            {CATEGORY_ORDER.filter(c=>parts[c]).map(c=>{
+              const g=card[c]; const M=CAT_META[c];
+              return (
+                <div key={c} style={{padding:"14px",borderRadius:"12px",background:"var(--c-panel)",border:`2px solid ${g.color}44`,textAlign:"center"}}>
+                  <M.Icon size={20} style={{color:g.color,marginBottom:"6px"}} />
+                  <div style={{fontSize:"0.76rem",color:"var(--c-muted)",marginBottom:"4px"}}>{tCat(c)}</div>
+                  <div style={{fontSize:"2.5rem",fontWeight:800,color:g.color,fontFamily:"'Chakra Petch',sans-serif",lineHeight:1}}>{g.grade}</div>
+                  <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginTop:"4px"}}>{g.score}/100</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {tab==="tier" && tier && (
+          <div style={{textAlign:"center",padding:"40px 20px"}}>
+            <div style={{fontSize:"6rem",fontWeight:900,color:tier.color,fontFamily:"'Chakra Petch',sans-serif",lineHeight:1,textShadow:`0 0 60px ${tier.color}66`}}>{tier.tier}</div>
+            <div style={{fontSize:"1.4rem",fontWeight:700,color:tier.color,marginTop:"8px"}}>{tier.label}</div>
+            <p style={{color:"var(--c-muted)",marginTop:"8px",fontSize:"0.9rem"}}>{tier.desc}</p>
+            <div style={{marginTop:"20px",display:"inline-flex",gap:"6px",flexWrap:"wrap",justifyContent:"center"}}>
+              {["D","C","B","A","S","S+"].map(t=><span key={t} style={{padding:"6px 14px",borderRadius:"999px",border:`2px solid ${tier.tier===t?tier.color:"var(--c-border)"}`,fontWeight:700,fontSize:"0.9rem",color:tier.tier===t?tier.color:"var(--c-muted)",fontFamily:"'Chakra Petch'"}}>{t}</span>)}
+            </div>
+            <div style={{marginTop:"24px",padding:"12px 16px",borderRadius:"10px",background:"var(--c-panel)",display:"inline-block"}}>
+              <span className="rf-muted" style={{fontSize:"0.84rem"}}>Performance score: </span>
+              <span style={{fontWeight:700,color:"var(--c-accent)"}}>{analysis.score} / 1000</span>
+            </div>
+          </div>
+        )}
+        {tab==="tips" && (
+          <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+            {tips.map((tip,i)=>(
+              <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",padding:"12px 14px",borderRadius:"10px",background:"var(--c-panel)",border:"1px solid var(--c-border)"}}>
+                <span style={{fontSize:"1.2rem",lineHeight:1,paddingTop:"1px"}}>{tip.icon}</span>
+                <span style={{fontSize:"0.86rem",lineHeight:1.5}}>{tip.text}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </>}
+    </div>
+  );
+}
+
+/* ---- Power & Peripherals view ---- */
+function PowerPeripheralsView({ parts, useCase, onBack }) {
+  const [tab, setTab] = useState("power");
+  const pw = parts ? powerBreakdown(parts) : { items:[], total:0 };
+  const ucKey = (USE_CASES[useCase] ? useCase : null) || "gaming";
+  const perifs = PERIPHERAL_SETS[ucKey] || PERIPHERAL_SETS.gaming;
+  return (
+    <div className="rf-fade rf-community">
+      <div className="rf-section-head" style={{marginBottom:"1.2rem"}}>
+        <div><h2 style={{margin:0}}>🔋 Power & Peripherals</h2><p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Component wattage breakdown and peripheral suggestions</p></div>
+        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+      </div>
+      <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
+        {["power","peripherals"].map(t=><button key={t} className={"rf-pill"+(tab===t?" active":"")} onClick={()=>setTab(t)}>{t==="power"?"🔋 Power Breakdown":"🖱️ Peripherals"}</button>)}
+      </div>
+      {tab==="power" && (
+        !parts ? <p className="rf-muted">Build a PC first.</p> :
+        <div className="rf-pe-card" style={{maxWidth:"520px"}}>
+          {pw.items.map(item=>{
+            const pct=Math.round((item.watts/pw.total)*100);
+            const col=item.label==="CPU"||item.label==="GPU"?"var(--c-accent)":"var(--c-muted)";
+            return (
+              <div key={item.label} style={{marginBottom:"10px"}}>
+                <div className="rf-analyze-row" style={{marginBottom:"4px"}}>
+                  <span style={{fontSize:"0.84rem"}}>{item.label}</span>
+                  <span style={{fontSize:"0.84rem",fontWeight:600,color:col}}>{item.watts}W <span className="rf-muted">({pct}%)</span></span>
+                </div>
+                <div style={{height:"8px",borderRadius:"4px",background:"var(--c-panel-2)",overflow:"hidden"}}>
+                  <div style={{height:"100%",width:pct+"%",background:col,borderRadius:"4px",transition:"width .4s var(--ease)"}}/>
+                </div>
+              </div>
+            );
+          })}
+          <div className="rf-analyze-row" style={{marginTop:"12px",borderTop:"1px solid var(--c-border)",paddingTop:"10px"}}>
+            <span style={{fontWeight:700}}>Estimated Total</span>
+            <span style={{fontWeight:700,color:"var(--c-accent)"}}>{pw.total}W</span>
+          </div>
+          {parts.psu && <p className="rf-muted" style={{fontSize:"0.76rem",marginTop:"6px"}}>PSU rated: {parts.psu.watt}W · Headroom: {parts.psu.watt-pw.total}W ({Math.round(((parts.psu.watt-pw.total)/parts.psu.watt)*100)}%)</p>}
+        </div>
+      )}
+      {tab==="peripherals" && (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:"12px"}}>
+          {[["🖥️ Monitor",perifs.monitor],["🖱️ Mouse",perifs.mouse],["⌨️ Keyboard",perifs.kb]].map(([label,items])=>(
+            <div key={label} className="rf-pe-card">
+              <div className="rf-analyze-title">{label}</div>
+              {items.map((item,i)=>(
+                <div key={i} style={{padding:"7px 0",borderBottom:"1px solid var(--c-border)",fontSize:"0.84rem",display:"flex",gap:"8px",alignItems:"center"}}>
+                  <span style={{color:"var(--c-accent)",fontSize:"0.72rem",minWidth:"14px"}}>{i===0?"🥇":i===1?"🥈":"🥉"}</span>{item}
+                </div>
+              ))}
+              <p className="rf-muted" style={{fontSize:"0.74rem",marginTop:"8px"}}>Optimised for {USE_CASES[ucKey]?.label || "your use case"}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- Export & More view ---- */
+function ExportMoreView({ parts, analysis, useCase, budget, onBack }) {
+  const [tab, setTab] = useState("export");
+  const [copied, setCopied] = useState(false);
+  const total = parts ? CATEGORY_ORDER.reduce((s,c)=>s+(parts[c]?.price||0),0) : 0;
+
+  const buildText = parts ? [
+    `FORGEAPC Build — ${USE_CASES[useCase]?.label || useCase} · $${budget} budget`,
+    `Generated: ${new Date().toLocaleDateString()}`,
+    "─".repeat(50),
+    ...CATEGORY_ORDER.filter(c=>parts[c]).map(c=>`${tCat(c).padEnd(16)} ${parts[c].name} — $${parts[c].price}`),
+    "─".repeat(50),
+    `TOTAL: $${total}`,
+    parts.cpu ? `Performance score: ${analysis?.score || "—"}/1000` : "",
+  ].filter(Boolean).join("\n") : "";
+
+  const downloadTxt = () => {
+    const blob = new Blob([buildText], { type:"text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `forgeapc-build-${useCase}-$${budget}.txt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const downloadJson = () => {
+    const obj = { useCase, budget, total, parts, score: analysis?.score };
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type:"application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `forgeapc-build-${useCase}-$${budget}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const copyText = () => { navigator.clipboard.writeText(buildText).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); }); };
+
+  const tier = analysis ? buildTierRating(analysis) : null;
+
+  return (
+    <div className="rf-fade rf-community">
+      <div className="rf-section-head" style={{marginBottom:"1.2rem"}}>
+        <div><h2 style={{margin:0}}>📁 Export & More</h2><p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Export your build, compare eras, view summary card</p></div>
+        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+      </div>
+      <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
+        {["export","era","summary"].map(t=><button key={t} className={"rf-pill"+(tab===t?" active":"")} onClick={()=>setTab(t)}>{t==="export"?"📁 Export":t==="era"?"📈 Era Compare":"🎯 Summary Card"}</button>)}
+      </div>
+
+      {tab==="export" && (
+        !parts ? <p className="rf-muted">Build a PC first to export.</p> :
+        <div style={{display:"flex",flexDirection:"column",gap:"12px",maxWidth:"520px"}}>
+          <div style={{display:"flex",gap:"10px",flexWrap:"wrap"}}>
+            <button className="rf-btn" onClick={downloadTxt}><Save size={15}/> Download .txt</button>
+            <button className="rf-forge-btn outline" onClick={downloadJson}><Save size={15}/> Download .json</button>
+            <button className="rf-ghost" onClick={copyText}>{copied?<><Check size={13}/> Copied!</>:<><PackageSearch size={13}/> Copy to clipboard</>}</button>
+          </div>
+          <pre style={{background:"var(--c-panel)",border:"1px solid var(--c-border)",borderRadius:"10px",padding:"14px",fontSize:"0.76rem",color:"var(--c-muted)",overflowX:"auto",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{buildText}</pre>
+        </div>
+      )}
+
+      {tab==="era" && (
+        <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+          {ERA_BUILDS.map((era,i)=>{
+            const isCurrent = era.year === "2026";
+            return (
+              <div key={era.year} style={{padding:"16px",borderRadius:"12px",background:"var(--c-panel)",border:`2px solid ${isCurrent?"var(--c-accent)":"var(--c-border)"}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
+                  <span style={{fontWeight:700,fontSize:"1rem",fontFamily:"'Chakra Petch'"}}>{era.year} {isCurrent&&<span style={{color:"var(--c-accent)",fontSize:"0.8rem"}}>(Now)</span>}</span>
+                  <span style={{fontSize:"0.82rem",color:"var(--c-muted)"}}>{era.note}</span>
+                </div>
+                <div style={{fontSize:"0.84rem",marginBottom:"10px",color:"var(--c-muted)"}}>{era.desc}</div>
+                <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                  <div style={{flex:1,height:"10px",borderRadius:"5px",background:"var(--c-panel-2)",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:era.score+"%",background:isCurrent?"var(--c-accent)":"var(--c-accent2)",borderRadius:"5px"}}/>
+                  </div>
+                  <span style={{fontWeight:700,fontSize:"0.9rem",color:isCurrent?"var(--c-accent)":"var(--c-accent2)",minWidth:"50px",textAlign:"right"}}>{era.score}/100</span>
+                </div>
+              </div>
+            );
+          })}
+          <p className="rf-muted" style={{fontSize:"0.76rem"}}>All builds at ~$2,000. Shows how far PC performance has come over 4 years.</p>
+        </div>
+      )}
+
+      {tab==="summary" && (
+        !parts ? <p className="rf-muted">Build a PC first.</p> :
+        <div style={{maxWidth:"480px",padding:"24px",borderRadius:"14px",background:"linear-gradient(135deg,rgba(25,232,219,0.06),rgba(124,92,255,0.06))",border:"2px solid var(--c-accent)",fontFamily:"'Chakra Petch',sans-serif"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px"}}>
+            <div>
+              <div style={{fontSize:"1.1rem",fontWeight:700,color:"var(--c-accent)"}}>FORGEAPC</div>
+              <div style={{fontSize:"0.75rem",color:"var(--c-muted)"}}>{USE_CASES[useCase]?.label} · ${budget} budget</div>
+            </div>
+            {tier && <div style={{fontSize:"2rem",fontWeight:900,color:tier.color,lineHeight:1}}>{tier.tier}</div>}
+          </div>
+          {CATEGORY_ORDER.filter(c=>parts[c]).map(c=>(
+            <div key={c} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,0.06)",fontSize:"0.8rem"}}>
+              <span style={{color:"var(--c-muted)"}}>{tCat(c)}</span>
+              <span>{parts[c].name} <span style={{color:"var(--c-muted)"}}>· ${parts[c].price}</span></span>
+            </div>
+          ))}
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:"12px",paddingTop:"10px",borderTop:"1px solid var(--c-accent)44"}}>
+            <span style={{fontWeight:700}}>Total</span>
+            <span style={{fontWeight:700,color:"var(--c-accent)"}}>${total}</span>
+          </div>
+          {analysis && <div style={{marginTop:"10px",display:"flex",gap:"12px",fontSize:"0.78rem",color:"var(--c-muted)"}}>
+            <span>Perf: <strong style={{color:"var(--c-text)"}}>{analysis.score}</strong></span>
+            <span>P/P: <strong style={{color:"var(--c-text)"}}>{analysis.ppScore}</strong></span>
+          </div>}
         </div>
       )}
     </div>
