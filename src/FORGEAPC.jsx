@@ -1328,9 +1328,11 @@ function moggerAI(ucKey, budget, elo) {
     for (const c of order) {
       if (c === "psu") continue; // PSU is sized in fixValid — don't upgrade for "perf"
       const w = W[c] || 0.02, cur = build[c];
+      const vceil = VALUE_CEILING[c];
       for (const o of moggerOptions(c)) {
         if (!ok(c, o) || !cur || up(c, o) <= up(c, cur)) continue;
         const delta = o.price - cur.price; if (delta <= 0) continue;
+        if (vceil && o.price > vceil) continue; // don't overspend on capped categories
         if (spent() - cur.price + o.price > cap) continue;
         const gain = (up(c, o) - up(c, cur)) * w / delta;
         if (!best || gain > best.gain) best = { kind: "one", c, part: o, gain };
