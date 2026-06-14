@@ -1141,14 +1141,20 @@ function assembleBuild(useCaseKey, budget) {
   const upgradeOnce = () => {
     let best = null;
     for (const cat of CATEGORY_ORDER) {
+      // PSU is sized by wattage, not perf — never burn leftover budget chasing a bigger PSU.
+      if (cat === "psu") continue;
       const cur = parts[cat];
       if (!cur) continue;
       const w = (alloc[cat] || 0) / 100; // how much this category matters for the use case
       if (w <= 0) continue;
       const maxp = ucMaxPerf(cat, useCaseKey) || 1;
+      const ceil = VALUE_CEILING[cat]; // diminishing-returns price cap (e.g. mobo $250)
       for (const cand of inStock(CATALOG[cat])) {
         const extra = cand.price - cur.price;
         if (extra <= 0) continue;
+        // Don't push a capped category (e.g. motherboard) past its value ceiling — that money
+        // belongs on the CPU/GPU/RAM. Only allow upgrades that stay within the ceiling.
+        if (ceil && cand.price > ceil && cand.price > cur.price) continue;
         const rawGain = ucPerf(cat, cand, useCaseKey) - ucPerf(cat, cur, useCaseKey);
         if (rawGain <= 0) continue;
         if (totalCost() - cur.price + cand.price > budget) continue;
