@@ -552,7 +552,7 @@ function budgetStatus(price, band) {
 function requiredWatts(parts) {
   const cpu = parts.cpu?.tdp || 0;
   const gpu = parts.gpu?.tdp || 0;
-  return cpu + gpu + 100; // ~100W system overhead
+  return cpu + gpu + 150; // ~150W system overhead (fans, drives, mobo, USB)
 }
 function checkCompat(parts) {
   const issues = [];
@@ -1780,7 +1780,7 @@ function mBuildCandidate(ucKey, budget, cap, metric, topK) {
     if (c === "mobo" && build.cpu && o.socket !== build.cpu.socket) return false;
     if (c === "cpu" && build.mobo && o.socket !== build.mobo.socket) return false;
     if (c === "cooler") { if (build.cpu && o.sockets && !o.sockets.includes(build.cpu.socket)) return false; if (build.cpu && o.tdpRating && o.tdpRating < build.cpu.tdp) return false; }
-    if (c === "psu" && o.watt && o.watt < requiredWatts(build) * 1.25) return false;
+    if (c === "psu" && o.watt && o.watt < requiredWatts(build) * 1.35) return false;
     return true;
   };
   const cheapestMobo = (sock) => moggerOptions("mobo").filter((m) => m.socket === sock).sort((a, b) => a.price - b.price)[0];
@@ -1858,7 +1858,7 @@ function mBuildCandidate(ucKey, budget, cap, metric, topK) {
   // 3) Ensure cooler/PSU adequate, then trim under budget.
   const fixValid = () => {
     if (build.cpu) { const cl = cheapestCooler(build.cpu); if (cl && (!build.cooler || (build.cooler.tdpRating && build.cooler.tdpRating < build.cpu.tdp) || (build.cooler.sockets && !build.cooler.sockets.includes(build.cpu.socket)))) build.cooler = cl; }
-    const d = requiredWatts(build) * 1.25; const dMax = d * 1.45;
+    const d = requiredWatts(build) * 1.35; const dMax = d * 1.45;
     const psuPool = moggerOptions("psu").filter((p) => p.watt && p.watt >= d && p.watt <= dMax);
     const psu = (psuPool.length ? psuPool : moggerOptions("psu").filter((p) => p.watt && p.watt >= d)).sort((a, b) => a.price - b.price)[0];
     if (psu && (!build.psu || (build.psu.watt && build.psu.watt < d))) build.psu = psu;
@@ -3739,8 +3739,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
           {/* A3: Stats row */}
           {histStats.total > 0 && (
             <div className="pm-stats-row">
-              <span>W <b>{histStats.wins}</b></span>
-              <span>L <b>{histStats.losses}</b></span>
+              <span className="pm-stat-w">W <b>{histStats.wins}</b></span>
+              <span className="pm-stat-l">L <b>{histStats.losses}</b></span>
               <span>Avg <b>{histStats.avg}</b></span>
               <span>Best <b>{histStats.best}</b></span>
               {histStats.hardestAI > 0 && <span>Hardest AI <b>{histStats.hardestAI} elo</b></span>}

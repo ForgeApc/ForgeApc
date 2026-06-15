@@ -556,7 +556,7 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .pm-mode:hover{transform:translateY(-2px);border-color:var(--c-accent);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 14px 40px rgba(25,232,219,0.18);}
 .pm-mode-icon{font-size:24px;color:var(--c-accent);}
 .pm-mode-name{font-family:'Chakra Petch';font-weight:600;font-size:17px;}
-.pm-mode-sub{color:var(--c-muted);font-size:13px;}
+.pm-mode-sub{color:var(--c-muted);font-size:12px;font-family:'JetBrains Mono',monospace;}
 .pm-soon{opacity:0.82;}
 .pm-exit{margin-top:6px;}
 .pm-card{background:var(--c-panel);border:1px solid var(--c-border);border-radius:20px;padding:28px;max-width:560px;margin:10px auto;backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 12px 36px rgba(0,0,0,0.32);}
@@ -1063,9 +1063,11 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .pm-replay-table td.cat{text-align:center;color:var(--c-muted);font-size:0.72rem;font-weight:700;text-transform:uppercase;}
 
 /* A3: Stats row */
-.pm-stats-row{display:flex;gap:16px;flex-wrap:wrap;padding:8px 12px;background:var(--c-panel);border-radius:10px;margin-bottom:10px;font-size:0.82rem;}
+.pm-stats-row{display:flex;gap:16px;flex-wrap:wrap;padding:8px 12px;background:var(--c-panel);border-radius:10px;margin-bottom:10px;font-size:0.82rem;font-family:'JetBrains Mono',monospace;}
 .pm-stats-row span{color:var(--c-muted);}
 .pm-stats-row b{color:var(--c-text);}
+.pm-stat-w{color:var(--c-good) !important;}.pm-stat-w b{color:var(--c-good) !important;font-weight:800;}
+.pm-stat-l{color:var(--c-bad) !important;}.pm-stat-l b{color:var(--c-bad) !important;font-weight:800;}
 
 /* A5: Budget efficiency */
 .pm-budget-eff-row{padding:8px 14px;background:rgba(25,232,219,0.06);border:1px solid rgba(25,232,219,0.2);border-radius:10px;font-size:0.8rem;margin:8px 0;}
@@ -1167,7 +1169,7 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 
 /* Quick-access row at top of duel menu */
 .pm-quick-row{display:flex;gap:8px;justify-content:center;margin:0 auto 14px;flex-wrap:wrap;max-width:430px;}
-.pm-quick-btn{flex:1;min-width:90px;padding:8px 10px;border-radius:10px;border:1px solid var(--c-border);background:var(--c-panel);color:var(--c-text);font-size:0.78rem;font-weight:600;cursor:pointer;transition:border-color .15s,background .15s;}
+.pm-quick-btn{flex:1;min-width:90px;padding:8px 10px;border-radius:10px;border:1px solid var(--c-border);background:var(--c-panel);color:var(--c-text);font-size:0.75rem;font-weight:700;font-family:'Chakra Petch',sans-serif;cursor:pointer;transition:border-color .15s,background .15s;}
 .pm-quick-btn:hover{border-color:var(--c-accent);background:rgba(25,232,219,0.07);}
 
 /* NoBuildPicker — saved build search in "More" views */
