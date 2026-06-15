@@ -205,3 +205,38 @@ export async function deleteCommunityBuild(id, userId) {
   } catch (e) { return { ok: false, error: "Could not delete." }; }
 }
 
+// ---- feedback (table: feedback) ----
+// Required SQL (run once in Supabase SQL editor):
+//   CREATE TABLE feedback (
+//     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+//     created_at TIMESTAMPTZ DEFAULT NOW(),
+//     user_name TEXT, user_id TEXT,
+//     message TEXT NOT NULL, image TEXT
+//   );
+export async function submitFeedback(message, imageDataUrl, userName, userId) {
+  try {
+    const { error } = await supabase.from("feedback").insert({
+      message: (message || "").slice(0, 2000),
+      image: imageDataUrl || null,
+      user_name: userName || "Anonymous",
+      user_id: userId || null,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e) { return { ok: false, error: "Could not send feedback." }; }
+}
+export async function listFeedback(limit = 100) {
+  try {
+    const { data, error } = await supabase.from("feedback").select("*").order("created_at", { ascending: false }).limit(limit);
+    if (error) return { rows: [], error: error.message };
+    return { rows: data || [] };
+  } catch (e) { return { rows: [], error: "Could not load feedback." }; }
+}
+export async function deleteFeedback(id) {
+  try {
+    const { error } = await supabase.from("feedback").delete().eq("id", id);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e) { return { ok: false, error: "Could not delete." }; }
+}
+

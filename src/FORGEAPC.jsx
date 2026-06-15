@@ -6,7 +6,7 @@ import {
   ChevronLeft, Zap, DollarSign, RotateCcw, ShieldCheck, ShieldAlert, Repeat2, Wrench, Send, Bot, MessageCircle, Maximize, Minimize, Settings, Sun, Moon, Search, Users, Upload, Globe, Columns2, PackageSearch, LayoutGrid
 } from "lucide-react";
 import { MEDIA, MEDIA_NE } from "../data/part-media.js";
-import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity } from "./moggerNet.js";
+import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity, submitFeedback as netSubmitFeedback, listFeedback as netListFeedback, deleteFeedback as netDeleteFeedback } from "./moggerNet.js";
 /* ----------------------------- i18n ----------------------------- */
 const LANGS = [{"code": "en", "name": "English"}, {"code": "es", "name": "Español"}, {"code": "zh", "name": "中文"}, {"code": "hi", "name": "हिन्दी"}, {"code": "ar", "name": "العربية"}, {"code": "pt", "name": "Português"}, {"code": "fr", "name": "Français"}, {"code": "ru", "name": "Русский"}, {"code": "ja", "name": "日本語"}, {"code": "de", "name": "Deutsch"}];
 const I18N = {"en": {"myRigs": "My Rigs", "settings": "Settings", "appearance": "Appearance", "language": "Language", "theme": "Theme", "dark": "Dark", "light": "Light", "back": "Back", "saveRig": "Save rig", "select": "Select", "selected": "Selected", "moreInfo": "More info", "hideInfo": "Hide info", "autoForge": "Auto-Forge", "buildYourself": "Build It Yourself", "yourBuild": "Your build", "budgetQ": "What's your budget?", "useCaseQ": "What will this PC be for?", "livePrices": "Live prices", "samplePrices": "sample prices", "updated": "updated", "componentsDb": "components in the database", "overBudgetCat": "Over your {x} budget", "performance": "PERFORMANCE", "pricePerf": "PRICE / PERF", "pros": "PROS", "cons": "CONS"}, "es": {"myRigs": "Mis Equipos", "settings": "Ajustes", "appearance": "Apariencia", "language": "Idioma", "theme": "Tema", "dark": "Oscuro", "light": "Claro", "back": "Atrás", "saveRig": "Guardar", "select": "Elegir", "selected": "Elegido", "moreInfo": "Más info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Hazlo tú mismo", "yourBuild": "Tu equipo", "budgetQ": "¿Cuál es tu presupuesto?", "useCaseQ": "¿Para qué será este PC?", "livePrices": "Precios en vivo", "samplePrices": "precios de muestra", "updated": "actualizado", "componentsDb": "componentes en la base de datos", "overBudgetCat": "Supera tu presupuesto de {x}", "performance": "RENDIMIENTO", "pricePerf": "PRECIO / REND", "pros": "PROS", "cons": "CONTRAS"}, "zh": {"myRigs": "我的配置", "settings": "设置", "appearance": "外观", "language": "语言", "theme": "主题", "dark": "深色", "light": "浅色", "back": "返回", "saveRig": "保存配置", "select": "选择", "selected": "已选", "moreInfo": "更多信息", "hideInfo": "隐藏", "autoForge": "自动配置", "buildYourself": "自己组装", "yourBuild": "你的配置", "budgetQ": "你的预算是多少？", "useCaseQ": "这台电脑用来做什么？", "livePrices": "实时价格", "samplePrices": "示例价格", "updated": "更新于", "componentsDb": "个组件已入库", "overBudgetCat": "超出{x}预算", "performance": "性能", "pricePerf": "性价比", "pros": "优点", "cons": "缺点"}, "hi": {"myRigs": "मेरे रिग", "settings": "सेटिंग्स", "appearance": "रूप", "language": "भाषा", "theme": "थीम", "dark": "गहरा", "light": "हल्का", "back": "वापस", "saveRig": "सहेजें", "select": "चुनें", "selected": "चयनित", "moreInfo": "और जानकारी", "hideInfo": "छिपाएं", "autoForge": "ऑटो-फोर्ज", "buildYourself": "खुद बनाएं", "yourBuild": "आपका बिल्ड", "budgetQ": "आपका बजट क्या है?", "useCaseQ": "यह पीसी किसलिए होगा?", "livePrices": "लाइव कीमतें", "samplePrices": "नमूना कीमतें", "updated": "अपडेट", "componentsDb": "घटक डेटाबेस में", "overBudgetCat": "{x} बजट से अधिक", "performance": "प्रदर्शन", "pricePerf": "मूल्य/प्रदर्शन", "pros": "फायदे", "cons": "नुकसान"}, "ar": {"myRigs": "أجهزتي", "settings": "الإعدادات", "appearance": "المظهر", "language": "اللغة", "theme": "السمة", "dark": "داكن", "light": "فاتح", "back": "رجوع", "saveRig": "حفظ", "select": "اختيار", "selected": "محدد", "moreInfo": "المزيد", "hideInfo": "إخفاء", "autoForge": "تجميع تلقائي", "buildYourself": "اصنعه بنفسك", "yourBuild": "تجميعتك", "budgetQ": "ما هي ميزانيتك؟", "useCaseQ": "لأي غرض هذا الحاسوب؟", "livePrices": "أسعار حية", "samplePrices": "أسعار تجريبية", "updated": "محدّث", "componentsDb": "مكوّن في قاعدة البيانات", "overBudgetCat": "يتجاوز ميزانية {x}", "performance": "الأداء", "pricePerf": "السعر/الأداء", "pros": "الإيجابيات", "cons": "السلبيات"}, "pt": {"myRigs": "Meus PCs", "settings": "Configurações", "appearance": "Aparência", "language": "Idioma", "theme": "Tema", "dark": "Escuro", "light": "Claro", "back": "Voltar", "saveRig": "Salvar", "select": "Selecionar", "selected": "Selecionado", "moreInfo": "Mais info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Faça você mesmo", "yourBuild": "Sua build", "budgetQ": "Qual é o seu orçamento?", "useCaseQ": "Para que será este PC?", "livePrices": "Preços ao vivo", "samplePrices": "preços de exemplo", "updated": "atualizado", "componentsDb": "componentes no banco de dados", "overBudgetCat": "Acima do orçamento de {x}", "performance": "DESEMPENHO", "pricePerf": "PREÇO / DESEMP", "pros": "PRÓS", "cons": "CONTRAS"}, "fr": {"myRigs": "Mes Configs", "settings": "Réglages", "appearance": "Apparence", "language": "Langue", "theme": "Thème", "dark": "Sombre", "light": "Clair", "back": "Retour", "saveRig": "Enregistrer", "select": "Choisir", "selected": "Choisi", "moreInfo": "Plus d'infos", "hideInfo": "Masquer", "autoForge": "Auto-Forge", "buildYourself": "Faites-le vous-même", "yourBuild": "Votre config", "budgetQ": "Quel est votre budget ?", "useCaseQ": "À quoi servira ce PC ?", "livePrices": "Prix en direct", "samplePrices": "prix indicatifs", "updated": "mis à jour", "componentsDb": "composants dans la base", "overBudgetCat": "Au-dessus du budget {x}", "performance": "PERFORMANCE", "pricePerf": "PRIX / PERF", "pros": "ATOUTS", "cons": "INCONVÉNIENTS"}, "ru": {"myRigs": "Мои сборки", "settings": "Настройки", "appearance": "Вид", "language": "Язык", "theme": "Тема", "dark": "Тёмная", "light": "Светлая", "back": "Назад", "saveRig": "Сохранить", "select": "Выбрать", "selected": "Выбрано", "moreInfo": "Подробнее", "hideInfo": "Скрыть", "autoForge": "Авто-сборка", "buildYourself": "Собрать самому", "yourBuild": "Ваша сборка", "budgetQ": "Каков ваш бюджет?", "useCaseQ": "Для чего этот ПК?", "livePrices": "Цены в реальном времени", "samplePrices": "примерные цены", "updated": "обновлено", "componentsDb": "компонентов в базе", "overBudgetCat": "Сверх бюджета на {x}", "performance": "ПРОИЗВОДИТ.", "pricePerf": "ЦЕНА/КАЧ.", "pros": "ПЛЮСЫ", "cons": "МИНУСЫ"}, "ja": {"myRigs": "マイ構成", "settings": "設定", "appearance": "外観", "language": "言語", "theme": "テーマ", "dark": "ダーク", "light": "ライト", "back": "戻る", "saveRig": "保存", "select": "選択", "selected": "選択済", "moreInfo": "詳細", "hideInfo": "隠す", "autoForge": "自動構成", "buildYourself": "自分で組む", "yourBuild": "あなたの構成", "budgetQ": "予算はいくらですか？", "useCaseQ": "このPCの用途は？", "livePrices": "ライブ価格", "samplePrices": "サンプル価格", "updated": "更新", "componentsDb": "個のパーツを収録", "overBudgetCat": "{x}予算オーバー", "performance": "性能", "pricePerf": "価格性能", "pros": "長所", "cons": "短所"}, "de": {"myRigs": "Meine Builds", "settings": "Einstellungen", "appearance": "Darstellung", "language": "Sprache", "theme": "Thema", "dark": "Dunkel", "light": "Hell", "back": "Zurück", "saveRig": "Speichern", "select": "Wählen", "selected": "Gewählt", "moreInfo": "Mehr Info", "hideInfo": "Verbergen", "autoForge": "Auto-Forge", "buildYourself": "Selbst bauen", "yourBuild": "Dein Build", "budgetQ": "Wie hoch ist dein Budget?", "useCaseQ": "Wofür ist dieser PC?", "livePrices": "Live-Preise", "samplePrices": "Beispielpreise", "updated": "aktualisiert", "componentsDb": "Komponenten in der Datenbank", "overBudgetCat": "Über dem {x}-Budget", "performance": "LEISTUNG", "pricePerf": "PREIS / LEIST", "pros": "VORTEILE", "cons": "NACHTEILE"}};
@@ -3243,6 +3243,12 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
   const [ranksDraft, setRanksDraft] = useState([]);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [msg, setMsg] = useState("");
+  const [adminTab, setAdminTab] = useState("accounts");
+  const [fbRows, setFbRows] = useState(null);
+  const [fbErr, setFbErr] = useState("");
+  const [fbDelId, setFbDelId] = useState(null);
+  const loadFeedback = async () => { setFbRows(null); setFbErr(""); const r = await netListFeedback(); if (r.error) setFbErr(r.error); setFbRows(r.rows || []); };
+  const delFeedback = async (id) => { await netDeleteFeedback(id); setFbRows((prev) => (prev || []).filter((f) => f.id !== id)); setFbDelId(null); };
   const load = async () => { setRows(null); const r = await netAllUsers(); if (r.error) { setErr(r.error); setRows([]); } else { setErr(""); setRows(r.rows); } };
   useEffect(() => { if (authed) load(); }, [authed]);
   const tryAuth = () => { if (pw === ADMIN_PASS) { setAuthed(true); load(); } else setErr("Wrong admin password."); };
@@ -3297,7 +3303,12 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
   }
   return (
     <div className="pm-card pm-center rf-fade">
-      <h2 className="pm-h2">🔒 {isCoadmin ? "Co-Admin" : "Admin"} · Accounts</h2>
+      <h2 className="pm-h2">🔒 {isCoadmin ? "Co-Admin" : "Admin"}</h2>
+      <div className="rf-community-filters" style={{marginBottom:"14px"}}>
+        <button className={"rf-pill" + (adminTab === "accounts" ? " active" : "")} onClick={() => setAdminTab("accounts")}>👤 Accounts</button>
+        <button className={"rf-pill" + (adminTab === "feedback" ? " active" : "")} onClick={() => { setAdminTab("feedback"); if (!fbRows) loadFeedback(); }}>📩 Feedback</button>
+      </div>
+      {adminTab === "accounts" && <>
       {err && <div className="pm-auth-err">{err}</div>}
       {msg && <div className="pm-admin-msg">{msg}</div>}
       {rows == null ? <div className="pm-spinner" /> : rows.length === 0 ? <p className="pm-p">No accounts found.</p> : (
@@ -3332,7 +3343,35 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
           ))}
         </div>
       )}
-      <div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button><button className="rf-btn rf-ghost-btn" onClick={load}>Refresh</button></div>
+      <div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={load}>Refresh</button></div>
+      </>}
+      {adminTab === "feedback" && (
+        <div>
+          {fbErr && <div className="pm-auth-err">{fbErr}</div>}
+          {fbRows == null ? <div className="pm-spinner" /> : fbRows.length === 0 ? <p className="pm-p">No feedback yet.</p> : (
+            <div style={{display:"flex",flexDirection:"column",gap:"12px",maxHeight:"60vh",overflowY:"auto"}}>
+              {fbRows.map((f) => (
+                <div key={f.id} className="pm-admin-item" style={{padding:"12px 14px",borderRadius:"12px",border:"1px solid var(--c-border)",background:"var(--c-panel)"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px",marginBottom:"6px"}}>
+                    <div>
+                      <span style={{fontFamily:"'Chakra Petch',sans-serif",fontWeight:700,fontSize:"0.88rem",color:"var(--c-accent2)"}}>{f.user_name || "Anonymous"}</span>
+                      <span className="rf-muted" style={{fontSize:"0.72rem",marginLeft:"8px",fontFamily:"'JetBrains Mono',monospace"}}>{f.created_at ? new Date(f.created_at).toLocaleString() : ""}</span>
+                    </div>
+                    {fbDelId === f.id
+                      ? <span style={{display:"flex",gap:"6px"}}><button className="pm-del-yes" onClick={() => delFeedback(f.id)}>Delete</button><button className="pm-del-no" onClick={() => setFbDelId(null)}>Cancel</button></span>
+                      : <button className="pm-del-btn" onClick={() => setFbDelId(f.id)}><X size={13}/></button>
+                    }
+                  </div>
+                  <p style={{fontSize:"0.85rem",lineHeight:1.5,margin:"0 0 8px",whiteSpace:"pre-wrap"}}>{f.message}</p>
+                  {f.image && <img src={f.image} alt="screenshot" style={{maxWidth:"100%",maxHeight:"200px",objectFit:"contain",borderRadius:"8px",border:"1px solid var(--c-border)"}} />}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="pm-row pm-center-row" style={{marginTop:"12px"}}><button className="rf-btn rf-ghost-btn" onClick={loadFeedback}>Refresh</button></div>
+        </div>
+      )}
+      <div className="pm-row pm-center-row" style={{marginTop:"16px"}}><button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button></div>
     </div>
   );
 }
@@ -3390,6 +3429,87 @@ function Confetti() {
     return () => { cancelAnimationFrame(raf); clearTimeout(t); };
   }, []);
   return <canvas ref={canvasRef} style={{position:"fixed",top:0,left:0,pointerEvents:"none",zIndex:9999}} />;
+}
+
+/* ---- Feedback modal ---- */
+async function compressImage(file, maxW = 600) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.72));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+function FeedbackModal({ user, onClose }) {
+  const [msg, setMsg] = useState("");
+  const [imgData, setImgData] = useState(null);
+  const [imgName, setImgName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [err, setErr] = useState("");
+  const pickImg = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    setImgName(f.name);
+    const d = await compressImage(f); setImgData(d);
+  };
+  const send = async () => {
+    if (!msg.trim()) { setErr("Add a message before sending."); return; }
+    setBusy(true); setErr("");
+    const r = await netSubmitFeedback(msg.trim(), imgData, user ? user.name : "Anonymous", user ? user.id : null);
+    setBusy(false);
+    if (!r.ok) { setErr(r.error || "Failed to send."); return; }
+    setDone(true);
+  };
+  return (
+    <div className="pm-modal-bg" onClick={onClose}>
+      <div className="pm-modal-card rf-fade" onClick={(e) => e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+          <h2 className="pm-h2" style={{margin:0}}>📩 Send Feedback</h2>
+          <button className="pm-acct-btn" onClick={onClose}><X size={14}/></button>
+        </div>
+        {done ? (
+          <div style={{textAlign:"center",padding:"24px 0"}}>
+            <div style={{fontSize:"2.5rem",marginBottom:"12px"}}>✅</div>
+            <p className="pm-p" style={{fontFamily:"'Chakra Petch',sans-serif",fontWeight:600}}>Feedback sent!</p>
+            <p className="rf-muted" style={{fontSize:"0.85rem"}}>Thanks — we'll review it shortly.</p>
+            <button className="rf-btn" style={{marginTop:"16px"}} onClick={onClose}>Close</button>
+          </div>
+        ) : (<>
+          <p className="rf-muted" style={{fontSize:"0.83rem",marginBottom:"12px"}}>Tell us what's working, what's broken, or what you'd like to see. A screenshot is optional but super helpful.</p>
+          <textarea
+            className="pm-input"
+            rows={4}
+            placeholder="Your feedback…"
+            value={msg}
+            onChange={(e) => setMsg(e.target.value)}
+            style={{width:"100%",resize:"vertical",fontFamily:"'Sora',sans-serif",fontSize:"0.88rem"}}
+          />
+          <div style={{marginTop:"10px",display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+            <label className="rf-btn rf-ghost-btn" style={{cursor:"pointer",fontSize:"0.82rem"}}>
+              📷 {imgName ? imgName : "Attach screenshot"}
+              <input type="file" accept="image/*" style={{display:"none"}} onChange={pickImg} />
+            </label>
+            {imgData && <button className="pm-acct-btn" onClick={() => { setImgData(null); setImgName(""); }}>✕ Remove</button>}
+          </div>
+          {imgData && <img src={imgData} alt="preview" style={{marginTop:"8px",maxWidth:"100%",maxHeight:"140px",objectFit:"contain",borderRadius:"8px",border:"1px solid var(--c-border)"}} />}
+          {err && <div className="pm-auth-err" style={{marginTop:"8px"}}>{err}</div>}
+          <div className="pm-row pm-center-row" style={{marginTop:"16px"}}>
+            <button className="rf-btn rf-ghost-btn" onClick={onClose}>Cancel</button>
+            <button className="rf-btn" disabled={busy || !msg.trim()} onClick={send}>{busy ? "Sending…" : <><Send size={14}/> Send</>}</button>
+          </div>
+        </>)}
+      </div>
+    </div>
+  );
 }
 
 // B1: Achievements
@@ -3474,6 +3594,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const [selectedTaunt, setSelectedTaunt] = useState(null);
   // B2: confetti on win
   const [showConfetti, setShowConfetti] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   // Rivals data
   const rivalsData = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("mogger_rivals") || "{}"); } catch(e) { return {}; }
@@ -3602,6 +3723,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
   return (
     <div className="pm-mogger rf-fade">
       {showConfetti && <Confetti />}
+      {feedbackOpen && <FeedbackModal user={user} onClose={() => setFeedbackOpen(false)} />}
       {screen === "menu" && (
         <div className="pm-menu">
           <div className="pm-account">{user ? <><span className="pm-acct-name">{user.name}</span><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo} elo</span><button className="pm-acct-btn" onClick={() => persist(null)}>Log out</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in / Sign up</button>}</div>
@@ -3647,6 +3769,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
             <button className="pm-quick-btn" onClick={() => setScreen("history")}>📜 History</button>
             <button className="pm-quick-btn" onClick={() => setScreen("achievements")}>🏅 Achievements</button>
             <button className="pm-quick-btn" onClick={() => setScreen("leaderboard")}>🏆 Leaderboard</button>
+            <button className="pm-quick-btn" onClick={() => setFeedbackOpen(true)}>📩 Feedback</button>
           </div>
           <div className="pm-mode-grid">
             <button className="pm-mode" onClick={() => { setMode("ai"); setScreen("diff"); }}><span className="pm-mode-icon"><Bot size={24} /></span><span className="pm-mode-name">Play vs AI</span><span className="pm-mode-sub">Ranked or practice</span></button>
@@ -4455,7 +4578,13 @@ function NoBuildPicker({ saved, onPick }) {
   );
 }
 
-function ToolsView({ parts, analysis, useCase, budget, onBack, saved, onPickSaved }) {
+function ToolsView({ parts: propParts, analysis: propAnalysis, useCase: propUseCase, budget: propBudget, onBack, saved }) {
+  const [localBuild, setLocalBuild] = useState(null);
+  const parts = localBuild ? localBuild.parts : propParts;
+  const useCase = localBuild ? localBuild.useCase : propUseCase;
+  const budget = localBuild ? localBuild.budget : propBudget;
+  const analysis = useMemo(() => localBuild ? analyzeBuild(localBuild.parts, localBuild.useCase, localBuild.budget) : propAnalysis, [localBuild, propAnalysis]);
+  const handleBack = () => { if (localBuild) { setLocalBuild(null); return; } onBack(); };
   const total = parts ? CATEGORY_ORDER.reduce((s,c) => s + (parts[c]?.price || 0), 0) : 0;
   const [payMonths, setPayMonths] = useState(12);
   const [payInterest, setPayInterest] = useState(0);
@@ -4536,10 +4665,10 @@ function ToolsView({ parts, analysis, useCase, budget, onBack, saved, onPickSave
           <h2 style={{margin:0}}>💰 Cost Tools</h2>
           <p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Budget breakdown, lifespan, resale, payment plans & shopping</p>
         </div>
-        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+        <button className="rf-ghost" onClick={handleBack}><ChevronLeft size={15}/> Back</button>
       </div>
 
-      {!parts && <NoBuildPicker saved={saved} onPick={onPickSaved} />}
+      {!parts && <NoBuildPicker saved={saved} onPick={setLocalBuild} />}
 
       {parts && (
         <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
@@ -4778,7 +4907,10 @@ function ToolsView({ parts, analysis, useCase, budget, onBack, saved, onPickSave
 }
 
 /* ---- FPS & Games view ---- */
-function FpsGamesView({ parts, onBack, saved, onPickSaved }) {
+function FpsGamesView({ parts: propParts, onBack, saved }) {
+  const [localBuild, setLocalBuild] = useState(null);
+  const parts = localBuild ? localBuild.parts : propParts;
+  const handleBack = () => { if (localBuild) { setLocalBuild(null); return; } onBack(); };
   const [tab, setTab] = useState("fps");
   const gpuPerf = parts?.gpu?.perf || 0;
   const cores = parts?.cpu?.cores || 0;
@@ -4793,9 +4925,9 @@ function FpsGamesView({ parts, onBack, saved, onPickSaved }) {
     <div className="rf-fade rf-community">
       <div className="rf-section-head" style={{marginBottom:"1.2rem"}}>
         <div><h2 style={{margin:0}}>🎮 FPS & Game Checker</h2><p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Estimated FPS and game compatibility for your build</p></div>
-        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+        <button className="rf-ghost" onClick={handleBack}><ChevronLeft size={15}/> Back</button>
       </div>
-      {!parts && <NoBuildPicker saved={saved} onPick={onPickSaved} />}
+      {!parts && <NoBuildPicker saved={saved} onPick={setLocalBuild} />}
       {parts && <>
       <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
         {["fps","games"].map(t=><button key={t} className={"rf-pill"+(tab===t?" active":"")} onClick={()=>setTab(t)}>{t==="fps"?"⚡ FPS Estimator":"✅ Game Checker"}</button>)}
@@ -4841,7 +4973,12 @@ function FpsGamesView({ parts, onBack, saved, onPickSaved }) {
 }
 
 /* ---- Build Stats view ---- */
-function BuildStatsView({ parts, analysis, useCase, onBack, saved, onPickSaved }) {
+function BuildStatsView({ parts: propParts, analysis: propAnalysis, useCase: propUseCase, onBack, saved }) {
+  const [localBuild, setLocalBuild] = useState(null);
+  const parts = localBuild ? localBuild.parts : propParts;
+  const useCase = localBuild ? localBuild.useCase : propUseCase;
+  const analysis = useMemo(() => localBuild ? analyzeBuild(localBuild.parts, localBuild.useCase, localBuild.budget) : propAnalysis, [localBuild, propAnalysis]);
+  const handleBack = () => { if (localBuild) { setLocalBuild(null); return; } onBack(); };
   const [tab, setTab] = useState("card");
   const tier = analysis ? buildTierRating(analysis) : null;
   const card = parts && analysis ? buildReportCard(parts, analysis, useCase) : null;
@@ -4850,9 +4987,9 @@ function BuildStatsView({ parts, analysis, useCase, onBack, saved, onPickSaved }
     <div className="rf-fade rf-community">
       <div className="rf-section-head" style={{marginBottom:"1.2rem"}}>
         <div><h2 style={{margin:0}}>🏆 Build Stats</h2><p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Tier rating, component grades and smart tips</p></div>
-        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+        <button className="rf-ghost" onClick={handleBack}><ChevronLeft size={15}/> Back</button>
       </div>
-      {(!parts||!analysis) && <NoBuildPicker saved={saved} onPick={onPickSaved} />}
+      {(!parts||!analysis) && <NoBuildPicker saved={saved} onPick={setLocalBuild} />}
       {parts && analysis && <>
         <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
           {["card","tier","tips"].map(t=><button key={t} className={"rf-pill"+(tab===t?" active":"")} onClick={()=>setTab(t)}>{t==="card"?"📊 Report Card":t==="tier"?"🏆 Build Tier":"💡 Smart Tips"}</button>)}
@@ -4902,7 +5039,11 @@ function BuildStatsView({ parts, analysis, useCase, onBack, saved, onPickSaved }
 }
 
 /* ---- Power & Peripherals view ---- */
-function PowerPeripheralsView({ parts, useCase, onBack, saved, onPickSaved }) {
+function PowerPeripheralsView({ parts: propParts, useCase: propUseCase, onBack, saved }) {
+  const [localBuild, setLocalBuild] = useState(null);
+  const parts = localBuild ? localBuild.parts : propParts;
+  const useCase = localBuild ? localBuild.useCase : propUseCase;
+  const handleBack = () => { if (localBuild) { setLocalBuild(null); return; } onBack(); };
   const [tab, setTab] = useState("power");
   const pw = parts ? powerBreakdown(parts) : { items:[], total:0 };
   const ucKey = (USE_CASES[useCase] ? useCase : null) || "gaming";
@@ -4911,13 +5052,13 @@ function PowerPeripheralsView({ parts, useCase, onBack, saved, onPickSaved }) {
     <div className="rf-fade rf-community">
       <div className="rf-section-head" style={{marginBottom:"1.2rem"}}>
         <div><h2 style={{margin:0}}>🔋 Power & Peripherals</h2><p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Component wattage breakdown and peripheral suggestions</p></div>
-        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+        <button className="rf-ghost" onClick={handleBack}><ChevronLeft size={15}/> Back</button>
       </div>
       <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
         {["power","peripherals"].map(t=><button key={t} className={"rf-pill"+(tab===t?" active":"")} onClick={()=>setTab(t)}>{t==="power"?"🔋 Power Breakdown":"🖱️ Peripherals"}</button>)}
       </div>
       {tab==="power" && (
-        !parts ? <NoBuildPicker saved={saved} onPick={onPickSaved} /> :
+        !parts ? <NoBuildPicker saved={saved} onPick={setLocalBuild} /> :
         <div className="rf-pe-card" style={{maxWidth:"520px"}}>
           {pw.items.map(item=>{
             const pct=Math.round((item.watts/pw.total)*100);
@@ -4961,7 +5102,13 @@ function PowerPeripheralsView({ parts, useCase, onBack, saved, onPickSaved }) {
 }
 
 /* ---- Export & More view ---- */
-function ExportMoreView({ parts, analysis, useCase, budget, onBack, saved, onPickSaved }) {
+function ExportMoreView({ parts: propParts, analysis: propAnalysis, useCase: propUseCase, budget: propBudget, onBack, saved }) {
+  const [localBuild, setLocalBuild] = useState(null);
+  const parts = localBuild ? localBuild.parts : propParts;
+  const useCase = localBuild ? localBuild.useCase : propUseCase;
+  const budget = localBuild ? localBuild.budget : propBudget;
+  const analysis = useMemo(() => localBuild ? analyzeBuild(localBuild.parts, localBuild.useCase, localBuild.budget) : propAnalysis, [localBuild, propAnalysis]);
+  const handleBack = () => { if (localBuild) { setLocalBuild(null); return; } onBack(); };
   const [tab, setTab] = useState("export");
   const [copied, setCopied] = useState(false);
   const total = parts ? CATEGORY_ORDER.reduce((s,c)=>s+(parts[c]?.price||0),0) : 0;
@@ -5003,14 +5150,14 @@ function ExportMoreView({ parts, analysis, useCase, budget, onBack, saved, onPic
     <div className="rf-fade rf-community">
       <div className="rf-section-head" style={{marginBottom:"1.2rem"}}>
         <div><h2 style={{margin:0}}>📁 Export & More</h2><p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Export your build, compare eras, view summary card</p></div>
-        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+        <button className="rf-ghost" onClick={handleBack}><ChevronLeft size={15}/> Back</button>
       </div>
       <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
         {["export","era","summary"].map(t=><button key={t} className={"rf-pill"+(tab===t?" active":"")} onClick={()=>setTab(t)}>{t==="export"?"📁 Export":t==="era"?"📈 Era Compare":"🎯 Summary Card"}</button>)}
       </div>
 
       {tab==="export" && (
-        !parts ? <NoBuildPicker saved={saved} onPick={onPickSaved} /> :
+        !parts ? <NoBuildPicker saved={saved} onPick={setLocalBuild} /> :
         <div style={{display:"flex",flexDirection:"column",gap:"12px",maxWidth:"520px"}}>
           <div style={{display:"flex",gap:"10px",flexWrap:"wrap"}}>
             <button className="rf-btn" onClick={downloadTxt}><Save size={15}/> Download .txt</button>
@@ -5046,7 +5193,7 @@ function ExportMoreView({ parts, analysis, useCase, budget, onBack, saved, onPic
       )}
 
       {tab==="summary" && (
-        !parts ? <NoBuildPicker saved={saved} onPick={onPickSaved} /> :
+        !parts ? <NoBuildPicker saved={saved} onPick={setLocalBuild} /> :
         <div style={{maxWidth:"480px",padding:"24px",borderRadius:"14px",background:"linear-gradient(135deg,rgba(25,232,219,0.06),rgba(124,92,255,0.06))",border:"2px solid var(--c-accent)",fontFamily:"'Chakra Petch',sans-serif"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px"}}>
             <div>
@@ -5117,14 +5264,19 @@ function upgradeSuggestions(parts, useCase, budget) {
 }
 
 /* ----------------------------- ANALYZE VIEW ----------------------------- */
-function AnalyzeView({ parts, analysis, useCase, onBack, saved, onPickSaved }) {
+function AnalyzeView({ parts: propParts, analysis: propAnalysis, useCase: propUseCase, onBack, saved }) {
+  const [localBuild, setLocalBuild] = useState(null);
+  const parts = localBuild ? localBuild.parts : propParts;
+  const useCase = localBuild ? localBuild.useCase : propUseCase;
+  const analysis = useMemo(() => localBuild ? analyzeBuild(localBuild.parts, localBuild.useCase, localBuild.budget) : propAnalysis, [localBuild, propAnalysis]);
+  const handleBack = () => { if (localBuild) { setLocalBuild(null); return; } onBack(); };
   if (!parts || !analysis) return (
     <div className="rf-fade rf-community">
       <div className="rf-section-head" style={{marginBottom:"1rem"}}>
         <h2 style={{margin:0}}>🔬 Build Analysis</h2>
-        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+        <button className="rf-ghost" onClick={handleBack}><ChevronLeft size={15}/> Back</button>
       </div>
-      <NoBuildPicker saved={saved} onPick={onPickSaved} />
+      <NoBuildPicker saved={saved} onPick={setLocalBuild} />
     </div>
   );
   const thermal = thermalEstimate(parts);
@@ -5151,7 +5303,7 @@ function AnalyzeView({ parts, analysis, useCase, onBack, saved, onPickSaved }) {
           <h2 style={{margin:0}}>🔬 Build Analysis</h2>
           <p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Deep performance metrics for your current build</p>
         </div>
-        <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
+        <button className="rf-ghost" onClick={handleBack}><ChevronLeft size={15}/> Back</button>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(290px,1fr))",gap:"14px"}}>

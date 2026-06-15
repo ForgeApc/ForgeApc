@@ -1177,3 +1177,7 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .rf-no-build-card:hover{border-color:var(--c-accent);background:rgba(25,232,219,0.06);}
 .rf-no-build-name{font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:0.9rem;color:var(--c-text);}
 .rf-no-build-meta{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--c-accent);letter-spacing:0.3px;}
+
+/* Feedback modal */
+.pm-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;}
+.pm-modal-card{background:var(--c-bg);border:1px solid var(--c-border);border-radius:16px;padding:22px 24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.5);}
