@@ -2447,7 +2447,19 @@ function MoggerScoreCol({ title, build, s, win, shown, rank }) {
       <div className="pm-bigscore" style={rank ? { color: rank.color } : undefined}>{big}<small>/1000</small></div>
       <div className="pm-metrics"><span>Performance <b>{s.perf}</b></span><span>Compatibility <b>{s.compat}</b></span><span>Spent <b className={s.over ? "pm-red" : ""}>{fmt(s.spend)}</b></span></div>
       {s.issues.length > 0 && <div className="pm-issues">{s.issues.map((i, n) => <span key={n}><AlertTriangle size={11} /> {i}</span>)}</div>}
-      <div className="pm-buildlist">{CATEGORY_ORDER.map((c) => <span key={c}><i>{CAT_META[c].label}</i>{build[c] ? (build[c].model || build[c].name) : "—"}</span>)}</div>
+      <div className="pm-buildlist">
+        {CATEGORY_ORDER.map((c) => {
+          const p = build[c];
+          return (
+            <span key={c}>
+              {p && p.img
+                ? <img src={p.img} alt="" className="pm-buildlist-img" loading="lazy" />
+                : <span className="pm-buildlist-icon">{React.createElement(CAT_META[c].Icon, { size: 13 })}</span>}
+              <i>{CAT_META[c].label}</i>{p ? (p.model || p.name) : "—"}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -3884,6 +3896,11 @@ function Home({ saved, loading, onNew, onOpen, onDelete, priceInfo, onMogger, on
                     if (!pt && !noGpu) return null;
                     return (
                       <div key={c} className="rf-saved-part">
+                        <span className="rf-saved-part-thumb">
+                          {pt && pt.img
+                            ? <img src={pt.img} alt="" loading="lazy" />
+                            : React.createElement(CAT_META[c].Icon, { size: 14 })}
+                        </span>
                         <span className="rf-saved-part-cat">{tCat(c)}</span>
                         <span className="rf-saved-part-name">{pt ? pt.name : "Integrated graphics"}</span>
                       </div>
