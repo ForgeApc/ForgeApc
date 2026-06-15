@@ -1558,12 +1558,12 @@ export default function RigForge() {
         {view === "parts" && <PartsExplorer onBack={() => setView("home")} />}
         {view === "compare" && <CompareBuilds saved={saved} onBack={() => setView("home")} />}
         {view === "calendar" && <LaunchCalendar />}
-        {view === "analyze" && <AnalyzeView parts={parts} analysis={analysis} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} />}
-        {view === "tools" && <ToolsView parts={parts} analysis={analysis} useCase={useCase} budget={budget} onBack={() => setView(parts ? "results" : "home")} />}
-        {view === "fps-games" && <FpsGamesView parts={parts} onBack={() => setView(parts ? "results" : "home")} />}
-        {view === "build-stats" && <BuildStatsView parts={parts} analysis={analysis} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} />}
-        {view === "power-peripherals" && <PowerPeripheralsView parts={parts} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} />}
-        {view === "export-more" && <ExportMoreView parts={parts} analysis={analysis} useCase={useCase} budget={budget} onBack={() => setView(parts ? "results" : "home")} />}
+        {view === "analyze" && <AnalyzeView parts={parts} analysis={analysis} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} saved={saved} onPickSaved={(b) => { setUseCase(b.useCase); setBudget(b.budget); setParts(b.parts); }} />}
+        {view === "tools" && <ToolsView parts={parts} analysis={analysis} useCase={useCase} budget={budget} onBack={() => setView(parts ? "results" : "home")} saved={saved} onPickSaved={(b) => { setUseCase(b.useCase); setBudget(b.budget); setParts(b.parts); }} />}
+        {view === "fps-games" && <FpsGamesView parts={parts} onBack={() => setView(parts ? "results" : "home")} saved={saved} onPickSaved={(b) => { setUseCase(b.useCase); setBudget(b.budget); setParts(b.parts); }} />}
+        {view === "build-stats" && <BuildStatsView parts={parts} analysis={analysis} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} saved={saved} onPickSaved={(b) => { setUseCase(b.useCase); setBudget(b.budget); setParts(b.parts); }} />}
+        {view === "power-peripherals" && <PowerPeripheralsView parts={parts} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} saved={saved} onPickSaved={(b) => { setUseCase(b.useCase); setBudget(b.budget); setParts(b.parts); }} />}
+        {view === "export-more" && <ExportMoreView parts={parts} analysis={analysis} useCase={useCase} budget={budget} onBack={() => setView(parts ? "results" : "home")} saved={saved} onPickSaved={(b) => { setUseCase(b.useCase); setBudget(b.budget); setParts(b.parts); }} />}
         {view === "mogger" && <MoggerGame onExit={() => setView("home")} onSaveBuild={saveExternalBuild} />}
         {view === "mogger-admin" && <MoggerAdmin onBack={() => setView("home")} user={hdrUser} />}
         {view === "mogger-coadmin" && <MoggerCoAdmin onBack={() => setView("home")} bypass={true} />}
@@ -4397,7 +4397,31 @@ const SALE_DATES = [
   { name: "CES Launch Window", date: "Jan 2027", tip: "New GPU/CPU launches drive last-gen prices down." },
 ];
 
-function ToolsView({ parts, analysis, useCase, budget, onBack }) {
+// Shown inside any More view when no active build is loaded.
+// Lets the user search and pick from their saved rigs without leaving the view.
+function NoBuildPicker({ saved, onPick }) {
+  const [q, setQ] = useState("");
+  const list = (saved || []).filter((b) =>
+    !q || (b.name || "").toLowerCase().includes(q.toLowerCase()) || ((USE_CASES[b.useCase] || {}).label || "").toLowerCase().includes(q.toLowerCase())
+  );
+  return (
+    <div className="rf-no-build-picker">
+      <p className="rf-muted" style={{ marginBottom: "12px" }}>No active build — pick one of your saved rigs to analyse it here:</p>
+      <input className="rf-input" placeholder="Search saved builds…" value={q} onChange={(e) => setQ(e.target.value)} style={{ marginBottom: "10px" }} />
+      {list.length === 0 && <p className="rf-muted" style={{ fontSize: "0.82rem" }}>{(saved || []).length === 0 ? "No saved builds yet. Build and save one first." : "No builds match your search."}</p>}
+      <div className="rf-no-build-list">
+        {list.map((b) => (
+          <button key={b.id} className="rf-no-build-card" onClick={() => onPick(b)}>
+            <span className="rf-no-build-name">{b.name || "Untitled build"}</span>
+            <span className="rf-no-build-meta">{(USE_CASES[b.useCase] || {}).label || b.useCase} · {fmt(b.budget || 0)}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ToolsView({ parts, analysis, useCase, budget, onBack, saved, onPickSaved }) {
   const total = parts ? CATEGORY_ORDER.reduce((s,c) => s + (parts[c]?.price || 0), 0) : 0;
   const [payMonths, setPayMonths] = useState(12);
   const [payInterest, setPayInterest] = useState(0);
@@ -4481,7 +4505,7 @@ function ToolsView({ parts, analysis, useCase, budget, onBack }) {
         <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
       </div>
 
-      {!parts && <p className="rf-muted">Build a PC first to use the cost tools.</p>}
+      {!parts && <NoBuildPicker saved={saved} onPick={onPickSaved} />}
 
       {parts && (
         <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
@@ -4720,7 +4744,7 @@ function ToolsView({ parts, analysis, useCase, budget, onBack }) {
 }
 
 /* ---- FPS & Games view ---- */
-function FpsGamesView({ parts, onBack }) {
+function FpsGamesView({ parts, onBack, saved, onPickSaved }) {
   const [tab, setTab] = useState("fps");
   const gpuPerf = parts?.gpu?.perf || 0;
   const cores = parts?.cpu?.cores || 0;
@@ -4780,7 +4804,7 @@ function FpsGamesView({ parts, onBack }) {
 }
 
 /* ---- Build Stats view ---- */
-function BuildStatsView({ parts, analysis, useCase, onBack }) {
+function BuildStatsView({ parts, analysis, useCase, onBack, saved, onPickSaved }) {
   const [tab, setTab] = useState("card");
   const tier = analysis ? buildTierRating(analysis) : null;
   const card = parts && analysis ? buildReportCard(parts, analysis, useCase) : null;
@@ -4791,7 +4815,7 @@ function BuildStatsView({ parts, analysis, useCase, onBack }) {
         <div><h2 style={{margin:0}}>🏆 Build Stats</h2><p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Tier rating, component grades and smart tips</p></div>
         <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
       </div>
-      {(!parts||!analysis) && <p className="rf-muted">Build a PC first to see stats.</p>}
+      {(!parts||!analysis) && <NoBuildPicker saved={saved} onPick={onPickSaved} />}
       {parts && analysis && <>
         <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
           {["card","tier","tips"].map(t=><button key={t} className={"rf-pill"+(tab===t?" active":"")} onClick={()=>setTab(t)}>{t==="card"?"📊 Report Card":t==="tier"?"🏆 Build Tier":"💡 Smart Tips"}</button>)}
@@ -4841,7 +4865,7 @@ function BuildStatsView({ parts, analysis, useCase, onBack }) {
 }
 
 /* ---- Power & Peripherals view ---- */
-function PowerPeripheralsView({ parts, useCase, onBack }) {
+function PowerPeripheralsView({ parts, useCase, onBack, saved, onPickSaved }) {
   const [tab, setTab] = useState("power");
   const pw = parts ? powerBreakdown(parts) : { items:[], total:0 };
   const ucKey = (USE_CASES[useCase] ? useCase : null) || "gaming";
@@ -4856,7 +4880,7 @@ function PowerPeripheralsView({ parts, useCase, onBack }) {
         {["power","peripherals"].map(t=><button key={t} className={"rf-pill"+(tab===t?" active":"")} onClick={()=>setTab(t)}>{t==="power"?"🔋 Power Breakdown":"🖱️ Peripherals"}</button>)}
       </div>
       {tab==="power" && (
-        !parts ? <p className="rf-muted">Build a PC first.</p> :
+        !parts ? <NoBuildPicker saved={saved} onPick={onPickSaved} /> :
         <div className="rf-pe-card" style={{maxWidth:"520px"}}>
           {pw.items.map(item=>{
             const pct=Math.round((item.watts/pw.total)*100);
@@ -4900,7 +4924,7 @@ function PowerPeripheralsView({ parts, useCase, onBack }) {
 }
 
 /* ---- Export & More view ---- */
-function ExportMoreView({ parts, analysis, useCase, budget, onBack }) {
+function ExportMoreView({ parts, analysis, useCase, budget, onBack, saved, onPickSaved }) {
   const [tab, setTab] = useState("export");
   const [copied, setCopied] = useState(false);
   const total = parts ? CATEGORY_ORDER.reduce((s,c)=>s+(parts[c]?.price||0),0) : 0;
@@ -4949,7 +4973,7 @@ function ExportMoreView({ parts, analysis, useCase, budget, onBack }) {
       </div>
 
       {tab==="export" && (
-        !parts ? <p className="rf-muted">Build a PC first to export.</p> :
+        !parts ? <NoBuildPicker saved={saved} onPick={onPickSaved} /> :
         <div style={{display:"flex",flexDirection:"column",gap:"12px",maxWidth:"520px"}}>
           <div style={{display:"flex",gap:"10px",flexWrap:"wrap"}}>
             <button className="rf-btn" onClick={downloadTxt}><Save size={15}/> Download .txt</button>
@@ -4985,7 +5009,7 @@ function ExportMoreView({ parts, analysis, useCase, budget, onBack }) {
       )}
 
       {tab==="summary" && (
-        !parts ? <p className="rf-muted">Build a PC first.</p> :
+        !parts ? <NoBuildPicker saved={saved} onPick={onPickSaved} /> :
         <div style={{maxWidth:"480px",padding:"24px",borderRadius:"14px",background:"linear-gradient(135deg,rgba(25,232,219,0.06),rgba(124,92,255,0.06))",border:"2px solid var(--c-accent)",fontFamily:"'Chakra Petch',sans-serif"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px"}}>
             <div>
@@ -5056,14 +5080,14 @@ function upgradeSuggestions(parts, useCase, budget) {
 }
 
 /* ----------------------------- ANALYZE VIEW ----------------------------- */
-function AnalyzeView({ parts, analysis, useCase, onBack }) {
+function AnalyzeView({ parts, analysis, useCase, onBack, saved, onPickSaved }) {
   if (!parts || !analysis) return (
     <div className="rf-fade rf-community">
       <div className="rf-section-head" style={{marginBottom:"1rem"}}>
         <h2 style={{margin:0}}>🔬 Build Analysis</h2>
         <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
       </div>
-      <p className="rf-muted">Build a PC first to see your analysis.</p>
+      <NoBuildPicker saved={saved} onPick={onPickSaved} />
     </div>
   );
   const thermal = thermalEstimate(parts);
