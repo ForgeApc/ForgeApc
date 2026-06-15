@@ -103,6 +103,26 @@ const CATALOG_COUNT = Object.values(CATALOG).reduce((s, a) => s + a.length, 0);
 // Attach product image + link to each part (refreshed live by /api/prices when available).
 for (const _c in CATALOG) for (const _p of CATALOG[_c]) { const _m = MEDIA[_p.id]; if (_m) { _p.img = _m.img; _p.url = _m.url; } }
 
+// After MEDIA is attached, fill missing images from sibling variants.
+// Pass 1: exact model match (e.g. same GPU model, different variant).
+// Pass 2: family match — strips " 16GB DDR4-3600", " 750W", " 360" suffixes so that
+//         "G.Skill Ripjaws V 16GB DDR4-3200" reuses "G.Skill Ripjaws V 16GB DDR4-3600" image.
+const _famKey = (n) => (n || "").replace(/\s+\d+GB[\w\s-]*$/i, "").replace(/\s+\d+W\s*$/i, "").replace(/\s+\d+\s*$/, "").trim();
+for (const _pass of [0, 1]) {
+  for (const _c in CATALOG) {
+    for (const _p of CATALOG[_c]) {
+      if (_p.img) continue;
+      const _pKey = _pass === 0 ? (_p.model || _p.name) : _famKey(_p.model || _p.name);
+      const _sib = CATALOG[_c].find((s) => {
+        if (!s.img || s.id === _p.id) return false;
+        const _sKey = _pass === 0 ? (s.model || s.name) : _famKey(s.model || s.name);
+        return _sKey === _pKey;
+      });
+      if (_sib) { _p.img = _sib.img; _p.url = _sib.url; }
+    }
+  }
+}
+
 let PRICE_LIVE = false; // set true once live pricing has loaded
 const partOOS = (p) => PRICE_LIVE && p && p._live === false; // out of stock = no live price
 const fmt = (n) => "$" + (Number.isInteger(Number(n)) ? Number(n).toLocaleString() : Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
