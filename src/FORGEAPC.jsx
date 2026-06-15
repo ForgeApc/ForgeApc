@@ -2521,9 +2521,9 @@ function partJudgeSummary(cat, part, ucKey) {
   }
 }
 
-function MoggerResult({ round, you, opp, oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, onAgain, onMenu, onHistory, onSaveBuild, onMirror }) {
-  const sy = useMemo(() => moggerScore(you, round.useCase, round.budget), []);
-  const so = useMemo(() => moggerScore(opp, round.useCase, round.budget), []);
+function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, onAgain, onMenu, onHistory, onSaveBuild, onMirror }) {
+  const sy = useMemo(() => moggerScore(you, round.useCase, round.budget), [you, opp]);
+  const so = useMemo(() => moggerScore(opp, round.useCase, round.budget), [you, opp]);
   // B7: Sudden Death — zero score if over budget
   const sySD = round.suddenDeath && sy.over ? { ...sy, total: 0 } : sy;
   const soSD = round.suddenDeath && so.over ? { ...so, total: 0 } : so;
@@ -2531,7 +2531,7 @@ function MoggerResult({ round, you, opp, oppName, oppElo, oppTag, oppPersona, my
   const oppRank = oppElo != null ? moggerRank(oppElo) : null;
   const youWin = sySD.total >= soSD.total;
   const winnerBuild = youWin ? you : opp;
-  const mvpCat = useMemo(() => duelMVP(winnerBuild, round.useCase, round.budget), []);
+  const mvpCat = useMemo(() => duelMVP(winnerBuild, round.useCase, round.budget), [you, opp]);
   // Open breakdown automatically when you lose so the player sees why
   const [showBreakdown, setShowBreakdown] = useState(!youWin);
   // AI persona post-match quip
@@ -2629,18 +2629,18 @@ function MoggerResult({ round, you, opp, oppName, oppElo, oppTag, oppPersona, my
         </div>
       )}
       <div className="pm-scorecols">
-        <MoggerScoreCol title="You" build={you} s={sySD} win={youWin} shown={ay} rank={myRank} />
+        <MoggerScoreCol title={youLabel} build={you} s={sySD} win={youWin} shown={ay} rank={myRank} />
         <MoggerScoreCol title={oppName} build={opp} s={soSD} win={!youWin} shown={ao} rank={oppRank} />
       </div>
       {/* B4: efficiency medal */}
       {effMedal && phase === "reveal" && <div className="pm-eff-medal">{effMedal} — Score {sy.total}/1000</div>}
       {/* A5: Budget efficiency row */}
-      {phase === "reveal" && <div className="pm-budget-eff-row"><span>Budget used: <b style={{color: budgEff > 100 ? "var(--c-bad)" : budgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{budgEff}%</b> you · <b style={{color: oppBudgEff > 100 ? "var(--c-bad)" : oppBudgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{oppBudgEff}%</b> {oppName}</span></div>}
-      {mvpCat && <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? "you" : oppName}</div>}
+      {phase === "reveal" && <div className="pm-budget-eff-row"><span>Budget used: <b style={{color: budgEff > 100 ? "var(--c-bad)" : budgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{budgEff}%</b> {youLabel} · <b style={{color: oppBudgEff > 100 ? "var(--c-bad)" : oppBudgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{oppBudgEff}%</b> {oppName}</span></div>}
+      {mvpCat && <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? youLabel : oppName}</div>}
       <button className="rf-btn rf-ghost-btn pm-breakdown-toggle" onClick={() => setShowBreakdown((v) => !v)}>{showBreakdown ? "▲ Hide" : "▼ Show"} part-by-part breakdown</button>
       {showBreakdown && (
         <div className="pm-breakdown">
-          <div className="pm-breakdown-head"><span>You</span><span>Part</span><span>{oppName}</span></div>
+          <div className="pm-breakdown-head"><span>{youLabel}</span><span>Part</span><span>{oppName}</span></div>
           {CATEGORY_ORDER.map((c) => {
             const yp = you[c], op = opp[c];
             const Icon = CAT_META[c].Icon;
@@ -3465,6 +3465,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const [rankedAsk, setRankedAsk] = useState(false);
   const [custom, setCustom] = useState(1500);
   const [eloMsg, setEloMsg] = useState(null);
+  const [mirrored, setMirrored] = useState(false);
   const eloAppliedRef = useRef(false);
   const [streak, setStreak] = useState(() => { try { return +(localStorage.getItem("mogger_streak") || 0); } catch(e) { return 0; } });
   const [bestStreak, setBestStreak] = useState(() => { try { return +(localStorage.getItem("mogger_best_streak") || 0); } catch(e) { return 0; } });
@@ -3526,8 +3527,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const start = (r) => { setRound(r); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); if (mode === "ai") setOpp(moggerAI(r.useCase, r.budget, aiElo)); setScreen("intro"); };
   const finishP1 = (b) => { setYou(b); if (mode === "ai") setScreen("result"); else setScreen("handoff"); };
   const finishP2 = (b) => { setOpp(b); setScreen("result"); };
-  const again = () => { setYou(null); setOpp(null); setEloMsg(null); eloAppliedRef.current = false; setScreen(mode === "ai" ? "diff" : "lobby"); };
-  const menu = () => { setYou(null); setOpp(null); setRound(null); setEloMsg(null); setScreen("menu"); };
+  const again = () => { setYou(null); setOpp(null); setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; setScreen(mode === "ai" ? "diff" : "lobby"); };
+  const menu = () => { setYou(null); setOpp(null); setRound(null); setEloMsg(null); setMirrored(false); setScreen("menu"); };
   const exitToRoot = () => {
     try { if (typeof window !== "undefined" && window.history) { const p = window.location.pathname.replace(/\/+$/, "").split("/").pop(); if (p === "admin" || p === "coadmin") window.history.replaceState(null, "", "/"); } } catch (e) {}
     onExit();
@@ -3720,7 +3721,12 @@ function MoggerGame({ onExit, onSaveBuild }) {
       {screen === "handoff" && <div className="pm-card pm-center rf-fade"><h2 className="pm-h2"><Repeat2 size={20} /> Pass the device</h2><p className="pm-p">Player 1 is locked in. Hand the device to <b>Player 2</b> — same challenge, same clock. No peeking.</p><button className="rf-btn" onClick={() => setScreen("intro2")}>I am Player 2 — start <ChevronRight size={16} /></button></div>}
       {screen === "intro2" && round && <MoggerIntro round={round} player="Player 2" onGo={() => setScreen("p2")} />}
       {screen === "p2" && round && <MoggerBuild round={round} player="Player 2" oppLabel="Player 1" oppBuild={you} oppIsAI={false} oppLocked={true} onDone={finishP2} />}
-      {screen === "result" && round && you && opp && <MoggerResult round={round} you={you} opp={opp} oppName={mode === "ai" ? aiPersona(aiElo).name : "Player 2"} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} onAgain={again} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); setScreen("result"); }} />}
+      {screen === "result" && round && you && opp && (() => {
+        const aiName = mode === "ai" ? aiPersona(aiElo).name : "Player 2";
+        const resultYouLabel = mirrored ? aiName : "You";
+        const resultOppName  = mirrored ? "You" : aiName;
+        return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} onAgain={again} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
+      })()}
     </div>
   );
 }
@@ -4789,10 +4795,12 @@ function FpsGamesView({ parts, onBack, saved, onPickSaved }) {
         <div><h2 style={{margin:0}}>🎮 FPS & Game Checker</h2><p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Estimated FPS and game compatibility for your build</p></div>
         <button className="rf-ghost" onClick={onBack}><ChevronLeft size={15}/> Back</button>
       </div>
+      {!parts && <NoBuildPicker saved={saved} onPick={onPickSaved} />}
+      {parts && <>
       <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
         {["fps","games"].map(t=><button key={t} className={"rf-pill"+(tab===t?" active":"")} onClick={()=>setTab(t)}>{t==="fps"?"⚡ FPS Estimator":"✅ Game Checker"}</button>)}
       </div>
-      {!parts?.gpu && <p className="rf-muted">Add a GPU to see estimates.</p>}
+      {!parts.gpu && <p className="rf-muted">Add a GPU to see estimates.</p>}
       {parts?.gpu && tab === "fps" && (
         <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
           <div style={{display:"grid",gridTemplateColumns:"2fr repeat(3,1fr)",gap:"0",background:"var(--c-panel)",borderRadius:"10px",overflow:"hidden",fontSize:"0.78rem",fontWeight:700,color:"var(--c-muted)",border:"1px solid var(--c-border)"}}>
@@ -4827,6 +4835,7 @@ function FpsGamesView({ parts, onBack, saved, onPickSaved }) {
           })}
         </div>
       )}
+      </>}
     </div>
   );
 }
