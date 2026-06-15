@@ -928,7 +928,7 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .rf-pe-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:0.75rem;}
 .rf-pe-filters .rf-input{margin-bottom:0;}
 .rf-pe-price-wrap{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.rf-slider{accent-color:var(--c-accent);width:120px;}
+.rf-pe-price-wrap .rf-slider{accent-color:var(--c-accent);width:120px;}
 .rf-pe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
 .rf-pe-card{background:var(--c-panel);border:1px solid var(--c-border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:4px;transition:border-color .15s;}
 .rf-pe-card:hover{border-color:var(--c-accent);}
@@ -1009,3 +1009,150 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .rf-analyze-title{font-weight:700;font-size:0.93rem;margin-bottom:10px;}
 .rf-analyze-row{display:flex;justify-content:space-between;align-items:center;font-size:0.84rem;margin-bottom:4px;}
 .rf-more-menu{max-height:80vh;overflow-y:auto;}
+
+/* ---- PC Duels new features ---- */
+.pm-taunt{font-size:0.72rem;color:var(--c-accent2);font-style:italic;margin-top:4px;opacity:0.85;max-width:130px;text-align:center;line-height:1.3;}
+.pm-streak-banner{text-align:center;font-size:0.85rem;color:var(--c-warn);margin-bottom:10px;letter-spacing:0.01em;}
+.pm-streak-best{color:var(--c-muted);margin-left:4px;}
+.pm-mvp-banner{background:rgba(255,194,75,0.08);border:1px solid rgba(255,194,75,0.3);border-radius:8px;padding:10px 14px;font-size:0.83rem;color:var(--c-warn);margin:10px 0;}
+.pm-mvp-cat{color:var(--c-muted);}
+.pm-breakdown-toggle{margin:10px auto 0;display:block;font-size:0.8rem;}
+.pm-breakdown{background:var(--c-panel);border-radius:10px;padding:12px;margin-top:6px;}
+.pm-breakdown-head{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;font-size:0.72rem;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;text-align:center;}
+.pm-breakdown-row{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;padding:5px 0;border-bottom:1px solid var(--c-border);align-items:center;font-size:0.77rem;}
+.pm-breakdown-row:last-child{border-bottom:none;}
+.pm-breakdown-part{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pm-breakdown-part.opp{text-align:right;}
+.pm-breakdown-part.mvp{color:var(--c-warn);font-weight:700;}
+.pm-mvp-tag{margin-left:3px;}
+.pm-breakdown-cat{font-size:0.68rem;color:var(--c-muted);text-align:center;white-space:nowrap;display:flex;align-items:center;gap:3px;justify-content:center;}
+.pm-hist-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.pm-hist-row{display:grid;grid-template-columns:80px 1fr auto auto auto;gap:8px;align-items:center;background:var(--c-panel);border-radius:8px;padding:8px 12px;font-size:0.78rem;}
+.pm-hist-row.win{border-left:3px solid var(--c-good);}
+.pm-hist-row.lose{border-left:3px solid var(--c-bad);}
+.pm-hist-result{font-weight:700;font-size:0.72rem;}
+.pm-hist-row.win .pm-hist-result{color:var(--c-good);}
+.pm-hist-row.lose .pm-hist-result{color:var(--c-bad);}
+.pm-hist-score{color:var(--c-accent);font-weight:600;font-size:0.75rem;}
+.pm-hist-opp{color:var(--c-muted);}
+.pm-hist-date{color:var(--c-muted);font-size:0.72rem;}
+.pm-dim{color:var(--c-muted);}
+@media(max-width:500px){.pm-hist-row{grid-template-columns:60px 1fr;gap:4px;}.pm-hist-score,.pm-hist-opp,.pm-hist-date{display:none;}}
+
+/* ============================================================
+   NEW FEATURES CSS (A2-A7, B1-B7, C1-C15)
+   ============================================================ */
+
+/* A2: Match Replay */
+.pm-replay-table{width:100%;border-collapse:collapse;font-size:0.8rem;margin:10px 0;}
+.pm-replay-table td{padding:6px 8px;border-bottom:1px solid var(--c-border);}
+.pm-replay-table td.right{text-align:right;}
+.pm-replay-table td.cat{text-align:center;color:var(--c-muted);font-size:0.72rem;font-weight:700;text-transform:uppercase;}
+
+/* A3: Stats row */
+.pm-stats-row{display:flex;gap:16px;flex-wrap:wrap;padding:8px 12px;background:var(--c-panel);border-radius:10px;margin-bottom:10px;font-size:0.82rem;}
+.pm-stats-row span{color:var(--c-muted);}
+.pm-stats-row b{color:var(--c-text);}
+
+/* A5: Budget efficiency */
+.pm-budget-eff-row{padding:8px 14px;background:rgba(25,232,219,0.06);border:1px solid rgba(25,232,219,0.2);border-radius:10px;font-size:0.8rem;margin:8px 0;}
+
+/* A6: Close Call badge */
+.pm-close-call{margin-left:10px;font-size:0.65rem;background:rgba(255,194,75,0.15);border:1px solid rgba(255,194,75,0.4);color:var(--c-warn);border-radius:20px;padding:3px 9px;vertical-align:middle;font-family:'JetBrains Mono',monospace;}
+.pm-sd-badge{margin-left:8px;font-size:0.65rem;background:rgba(255,92,114,0.15);border:1px solid rgba(255,92,114,0.4);color:var(--c-bad);border-radius:20px;padding:3px 9px;vertical-align:middle;}
+
+/* A7: Taunt picker */
+.pm-taunt-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;}
+.pm-taunt-btn{padding:10px 14px;background:var(--c-panel);border:1px solid var(--c-border);border-radius:10px;color:var(--c-text);font-size:0.82rem;cursor:pointer;text-align:left;transition:border-color .2s,background .2s;}
+.pm-taunt-btn:hover{border-color:var(--c-accent);background:rgba(25,232,219,0.06);}
+.pm-taunt-btn.on{border-color:var(--c-accent);background:rgba(25,232,219,0.12);color:var(--c-accent);font-weight:600;}
+@media(max-width:500px){.pm-taunt-grid{grid-template-columns:1fr;}}
+
+/* B1: Achievements */
+.pm-ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:12px 0;}
+.pm-ach-item{padding:12px;border-radius:10px;background:var(--c-panel);border:1px solid var(--c-border);text-align:center;transition:border-color .2s;}
+.pm-ach-item.unlocked{border-color:var(--c-accent);background:rgba(25,232,219,0.06);}
+.pm-ach-item.locked{opacity:0.45;filter:grayscale(1);}
+.pm-ach-icon{font-size:1.8rem;margin-bottom:4px;}
+.pm-ach-name{font-weight:700;font-size:0.8rem;margin-bottom:2px;}
+.pm-ach-desc{font-size:0.7rem;color:var(--c-muted);}
+
+/* B3: Daily challenge */
+.pm-daily{border-color:var(--c-warn) !important;background:rgba(255,194,75,0.05) !important;}
+.pm-daily .pm-mode-icon{color:var(--c-warn);}
+
+/* B4: Efficiency medal */
+.pm-eff-medal{text-align:center;padding:8px 14px;background:rgba(25,232,219,0.08);border:1px solid rgba(25,232,219,0.25);border-radius:10px;font-size:0.84rem;font-weight:600;margin:8px 0;}
+
+/* C1-C5: Home upgrades */
+.rf-pinned{border-color:var(--c-accent) !important;}
+.rf-build-note{font-size:0.75rem;color:var(--c-muted);padding:4px 0;font-style:italic;white-space:pre-wrap;word-break:break-word;}
+
+/* C11: Sale badge in picker */
+.rf-sale-badge{display:inline-block;margin-left:6px;font-size:0.65rem;font-weight:700;background:rgba(255,92,114,0.18);border:1px solid rgba(255,92,114,0.45);color:#ff7070;border-radius:10px;padding:1px 7px;vertical-align:middle;font-family:'JetBrains Mono',monospace;letter-spacing:0.04em;}
+
+/* C12: Monthly cost / cashback tools */
+.rf-tools-planner-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:10px;}
+
+/* C15: Patch notes modal */
+.rf-patch-modal{max-width:560px;}
+.rf-patch-list{max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:18px;padding:4px 0;}
+.rf-patch-entry{display:flex;flex-direction:column;gap:4px;}
+.rf-patch-entry ul{margin:4px 0 0 18px;padding:0;color:var(--c-muted);font-size:0.83rem;line-height:1.8;}
+.rf-patch-ver{font-weight:700;color:var(--c-accent);font-family:'JetBrains Mono',monospace;font-size:0.9rem;}
+.rf-patch-date{font-size:0.75rem;color:var(--c-muted);}
+
+/* Update history list columns for new ▶ View button */
+.pm-hist-row{grid-template-columns:70px 1fr auto auto auto auto !important;}
+
+/* Mirror match label */
+.pm-mirror-label{font-size:0.75rem;color:var(--c-muted);text-align:center;margin:4px 0;}
+
+/* Feature 1: Post-game duel rating */
+.pm-rate-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0;padding:8px 14px;background:rgba(124,92,255,0.07);border-radius:10px;}
+.pm-rate-label{font-size:0.8rem;color:var(--c-muted);}
+.pm-rate-btn{background:rgba(255,255,255,0.06);border:1px solid var(--c-border);border-radius:8px;padding:4px 12px;font-size:1.2rem;cursor:pointer;transition:background 0.15s,border-color 0.15s;}
+.pm-rate-btn:hover{background:rgba(255,255,255,0.12);}
+.pm-rate-btn.on{background:rgba(25,232,219,0.18);border-color:var(--c-accent);}
+.pm-rate-thanks{font-size:0.78rem;color:var(--c-good);font-weight:600;}
+
+/* Feature 2: Win/loss sparkline */
+.pm-spark-row{display:flex;align-items:center;justify-content:center;gap:5px;margin:6px 0 8px;flex-wrap:wrap;}
+.pm-spark-dot{display:inline-block;width:10px;height:10px;border-radius:50%;}
+.pm-spark-dot.win{background:var(--c-good);}
+.pm-spark-dot.lose{background:var(--c-bad);}
+
+/* Feature 3: Duel tips */
+.pm-duel-tip{margin-top:8px;padding:7px 10px;background:rgba(25,232,219,0.07);border:1px solid rgba(25,232,219,0.18);border-radius:8px;font-size:0.72rem;color:var(--c-muted);line-height:1.4;text-align:center;}
+
+/* Feature 8: Best value badge */
+.rf-best-val{background:rgba(70,224,160,0.18);color:var(--c-good);font-size:0.62rem;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:700;}
+
+/* Feature 9: Comeback badge */
+.pm-comeback{color:var(--c-accent2);font-size:0.75rem;font-weight:700;margin-left:8px;}
+
+/* ── AI Persona & result enhancements ─────────────────────────────── */
+.pm-lobby-wide{max-width:680px;}
+.pm-opp-persona{display:flex;align-items:center;gap:10px;justify-content:center;margin:8px 0 12px;flex-wrap:wrap;}
+.pm-opp-persona-name{font-family:'Chakra Petch';font-weight:700;font-size:1rem;color:var(--c-accent2);}
+.pm-opp-persona-tag{font-size:0.72rem;color:var(--c-muted);font-style:italic;}
+.pm-opp-persona-quip{font-size:0.78rem;color:var(--c-text);font-style:italic;opacity:0.85;}
+/* Per-category score % in breakdown */
+.pm-bd-pct{font-size:0.65rem;font-weight:700;margin-left:5px;padding:1px 4px;border-radius:4px;background:rgba(255,255,255,0.06);}
+.pm-bd-pct.win{color:var(--c-good);}
+.pm-bd-pct.lose{color:var(--c-bad);}
+.pm-bd-alloc{font-size:0.6rem;color:var(--c-muted);margin-left:3px;}
+.pm-breakdown-note{font-size:0.65rem;color:var(--c-muted);text-align:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--c-border);}
+/* Intro opponent banner */
+.pm-intro-opp{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:16px;}
+.pm-intro-opp-vs{font-size:0.7rem;color:var(--c-muted);text-transform:uppercase;letter-spacing:0.1em;}
+.pm-intro-opp-name{font-family:'Chakra Petch';font-size:1.3rem;font-weight:700;color:var(--c-accent2);}
+.pm-intro-opp-tag{font-size:0.72rem;color:var(--c-muted);font-style:italic;}
+/* Rivals row on menu */
+.pm-rivals-row{text-align:center;font-size:0.73rem;color:var(--c-muted);margin-bottom:6px;}
+.pm-rivals-row b{color:var(--c-text);}
+
+/* Quick-access row at top of duel menu */
+.pm-quick-row{display:flex;gap:8px;justify-content:center;margin:0 auto 14px;flex-wrap:wrap;max-width:430px;}
+.pm-quick-btn{flex:1;min-width:90px;padding:8px 10px;border-radius:10px;border:1px solid var(--c-border);background:var(--c-panel);color:var(--c-text);font-size:0.78rem;font-weight:600;cursor:pointer;transition:border-color .15s,background .15s;}
+.pm-quick-btn:hover{border-color:var(--c-accent);background:rgba(25,232,219,0.07);}

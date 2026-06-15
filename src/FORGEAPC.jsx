@@ -976,6 +976,7 @@ export default function RigForge() {
   const [payBanner, setPayBanner] = useState(null); // { ok, text }
   const [lang, setLang] = useState("en");
   CUR_LANG = lang;
+  const [showPatch, setShowPatch] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -1256,6 +1257,7 @@ export default function RigForge() {
       if (e.key === "p") setView("parts");
       if (e.key === "x") setView("compare");
       if (e.key === "m") setView("mogger");
+      if (e.key === "d") setView("mogger");
       if (e.key === "s" && view === "results") setSavingOpen(true);
       if (e.key === "a" && view === "results") generateAuto();
       if (e.key === "Escape") { setSavingOpen(false); setPowerOpen(false); setView3D(false); }
@@ -1420,6 +1422,7 @@ export default function RigForge() {
               </div>
             )}
           </div>
+          <button className="rf-ghost rf-plans-btn" onClick={() => setShowPatch(true)}>✨ What's New</button>
           <button className="rf-ghost rf-plans-btn" onClick={() => setPlansOpen(true)}><Sparkles size={15} /> Plans</button>
           {hdrUser ? (
             <>
@@ -1542,7 +1545,14 @@ export default function RigForge() {
 
       <main className="rf-main">
         {view === "home" && (
-          <Home saved={saved} loading={loadingSaved} onNew={startSurvey} onOpen={openSaved} onDelete={deleteBuild} priceInfo={priceInfo} onMogger={() => setView("mogger")} />
+          <Home saved={saved} loading={loadingSaved} onNew={startSurvey} onOpen={openSaved} onDelete={deleteBuild} priceInfo={priceInfo} onMogger={() => setView("mogger")}
+            onClone={async (b) => {
+              const clone = { ...b, id: "b" + Date.now(), name: b.name + " (Copy)", savedAt: Date.now() };
+              await sSet("build:" + clone.id, clone);
+              await refreshSaved();
+              flash("Build cloned!");
+            }}
+          />
         )}
         {view === "community" && <CommunityBuilds user={hdrUser} onLogin={() => setHdrAuth(true)} onBack={() => setView("home")} />}
         {view === "parts" && <PartsExplorer onBack={() => setView("home")} />}
@@ -1584,6 +1594,22 @@ export default function RigForge() {
           />
         )}
       </main>
+
+      {showPatch && (
+        <div className="rf-modal-wrap" onClick={() => setShowPatch(false)}>
+          <div className="rf-modal rf-patch-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="rf-modal-head" style={{justifyContent:"space-between"}}>
+              <span>✨ What's New in ForgeAPC</span>
+              <button className="rf-icon-btn" onClick={() => setShowPatch(false)}><X size={16} /></button>
+            </div>
+            <div className="rf-patch-list">
+              <div className="rf-patch-entry"><span className="rf-patch-ver">v2.5</span><span className="rf-patch-date">Jun 2026</span><ul><li>PC Duels: Match replay — re-watch any past duel part-by-part</li><li>PC Duels: Pre-match taunt picker</li><li>PC Duels: Confetti on win, Sudden Death mode, Mirror Match</li><li>PC Duels: Daily Challenge, achievement badges, build efficiency medal</li><li>My Rigs: Clone build, search, pin/favorite, build notes, completeness ring</li><li>Analyze: Noise estimate, weight estimate, streaming quality card, upgrade path</li><li>Analyze: Streaming &amp; LAN setup checklists</li><li>Tools: Monthly cost planner, cashback &amp; tax calculator</li><li>Share: Copy build as text or URL, share duel result</li><li>Parts: Sale badges in PC Duels picker</li><li>Shortcuts: Press D to jump to PC Duels</li></ul></div>
+              <div className="rf-patch-entry"><span className="rf-patch-ver">v2.4</span><span className="rf-patch-date">Apr 2026</span><ul><li>Online multiplayer with real-time matchmaking</li><li>Global elo leaderboard</li><li>Ranked crank titles (Rookie → God Tier)</li><li>AI judge verdict after every duel</li></ul></div>
+              <div className="rf-patch-entry"><span className="rf-patch-ver">v2.3</span><span className="rf-patch-date">Feb 2026</span><ul><li>3D build preview</li><li>Live price feeds</li><li>Streaming &amp; content creator use-case</li></ul></div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {picker && (
         <Picker
@@ -1709,9 +1735,11 @@ function moggerScore(build, ucKey, budget) {
   // Runs on the same engine FORGEAPC uses: checkCompat + use-case-normalized
   // performance (analyzeBuild). Mogger rule on top: any issue OR missing part = 0.
   const a = analyzeBuild(build, ucKey, budget);
-  const filled = CATEGORY_ORDER.filter((c) => build[c]).length;
+  // Office legitimately skips a discrete GPU — don't penalise for it
+  const _need = CATEGORY_ORDER.filter((c) => !(c === "gpu" && USE_CASES[ucKey]?.alloc?.gpu === 0));
+  const filled = _need.filter((c) => build[c]).length;
   const issues = [...a.compat.issues];
-  if (filled < CATEGORY_ORDER.length) issues.push("Build is incomplete — missing parts");
+  if (filled < _need.length) issues.push("Build is incomplete — missing parts");
   const spend = a.total, over = spend > budget, overBy = Math.max(0, spend - budget);
   const perfPct = Math.round(a.fitNorm * 100);
   if (issues.length > 0) return { total: 0, perf: perfPct, value: 0, compat: 0, completeness: Math.round((filled / CATEGORY_ORDER.length) * 100), spend, over, overBy, issues, dead: true };
@@ -1720,17 +1748,33 @@ function moggerScore(build, ucKey, budget) {
   return { total: Math.round(clamp(raw, 0, 1) * 1000), perf: perfPct, value: a.ppScore, compat: 100, completeness: 100, spend, over, overBy, issues: [] };
 }
 
-// elo-driven AI. Higher elo => stronger, more consistent builds.
-//  - mistake chance curve: ~13% at low elo -> ~0.05% at 3000 (a mistake = a weaker but still COMPATIBLE pick)
-//  - only the lowest levels (elo < 400) can build something incompatible, at 5%
-function moggerAI(ucKey, budget, elo) {
-  elo = (typeof elo === "number" && isFinite(elo)) ? clamp(elo, 0, 3000) : 600;
-  const pMistake = elo >= 3000 ? 0 : Math.max(0.0005, 0.13 * Math.pow(1 - elo / 3000, 2));
-  const pIncompat = elo < 400 ? 0.05 : 0;
+// ---- AI opponent (elo-driven), v2 ----
+// Instead of a single myopic perf-per-dollar greedy, the AI now GENERATES several
+// diverse candidate builds and SCORES each with the real moggerScore(), then picks
+// one by elo. This means:
+//   - it optimizes the exact thing it's judged on (no proxy-objective mismatch),
+//   - high elo reliably lands a near-optimal, full-budget build,
+//   - low elo lands a deliberately weaker (but still coherent) build,
+//   - difficulty scales smoothly instead of feeling random.
+//
+// mBuildCandidate builds ONE complete, compatible, budget-valid build given a spend
+// cap and a strategy (metric = how upgrades are ranked, topK = how much randomness).
+function mBuildCandidate(ucKey, budget, cap, metric, topK) {
   const W = USE_CASES[ucKey].alloc;
   const build = {};
   const order = [...CATEGORY_ORDER].sort((a, b) => (W[b] || 0) - (W[a] || 0));
-  const draw = () => mEstDraw(build);
+  const up = (c, o) => ucPerf(c, o, ucKey);
+  // Hard spend cap per category: no more than 2× the use-case budget band.
+  // This prevents an AI from sinking 40% of a gaming budget into CPU at the
+  // expense of GPU, and stops office builds from buying overkill CPUs.
+  const catCap = {};
+  for (const c of CATEGORY_ORDER) {
+    catCap[c] = W[c] > 0 ? Math.round(budget * (W[c] / 100) * 2.0) : 0;
+  }
+  // Structural parts (mobo/cooler/psu/case) always get at least a $70 ceiling
+  // even when their alloc weight is small, so they remain upgradeable.
+  for (const c of ["mobo", "cooler", "psu", "case"]) { if (!catCap[c]) catCap[c] = 70; }
+  const spent = () => CATEGORY_ORDER.reduce((s, c) => s + (build[c] ? build[c].price : 0), 0);
   const ok = (c, o) => {
     if (c === "mobo" && build.cpu && o.socket !== build.cpu.socket) return false;
     if (c === "cpu" && build.mobo && o.socket !== build.mobo.socket) return false;
@@ -1738,59 +1782,77 @@ function moggerAI(ucKey, budget, elo) {
     if (c === "psu" && o.watt && o.watt < requiredWatts(build) * 1.25) return false;
     return true;
   };
-  const spent = () => CATEGORY_ORDER.reduce((s, c) => s + (build[c] ? build[c].price : 0), 0);
-  const up = (c, o) => ucPerf(c, o, ucKey); // engine's use-case-adjusted perf — the thing that's actually scored
-
-  // lowest-level fumble: deliberately incompatible build (scores 0)
-  if (Math.random() < pIncompat) {
-    for (const c of order) { const opts = [...moggerOptions(c)].sort((a, b) => a.price - b.price); build[c] = opts[0]; }
-    if (build.cpu) { const wrong = moggerOptions("mobo").find((m) => m.socket !== build.cpu.socket); if (wrong) build.mobo = wrong; }
-    return build;
-  }
-
-  // 1) Valid, complete, cheap base.
-  for (const c of order) { const opts = [...moggerOptions(c)].sort((a, b) => a.price - b.price); build[c] = opts.find((o) => ok(c, o)) || opts[0]; }
-
-  // 2) Quality scales with elo: weak players aim lower, strong players use the full budget optimally.
-  const cap = elo >= 3000 ? budget : budget * clamp(0.82 + (elo / 3000) * 0.15, 0.82, 0.97);
   const cheapestMobo = (sock) => moggerOptions("mobo").filter((m) => m.socket === sock).sort((a, b) => a.price - b.price)[0];
   const cheapestCooler = (cpu) => moggerOptions("cooler").filter((cl) => (!cl.sockets || cl.sockets.includes(cpu.socket)) && (!cl.tdpRating || cl.tdpRating >= cpu.tdp)).sort((a, b) => a.price - b.price)[0];
 
-  // 3) Greedy upgrade pass: best weighted perf-per-extra-dollar upgrade that still fits.
+  // 1) Valid, complete, cheap base.
+  for (const c of order) {
+    if (catCap[c] === 0) continue; // skip zero-alloc categories (e.g. gpu for office)
+    const opts = [...moggerOptions(c)].sort((a, b) => a.price - b.price);
+    if (c === "cpu" && W.gpu === 0) {
+      // GPU-less build: must use a CPU with integrated graphics
+      const iOpts = opts.filter((o) => o.igpu);
+      build[c] = (iOpts.find((o) => ok(c, o)) || iOpts[0]) || opts.find((o) => ok(c, o)) || opts[0];
+    } else {
+      build[c] = opts.find((o) => ok(c, o)) || opts[0];
+    }
+  }
+
+  // upgrade ranking metric:
+  //   "ratio" = weighted perf-per-extra-dollar (efficient, value-leaning)
+  //   "abs"   = weighted absolute perf gain (commits to big high-impact parts like the GPU)
+  const gainOf = (c, cur, o, delta) => {
+    const w = W[c] || 0.02, dperf = up(c, o) - up(c, cur);
+    return metric === "abs" ? dperf * w : (dperf * w) / delta;
+  };
+
+  // 2) Greedy upgrade pass. Collect every affordable improving move, rank them, and
+  //    pick from the top-K (K=1 is deterministic/strongest; K>1 adds believable variety).
   let guard = 0, improved = true;
-  while (improved && guard++ < 500) {
+  while (improved && guard++ < 600) {
     improved = false;
-    let best = null;
+    const moves = [];
     for (const c of order) {
-      if (c === "psu") continue; // PSU is sized in fixValid — don't upgrade for "perf"
-      const w = W[c] || 0.02, cur = build[c];
-      const vceil = VALUE_CEILING[c];
+      if (c === "psu") continue; // PSU is sized in fixValid — not a "perf" upgrade
+      if (catCap[c] === 0) continue; // never upgrade zero-alloc categories (e.g. gpu for office)
+      const cur = build[c]; if (!cur) continue;
+      // Respect both the global VALUE_CEILING and the per-category use-case cap
+      const vceil = Math.min(VALUE_CEILING[c] ?? Infinity, catCap[c] || Infinity);
       for (const o of moggerOptions(c)) {
-        if (!ok(c, o) || !cur || up(c, o) <= up(c, cur)) continue;
+        if (!ok(c, o) || up(c, o) <= up(c, cur)) continue;
         const delta = o.price - cur.price; if (delta <= 0) continue;
-        if (vceil && o.price > vceil) continue; // don't overspend on capped categories
+        if (vceil !== Infinity && o.price > vceil) continue;
         if (spent() - cur.price + o.price > cap) continue;
-        const gain = (up(c, o) - up(c, cur)) * w / delta;
-        if (!best || gain > best.gain) best = { kind: "one", c, part: o, gain };
+        moves.push({ kind: "one", c, part: o, gain: gainOf(c, cur, o, delta) });
       }
     }
     if (build.cpu) {
       for (const cpu of moggerOptions("cpu")) {
         if (up("cpu", cpu) <= up("cpu", build.cpu)) continue;
+        if (catCap.cpu && cpu.price > catCap.cpu) continue; // don't over-invest in CPU
+        if (W.gpu === 0 && !cpu.igpu) continue; // GPU-less builds must keep an iGPU CPU
         const mobo = cheapestMobo(cpu.socket), cooler = cheapestCooler(cpu);
         if (!mobo || !cooler) continue;
         const oldCost = build.cpu.price + (build.mobo ? build.mobo.price : 0) + (build.cooler ? build.cooler.price : 0);
         const newCost = cpu.price + mobo.price + cooler.price, delta = newCost - oldCost;
         if (delta <= 0) continue;
         if (spent() - oldCost + newCost > cap) continue;
-        const gain = (up("cpu", cpu) - up("cpu", build.cpu)) * (W.cpu || 0.1) / delta;
-        if (!best || gain > best.gain) best = { kind: "platform", cpu, mobo, cooler, gain };
+        const w = W.cpu || 0.1, dperf = up("cpu", cpu) - up("cpu", build.cpu);
+        moves.push({ kind: "platform", cpu, mobo, cooler, gain: metric === "abs" ? dperf * w : (dperf * w) / delta });
       }
     }
-    if (best) { improved = true; if (best.kind === "one") build[best.c] = best.part; else { build.cpu = best.cpu; build.mobo = best.mobo; build.cooler = best.cooler; } }
+    if (!moves.length) break;
+    moves.sort((a, b) => b.gain - a.gain);
+    const k = Math.max(1, Math.min(topK || 1, moves.length));
+    const pick = moves[k > 1 ? Math.floor(Math.random() * k) : 0];
+    if (pick) {
+      improved = true;
+      if (pick.kind === "one") build[pick.c] = pick.part;
+      else { build.cpu = pick.cpu; build.mobo = pick.mobo; build.cooler = pick.cooler; }
+    }
   }
 
-  // 4) Ensure cooler/PSU adequate, then trim under budget.
+  // 3) Ensure cooler/PSU adequate, then trim under budget.
   const fixValid = () => {
     if (build.cpu) { const cl = cheapestCooler(build.cpu); if (cl && (!build.cooler || (build.cooler.tdpRating && build.cooler.tdpRating < build.cpu.tdp) || (build.cooler.sockets && !build.cooler.sockets.includes(build.cpu.socket)))) build.cooler = cl; }
     const d = requiredWatts(build) * 1.25; const dMax = d * 1.45;
@@ -1852,17 +1914,71 @@ function moggerAI(ucKey, budget, elo) {
     build[bestSwap.c] = bestSwap.part;
   }
 
-  // 5) Mistake (compatible downgrade only — never makes it incompatible).
+  return build;
+}
+
+// elo-driven AI. Higher elo => stronger, more consistent builds.
+// Strategy: build a diverse POOL of candidates, score each on the real engine, then
+// pick by elo — strong AI takes the best, weak AI reaches into the worse end.
+function moggerAI(ucKey, budget, elo) {
+  elo = (typeof elo === "number" && isFinite(elo)) ? clamp(elo, 0, 3000) : 600;
+  const strength = elo / 3000; // 0..1
+
+  // Very low elo only: a real chance of a genuinely broken (incompatible -> 0) build.
+  const pIncompat = elo < 350 ? clamp(0.12 * (1 - elo / 350), 0, 0.12) : 0;
+  if (Math.random() < pIncompat) {
+    const W = USE_CASES[ucKey].alloc;
+    const order = [...CATEGORY_ORDER].sort((a, b) => (W[b] || 0) - (W[a] || 0));
+    const build = {};
+    for (const c of order) { const opts = [...moggerOptions(c)].sort((a, b) => a.price - b.price); build[c] = opts[0]; }
+    if (build.cpu) { const wrong = moggerOptions("mobo").find((m) => m.socket !== build.cpu.socket); if (wrong) build.mobo = wrong; }
+    return build;
+  }
+
+  // Candidate pool — stronger AI explores more strategies and aims for fuller budget use.
+  const N = 4 + Math.round(strength * 6); // 4 (weak) .. 10 (strong)
+  const cands = [];
+  for (let i = 0; i < N; i++) {
+    const baseCap = clamp(0.80 + strength * 0.20, 0.80, 1.0); // weak ~80%, strong ~100% of budget
+    const jitter = (Math.random() - 0.5) * 0.14;
+    const cap = budget * clamp(baseCap + jitter, 0.5, 1.0);
+    // mix the two upgrade strategies for genuine diversity in the pool
+    const metric = (i % 3 === 0) ? "abs" : "ratio";
+    // strong AI is near-deterministic (topK=1); weak AI is noisier and lands sloppier picks
+    const topK = strength > 0.85 ? 1 : 1 + Math.round((1 - strength) * 3);
+    cands.push(mBuildCandidate(ucKey, budget, cap, metric, topK));
+  }
+
+  // Score every candidate on the SAME engine the duel is judged by, best first.
+  const scored = cands
+    .map((b) => ({ b, s: moggerScore(b, ucKey, budget).total }))
+    .sort((a, b) => b.s - a.s);
+
+  // Pick by elo: elite -> the best build; weaker -> reach further down the (worse) pool.
+  const span = scored.length - 1;
+  let idx = 0;
+  if (strength < 0.97 && span > 0) {
+    const depth = (1 - strength) * span;          // how deep a weak AI can fall
+    idx = Math.min(span, Math.round(depth * (0.55 + Math.random() * 0.5)));
+  }
+  let chosen = (scored[idx] || scored[0]).b;
+
+  // Low/mid elo flavor: one compatible downgrade on a non-structural part (gpu/storage),
+  // so weaker AIs visibly leave performance on the table without ever going incompatible.
+  const pMistake = elo >= 2600 ? 0 : Math.max(0, 0.10 * Math.pow(1 - strength, 1.5));
   if (Math.random() < pMistake) {
-    const n = 1 + (Math.random() < 0.4 ? 1 : 0);
-    for (let i = 0; i < n; i++) {
-      const c = order[Math.floor(Math.random() * order.length)];
-      const cur = build[c];
-      const cheaper = moggerOptions(c).filter((o) => fullOk(c, o) && cur && up(c, o) < up(c, cur)).sort((a, b) => up(c, b) - up(c, a))[0];
-      if (cheaper) build[c] = cheaper;
+    const safe = ["gpu", "storage"].filter((c) => chosen[c]);
+    if (safe.length) {
+      const c = safe[Math.floor(Math.random() * safe.length)];
+      const cur = chosen[c];
+      const cheaper = moggerOptions(c)
+        .filter((o) => o.price < cur.price && ucPerf(c, o, ucKey) < ucPerf(c, cur, ucKey))
+        .sort((a, b) => ucPerf(c, b, ucKey) - ucPerf(c, a, ucKey))[0];
+      if (cheaper) chosen = { ...chosen, [c]: cheaper };
     }
   }
-  return build;
+
+  return chosen;
 }
 // Custom rank can be plain text (legacy) or JSON {name,color,icon}.
 function parseCrankOne(s) {
@@ -1990,8 +2106,126 @@ const MOGGER_SORTS = [
   { k: "name-asc", label: "Name A–Z" },
 ];
 
-function MoggerPicker({ cat, current, budget, spent, onPick, onClose }) {
+const AI_TAUNTS = [
+  "Already found the perfect combo for this budget.",
+  "You're still reading this? I'm halfway done.",
+  "Processing optimal build… done.",
+  "My cooler choice alone will decide this.",
+  "Budget efficiency: maximized.",
+  "Interesting GPU selection you're eyeing there.",
+  "I see your strategy. Countering it now.",
+  "Thinking… or panicking?",
+  "I don't make mistakes. Only optimal decisions.",
+  "Locked in. Waiting for you to catch up.",
+];
+
+// Human-feeling opponent personas keyed by elo tier.
+// Each has a name, a tagline shown on the result screen, and win/loss quips.
+const AI_PERSONAS = [
+  { minElo: 0,    name: "Budget Barry",  tag: "First PC build™",       taunts: ["wait what's a mobo", "lol whatever was cheapest"], wins: ["accidentally won i think??", "beginner's luck fr"], losses: ["yeah that tracks", "okay okay you got me"] },
+  { minElo: 450,  name: "Dave",          tag: "Learning the ropes",     taunts: ["I think this looks good?", "decent build tbh"], wins: ["not bad for a noob", "catching on quick"], losses: ["okay you know your stuff", "next time tho"] },
+  { minElo: 900,  name: "TechMike",      tag: "5 years on r/buildapc",  taunts: ["I read the reviews", "picked this for the value"], wins: ["that's what I said on reddit", "efficiency > flash"], losses: ["weird, the benchmarks said otherwise", "respectable"] },
+  { minElo: 1400, name: "CraftedRigs",   tag: "Builds PCs for friends", taunts: ["I've built 20 of these", "locked in under a minute"], wins: ["experience shows", "clean build wins clean"], losses: ["okay that use-case tripped me", "solid play"] },
+  { minElo: 1900, name: "BenchWarrior",  tag: "OC'ing since 2015",      taunts: ["Optimized every slot", "I don't leave budget on the table"], wins: ["margin of excellence", "the numbers don't lie"], losses: ["one category off — I'll remember that", "rare L"] },
+  { minElo: 2400, name: "Apex",          tag: "Pro system integrator",  taunts: ["Read the spec sheet", "I know where your budget leaks"], wins: ["efficient. balanced. dominant.", "as expected"], losses: ["exceptional build. noted.", "you forced a better outcome"] },
+  { minElo: 2800, name: "GOD_MODE",      tag: "Peak human optimization", taunts: ["MAXIMUM PERFORMANCE INCOMING", "every dollar is accounted for"], wins: ["PERFECTION ACHIEVED", "resistance is futile"], losses: ["...that's a first", "consider yourself elite"] },
+];
+
+function aiPersona(elo) {
+  return [...AI_PERSONAS].reverse().find((p) => elo >= p.minElo) || AI_PERSONAS[0];
+}
+
+// Random pick from an array — no side effects, safe to call anywhere
+function pickRand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function duelMVP(build, useCase, budget) {
+  const base = moggerScore(build, useCase, budget).total;
+  let bestCat = null, bestDrop = -1;
+  for (const c of CATEGORY_ORDER) {
+    if (!build[c]) continue;
+    const without = { ...build };
+    delete without[c];
+    const drop = base - moggerScore(without, useCase, budget).total;
+    if (drop > bestDrop) { bestDrop = drop; bestCat = c; }
+  }
+  return bestCat;
+}
+
+function MoggerHistory({ onBack }) {
+  const hist = useMemo(() => { try { return JSON.parse(localStorage.getItem("mogger_history") || "[]"); } catch(e) { return []; } }, []);
+  const [viewEntry, setViewEntry] = useState(null);
+  const clear = () => { try { localStorage.removeItem("mogger_history"); } catch(e) {} window.location.reload(); };
+  if (viewEntry) {
+    const ucLabel = (USE_CASES[viewEntry.useCase] || {}).label || viewEntry.useCase;
+    return (
+      <div className="pm-card rf-fade">
+        <h2 className="pm-h2">📼 Match Replay — {viewEntry.date}</h2>
+        <p className="pm-p pm-dim">{ucLabel} · {fmt(viewEntry.budget)}</p>
+        <p className="pm-p">{viewEntry.won ? "🏆 WIN" : "💀 LOSS"} — You {viewEntry.myScore} vs {viewEntry.oppName} {viewEntry.oppScore}</p>
+        {viewEntry.you && viewEntry.opp && (
+          <table className="pm-replay-table">
+            <tbody>
+              {CATEGORY_ORDER.map(c => (
+                <tr key={c}>
+                  <td className="right">{viewEntry.you[c] ? (viewEntry.you[c].model || viewEntry.you[c].name) : "—"}</td>
+                  <td className="cat">{CAT_META[c].label}</td>
+                  <td>{viewEntry.opp[c] ? (viewEntry.opp[c].model || viewEntry.opp[c].name) : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <button className="rf-btn rf-ghost-btn" onClick={() => setViewEntry(null)}><ChevronLeft size={16} /> Back</button>
+      </div>
+    );
+  }
+  return (
+    <div className="pm-card rf-fade">
+      <h2 className="pm-h2">📜 Duel History</h2>
+      {hist.length === 0 ? <p className="pm-p pm-dim">No matches yet — play a duel first!</p> : (
+        <div className="pm-hist-list">
+          {[...hist].reverse().map((h, i) => (
+            <div key={i} className={"pm-hist-row " + (h.won ? "win" : "lose")}>
+              <span className="pm-hist-result">{h.won ? "🏆 WIN" : "💀 LOSS"}</span>
+              <span className="pm-hist-info">{(USE_CASES[h.useCase] || {}).label || h.useCase} · {fmt(h.budget)}</span>
+              <span className="pm-hist-score">{h.myScore} vs {h.oppScore}</span>
+              <span className="pm-hist-opp">vs {h.oppName}</span>
+              <span className="pm-hist-date">{h.date}</span>
+              <button className="rf-btn rf-ghost-btn" style={{fontSize:"0.75rem",padding:"2px 8px"}} onClick={() => setViewEntry(h)}>▶ View</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="pm-row"><button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button>{hist.length > 0 && <button className="rf-btn rf-ghost-btn" style={{color:"var(--c-bad)"}} onClick={clear}>Clear history</button>}</div>
+    </div>
+  );
+}
+
+// C11: Sale badge helpers (deterministic hash based on id/name+date)
+function isOnSale(part) {
+  if (!part) return false;
+  const str = (part.id || part.name || "") + new Date().toDateString();
+  let h = 0; for (let i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) >>> 0; }
+  return h % 7 === 0; // ~1/7 parts on sale each day
+}
+function saleAmt(part) {
+  if (!part) return 0;
+  const str = (part.id || part.name || "") + new Date().toDateString();
+  let h = 0; for (let i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) >>> 0; }
+  return 5 + (h % 4) * 5; // 5%, 10%, 15%, or 20%
+}
+
+function MoggerPicker({ cat, current, budget, spent, onPick, onClose, useCase }) {
   const all = useMemo(() => moggerOptionsAll(cat), [cat]);
+  const bestValueId = useMemo(() => {
+    let best = null, bestRatio = -1;
+    for (const o of all) {
+      if (!o.price || o.price <= 0) continue;
+      const ratio = ucPerf(cat, o, useCase || "gaming") / o.price;
+      if (ratio > bestRatio) { bestRatio = ratio; best = o.id; }
+    }
+    return best;
+  }, [all, cat, useCase]);
   const [q, setQ] = useState("");
   const [info, setInfo] = useState(null);
   const [sort, setSort] = useState("price-asc");
@@ -2051,7 +2285,7 @@ function MoggerPicker({ cat, current, budget, spent, onPick, onClose }) {
                 <div className={"pm-opt" + (sel ? " sel" : "") + (blocked ? " blocked" : "") + (oos ? " oos" : "")}>
                   <button className="pm-opt-pick" disabled={blocked} onClick={() => { if (!blocked) onPick(o); }}>
                     <span className="pm-opt-img">{o.img ? <img src={o.img} alt="" loading="lazy" /> : <Icon size={18} />}</span>
-                    <span className="pm-opt-main"><span className="pm-opt-name">{o.model || o.name}</span><span className="pm-opt-brand">{o.brand}</span></span>
+                    <span className="pm-opt-main"><span className="pm-opt-name">{o.model || o.name}{isOnSale(o) && <span className="rf-sale-badge">{saleAmt(o)}% OFF</span>}{o.id === bestValueId && <span className="rf-best-val">★ Best Value</span>}</span><span className="pm-opt-brand">{o.brand}</span></span>
                     <span className="pm-opt-right">{oos ? <span className="pm-opt-oos">Out of stock</span> : <><span className="pm-opt-price">{o.price === 0 ? "Free" : fmt(o.price)}</span>{blocked ? <span className="pm-opt-block">over limit</span> : <span className={"pm-opt-bar" + (wouldBe > budget ? " over" : "")}><i style={{ width: clamp(o.perf, 4, 100) + "%" }} /></span>}</>}</span>
                   </button>
                   <button className="pm-opt-info" onClick={() => setInfo(showSpecs ? null : o.id)}>{showSpecs ? "Hide" : "Specs"}</button>
@@ -2067,6 +2301,17 @@ function MoggerPicker({ cat, current, budget, spent, onPick, onClose }) {
   );
 }
 
+const DUEL_TIPS = [
+  "Prioritise your biggest alloc category first",
+  "For gaming, GPU is king — spend ~34% there",
+  "RAM speed past DDR5-6000 scores lower, not higher",
+  "An incompatible build scores 0 — always check compat",
+  "Budget adherence matters — try to use 90%+ of your budget",
+  "For office builds, you don't need a discrete GPU",
+  "Balance CPU and GPU — a huge GPU with a weak CPU gets penalised",
+  "For AI/ML, GPU VRAM matters more than clock speed",
+];
+
 function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, liveOpp, oppLiveScore, oppLiveDone, onMyScore, myElo, oppElo, onDone }) {
   const oppFinal = useMemo(() => (oppBuild ? moggerScore(oppBuild, round.useCase, round.budget).total : null), []);
   const [build, setBuild] = useState({});
@@ -2075,6 +2320,19 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
   const [oppShown, setOppShown] = useState(oppFinal == null ? null : (oppLocked ? oppFinal : 0));
   const [oppDone, setOppDone] = useState(!!oppLocked);
   const ref = useRef(build); ref.current = build;
+  const [taunt, setTaunt] = useState("");
+  const [tipIdx, setTipIdx] = useState(0);
+  useEffect(() => {
+    const iv = setInterval(() => setTipIdx((i) => (i + 1) % DUEL_TIPS.length), 8000);
+    return () => clearInterval(iv);
+  }, []);
+  useEffect(() => {
+    if (!oppIsAI) return;
+    const cycle = () => setTaunt(AI_TAUNTS[Math.floor(Math.random() * AI_TAUNTS.length)]);
+    cycle();
+    const iv = setInterval(cycle, 4500);
+    return () => clearInterval(iv);
+  }, [oppIsAI]);
   useEffect(() => {
     const t = setInterval(() => setLeft((l) => { if (l <= 1) { clearInterval(t); onDone(ref.current); return 0; } return l - 1; }), 1000);
     return () => clearInterval(t);
@@ -2116,6 +2374,7 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
   const spent = CATEGORY_ORDER.reduce((s, c) => s + (build[c] ? build[c].price : 0), 0);
   const over = spent > round.budget;
   const filled = CATEGORY_ORDER.filter((c) => build[c]).length;
+  const bottleneck = useMemo(() => analyzeBuild(build, round.useCase, round.budget).bottleneck, [build]);
   const shownOpp = oppIsAI ? oppShown : oppLocked ? oppFinal : liveOpp ? (oppLiveScore == null ? null : oppLiveScore) : null;
   const shownDone = oppIsAI ? oppDone : oppLocked ? true : liveOpp ? !!oppLiveDone : false;
   const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, "0");
@@ -2129,6 +2388,7 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
           {myElo != null && <div className="pm-board-elo">{myElo} elo</div>}
           <div className="pm-board-score">?</div>
           <div className="pm-board-sub">{filled}/{CATEGORY_ORDER.length} parts</div>
+          {bottleneck && <div style={{fontSize:"0.7rem",color:"var(--c-warn)",marginTop:"2px"}}>⚠️ {bottleneck === "cpu" ? "CPU" : "GPU"} bottleneck</div>}
         </div>
         <div className="pm-vs-mid">
           <div className="pm-vs-word">VS</div>
@@ -2139,6 +2399,7 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
           {oppElo != null && <div className="pm-board-elo">{oppElo === "?" ? "? elo" : oppElo + " elo"}</div>}
           <div className="pm-board-score opp">{shownOpp == null ? "—" : shownOpp}</div>
           <div className={"pm-board-sub" + (shownDone ? " locked" : "")}>{shownOpp == null ? "waiting" : shownDone ? "🔒 locked in — waiting for you" : "building…"}</div>
+          {oppIsAI && taunt && <div className="pm-taunt">💬 "{taunt}"</div>}
         </div>
       </div>
       <div className="pm-challenge-row"><span className="pm-uc"><UC.Icon size={16} /> {UC.label}</span><span className="pm-budget">Budget {fmt(round.budget)}</span></div>
@@ -2164,18 +2425,23 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
               </div>
             ); })}
           </div>
+          <div className="pm-duel-tip">💡 {DUEL_TIPS[tipIdx]}</div>
         </div>
       </div>
       <button className="rf-btn rf-btn-lg pm-lockin" onClick={() => onDone(build)}><Check size={16} /> Lock in build</button>
-      {open && <MoggerPicker cat={open} current={build[open]} budget={round.budget} spent={spent} onPick={(o) => { setBuild((b) => ({ ...b, [open]: o })); setOpen(null); }} onClose={() => setOpen(null)} />}
+      {open && <MoggerPicker cat={open} current={build[open]} budget={round.budget} spent={spent} useCase={round.useCase} onPick={(o) => { setBuild((b) => ({ ...b, [open]: o })); setOpen(null); }} onClose={() => setOpen(null)} />}
     </div>
   );
 }
 
 function MoggerScoreCol({ title, build, s, win, shown, rank }) {
   const big = shown == null ? s.total : shown;
+  const gpuName = (build && build.gpu) ? (build.gpu.brand || build.gpu.name || "") : "";
+  const isNvidia = /nvidia|rtx|gtx/i.test(gpuName);
+  const isAmd = /amd|radeon|rx\s?\d/i.test(gpuName);
+  const glowStyle = win ? (isNvidia ? { boxShadow: "0 0 18px rgba(118,185,0,0.35)" } : isAmd ? { boxShadow: "0 0 18px rgba(237,28,36,0.35)" } : undefined) : undefined;
   return (
-    <div className={"pm-scorecol" + (win ? " win" : "")}>
+    <div className={"pm-scorecol" + (win ? " win" : "")} style={glowStyle}>
       <div className="pm-scorecol-head"><span className="pm-scorecol-title">{title}</span>{win && <span className="pm-crown">WINNER</span>}</div>
       {rank && <div className={"pm-rank pm-rank-" + rank.cls + " pm-rank-col"} style={rank.custom ? { color: "#fff", background: hexToRgba(rank.color, 0.2), borderColor: rank.color, boxShadow: "0 0 12px " + hexToRgba(rank.color, 0.45) } : undefined}>{rank.icon} {rank.name}</div>}
       <div className="pm-bigscore" style={rank ? { color: rank.color } : undefined}>{big}<small>/1000</small></div>
@@ -2186,12 +2452,76 @@ function MoggerScoreCol({ title, build, s, win, shown, rank }) {
   );
 }
 
-function MoggerResult({ round, you, opp, oppName, oppElo, myElo, myCrank, eloMsg, onAgain, onMenu, onSaveBuild }) {
+// Generates 2 sentences of real spec context for each part, tuned to the use case.
+// This goes straight into the AI judge prompt so it can reference actual hardware.
+function partJudgeSummary(cat, part, ucKey) {
+  if (!part) return `${CAT_META[cat].label}: none selected — costs 0 points in this slot.`;
+  const name = part.model || part.name || "Unknown";
+  const price = fmt(part.price || 0);
+  const maxP = ucMaxPerf(cat, ucKey);
+  const pct = maxP > 0 ? Math.round((ucPerf(cat, part, ucKey) / maxP) * 100) : 0;
+  const ucLabel = USE_CASES[ucKey].label;
+  switch (cat) {
+    case "cpu": {
+      const cores = part.cores || "?", sock = part.socket || "?", tdp = part.tdp ? part.tdp + "W" : "?W", perf = part.perf || 0;
+      const igpuNote = part.igpu ? "Has integrated graphics (important for GPU-less office builds)." : "No integrated graphics — requires a discrete GPU.";
+      const ucNote = ucKey === "gaming" ? (/X3D/i.test(name) ? `X3D cache gives a big gaming bonus (+10 pts on top of base perf ${perf}).` : `Gaming rewards raw single-core speed; this scores ${pct}% vs best gaming CPU.`) : ucKey === "content" || ucKey === "workstation" || ucKey === "ai" ? `Productivity use cases weight core count heavily; ${cores} cores + perf ${perf} puts it at ${pct}% of best.` : ucKey === "office" ? `Office caps CPU benefit at perf 80 (diminishing returns past that); scores ${pct}% of best office CPU.` : `Raw perf ${perf}, ${pct}% of best ${ucLabel} CPU.`;
+      return `CPU: ${name} (${price}) — ${cores} cores, ${sock}, ${tdp} TDP, base perf score ${perf}. ${igpuNote} ${ucNote}`;
+    }
+    case "gpu": {
+      const vram = part.vram ? part.vram + "GB VRAM" : "VRAM unknown", perf = part.perf || 0;
+      const brand = part.brand || ((/nvidia|rtx|gtx/i.test(name)) ? "Nvidia" : (/amd|rx\s/i.test(name)) ? "AMD" : (/arc|intel/i.test(name)) ? "Intel Arc" : "Unknown brand");
+      const streamNote = ucKey === "streaming" ? (/nvidia|rtx|gtx/i.test(brand + name) ? `Nvidia card — NVENC hardware encoder gives a streaming perf bonus (×1.4 multiplier).` : `Non-Nvidia card — no NVENC, so streaming perf is penalised vs an equivalent Nvidia GPU.`) : "";
+      const vramNote = (ucKey === "ai" || ucKey === "workstation") ? `VRAM is weighted 50% of score for ${ucLabel}; ${vram} is ${part.vram >= 16 ? "strong" : part.vram >= 8 ? "adequate" : "thin"} for this use case.` : "";
+      return `GPU: ${name} (${price}) — ${vram}, ${brand}, raw perf ${perf}, scores ${pct}% of best ${ucLabel} GPU. ${streamNote || vramNote || `For ${ucLabel}, GPU is weighted ${USE_CASES[ucKey].alloc.gpu}% of the total score.`}`;
+    }
+    case "ram": {
+      const cap = part.cap ? part.cap + "GB" : "?GB", speed = part.speed ? part.speed + "MT/s" : "?MT/s", type = part.ramType || "DDR5";
+      const speedNote = part.speed > 6000 ? `Speed (${speed}) is above the DDR5-6000 sweet spot — faster kits score lower due to diminishing real-world returns.` : part.speed < 5200 ? `Speed (${speed}) is below the ideal range; this pulls the RAM score down.` : `Speed (${speed}) is in the ideal range for real-world performance.`;
+      const capNote = (ucKey === "ai" || ucKey === "workstation" || ucKey === "content") ? `Capacity is weighted 60% for ${ucLabel} — ${cap} ${parseInt(cap) >= 32 ? "is solid" : "may be tight"}.` : `Capacity peaks at 32GB for gaming; ${cap} ${parseInt(cap) >= 32 ? "hits the sweet spot" : "leaves room to spare"}.`;
+      return `RAM: ${name} (${price}) — ${cap} ${type} @ ${speed}, scores ${pct}% of best ${ucLabel} RAM. ${speedNote} ${capNote}`;
+    }
+    case "storage": {
+      const cap = part.cap ? (part.cap >= 1000 ? (part.cap / 1000).toFixed(1) + "TB" : part.cap + "GB") : "?", perf = part.perf || 0;
+      const capNote = (ucKey === "ai" || ucKey === "workstation" || ucKey === "content") ? `Capacity is weighted 50–60% for ${ucLabel} — datasets and project files demand space.` : `Gaming and office reward capacity up to 2TB; beyond that score plateaus.`;
+      return `Storage: ${name} (${price}) — ${cap} capacity, transfer perf score ${perf}, scores ${pct}% of best ${ucLabel} drive. ${capNote}`;
+    }
+    case "mobo": {
+      const sock = part.socket || "?", form = part.form || "ATX", rtype = part.ramType || "DDR5", maxRam = part.maxRam ? part.maxRam + "GB max" : "no stated RAM cap";
+      return `Motherboard: ${name} (${price}) — ${sock} socket, ${form} form, ${rtype} support, ${maxRam}. Scores ${pct}% — must match CPU socket and RAM type or the build scores 0.`;
+    }
+    case "cooler": {
+      const tdpR = part.tdpRating ? part.tdpRating + "W rated" : "no TDP rating", h = part.height ? part.height + "mm" : "?mm tall", socks = (part.sockets || []).join("/") || "unknown sockets";
+      return `Cooler: ${name} (${price}) — ${tdpR}, ${h}, fits ${socks}. Scores ${pct}% — an underpowered cooler vs CPU TDP causes a compat failure and zero score for the whole build.`;
+    }
+    case "psu": {
+      const w = part.watt ? part.watt + "W" : "?W";
+      return `PSU: ${name} (${price}) — ${w} output, scores ${pct}%. Must supply ≥125% of the system's estimated draw; going under kills the build's compat check and zeroes the score.`;
+    }
+    case "case": {
+      const maxG = part.maxGpu ? part.maxGpu + "mm GPU" : "no GPU length limit", maxC = part.maxCool ? part.maxCool + "mm cooler" : "no cooler height limit";
+      return `Case: ${name} (${price}) — fits ${(part.forms || []).join("/")} boards, ${maxG}, ${maxC}, scores ${pct}%. Physical fit matters — a GPU or cooler that doesn't fit inside triggers a compat failure.`;
+    }
+    default:
+      return `${CAT_META[cat].label}: ${name} (${price}), ${pct}% of best.`;
+  }
+}
+
+function MoggerResult({ round, you, opp, oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, onAgain, onMenu, onHistory, onSaveBuild, onMirror }) {
   const sy = useMemo(() => moggerScore(you, round.useCase, round.budget), []);
   const so = useMemo(() => moggerScore(opp, round.useCase, round.budget), []);
+  // B7: Sudden Death — zero score if over budget
+  const sySD = round.suddenDeath && sy.over ? { ...sy, total: 0 } : sy;
+  const soSD = round.suddenDeath && so.over ? { ...so, total: 0 } : so;
   const myRank = myElo != null ? moggerRank(myElo, myCrank) : null;
   const oppRank = oppElo != null ? moggerRank(oppElo) : null;
-  const youWin = sy.total >= so.total;
+  const youWin = sySD.total >= soSD.total;
+  const winnerBuild = youWin ? you : opp;
+  const mvpCat = useMemo(() => duelMVP(winnerBuild, round.useCase, round.budget), []);
+  // Open breakdown automatically when you lose so the player sees why
+  const [showBreakdown, setShowBreakdown] = useState(!youWin);
+  // AI persona post-match quip
+  const aiQuip = oppPersona ? (youWin ? pickRand(oppPersona.losses) : pickRand(oppPersona.wins)) : null;
   const [phase, setPhase] = useState("loading"); // loading -> reveal
   const [ay, setAy] = useState(0);
   const [ao, setAo] = useState(0);
@@ -2199,6 +2529,18 @@ function MoggerResult({ round, you, opp, oppName, oppElo, myElo, myCrank, eloMsg
   const [busy, setBusy] = useState(true);
   const [savedYou, setSavedYou] = useState(false);
   const [savedOpp, setSavedOpp] = useState(false);
+  const [rCopied, setRCopied] = useState(false);
+  const [rateVal, setRateVal] = useState(null);
+  // A5: budget efficiency
+  const budgEff = sy.spend > 0 ? Math.round((sy.spend / round.budget) * 100) : 0;
+  const oppBudgEff = so.spend > 0 ? Math.round((so.spend / round.budget) * 100) : 0;
+  // B4: efficiency medal
+  const effMedal = sy.total > 0 ? (sy.total >= 900 ? "🥇 Gold Efficiency" : sy.total >= 750 ? "🥈 Silver Efficiency" : sy.total >= 600 ? "🥉 Bronze Efficiency" : null) : null;
+  // B5: share result text
+  const shareRes = () => {
+    const txt = `PC Duels result: ${youWin ? "I won!" : "I lost"} vs ${oppName} | ${USE_CASES[round.useCase].label} · ${fmt(round.budget)} | You: ${sySD.total}/1000 · ${oppName}: ${soSD.total}/1000 | via ForgeAPC`;
+    navigator.clipboard.writeText(txt).then(() => { setRCopied(true); setTimeout(() => setRCopied(false), 2500); });
+  };
   const saveSide = async (which) => {
     if (!onSaveBuild) return;
     const ucLabel = USE_CASES[round.useCase].label;
@@ -2216,15 +2558,19 @@ function MoggerResult({ round, you, opp, oppName, oppElo, myElo, myCrank, eloMsg
       const tick = (now) => {
         const f = Math.min(1, (now - t0) / dur);
         const e = 1 - Math.pow(1 - f, 3);
-        setAy(Math.round(sy.total * e));
-        setAo(Math.round(so.total * e));
+        setAy(Math.round(sySD.total * e));
+        setAo(Math.round(soSD.total * e));
         if (f < 1 && !dead) raf = requestAnimationFrame(tick);
       };
       raf = requestAnimationFrame(tick);
-      // verdict
-      const sum = (label, b, s) => `${label}: ${CATEGORY_ORDER.map((c) => CAT_META[c].label + "=" + (b[c] ? (b[c].model || b[c].name) : "none")).join(", ")}. Score ${s.total}/1000 (perf ${s.perf}, compat ${s.compat}, spent ${fmt(s.spend)}${s.over ? " OVER BUDGET" : ""}${s.dead ? " INCOMPATIBLE-DEAD" : ""}).`;
-      const system = "You are the judge of a PC-building battle in an app called PC Mogger. Write a short, punchy, entertaining verdict (2-3 sentences) saying why the winner won — call out the smartest pick and the biggest mistake, like a hype commentator. If a build scored 0 it had incompatible parts; roast that. Do not contradict the stated winner. No preamble.";
-      const prompt = `Challenge: ${USE_CASES[round.useCase].label} build, budget ${fmt(round.budget)}.\n\n${sum("PLAYER (You)", you, sy)}\n${sum(oppName, opp, so)}\n\nWinner by score: ${youWin ? "You" : oppName}. Write the verdict.`;
+      // verdict — full part data so the judge can reference real specs
+      const buildBlock = (label, b, s) => {
+        const header = `${label} — Score ${s.total}/1000 | perf ${s.perf}% | spent ${fmt(s.spend)} of ${fmt(round.budget)}${s.over ? " (OVER BUDGET)" : ""}${s.dead ? " (INCOMPATIBLE — scored 0)" : ""}`;
+        const parts = CATEGORY_ORDER.map((c) => "  • " + partJudgeSummary(c, b[c], round.useCase)).join("\n");
+        return header + "\n" + parts;
+      };
+      const system = `You are the judge of PC Duels in ForgeAPC. You have full spec data for every part. Write exactly 2 sharp sentences: one naming the deciding factor (specific parts and why they mattered for this use case), one calling out the biggest mistake. If a build scored 0, roast the incompatibility. No preamble, no fluff.`;
+      const prompt = `USE CASE: ${USE_CASES[round.useCase].label} | BUDGET: ${fmt(round.budget)}\n\n${buildBlock("PLAYER (You)", you, sy)}\n\n${buildBlock(oppName, opp, so)}\n\nDECLARED WINNER: ${youWin ? "PLAYER" : oppName}. Write the verdict now.`;
       const fallback = () => { const w = youWin ? "You" : oppName; const d = Math.abs(sy.total - so.total); const loser = youWin ? so : sy; return `${w} take${youWin ? "" : "s"} it${d < 30 ? " in a photo finish" : d > 150 ? " in a blowout" : ""} — better balance for a ${USE_CASES[round.useCase].label} on ${fmt(round.budget)}. ${loser.dead ? "The other rig had incompatible parts and flatlined at zero." : loser.over ? "The other rig busted the budget." : "It came down to part-for-part value."}`; };
       (async () => {
         try { await streamChat({ system, messages: [{ role: "user", content: prompt }] }, (full) => { if (!dead) setVerdict(full); }); }
@@ -2246,13 +2592,65 @@ function MoggerResult({ round, you, opp, oppName, oppElo, myElo, myCrank, eloMsg
   }
   return (
     <div className="pm-result rf-fade">
-      <h2 className={"pm-verdict-title " + (youWin ? "win" : "lose")}>{youWin ? "🏆 YOU WIN" : "💀 YOU LOSE"}</h2>
+      <h2 className={"pm-verdict-title " + (youWin ? "win" : "lose")}>
+        {youWin ? "🏆 YOU WIN" : "💀 YOU LOSE"}
+        {/* A6: Close Call badge */}
+        {Math.abs(sySD.total - soSD.total) <= 30 && <span className="pm-close-call">⚡ Close Call!</span>}
+        {/* Comeback badge: won by 31-79 points */}
+        {youWin && Math.abs(sySD.total - soSD.total) > 30 && Math.abs(sySD.total - soSD.total) < 80 && <span className="pm-comeback">🔄 Comeback Win!</span>}
+        {round.suddenDeath && <span className="pm-sd-badge">☠️ Sudden Death</span>}
+      </h2>
+      {oppPersona && (
+        <div className="pm-opp-persona">
+          <span className="pm-opp-persona-name">{oppName}</span>
+          <span className="pm-opp-persona-tag">{oppTag}</span>
+          {aiQuip && <span className="pm-opp-persona-quip">"{aiQuip}"</span>}
+        </div>
+      )}
       <div className="pm-verdict-box"><span className="pm-verdict-tag"><Sparkles size={12} /> AI JUDGE</span>{busy && !verdict ? <p className="pm-dim">Writing the verdict…</p> : <p>{verdict}</p>}</div>
       {eloMsg && <div className={"pm-elo-result " + (eloMsg.delta > 0 ? "up" : eloMsg.delta < 0 ? "down" : "")}>{eloMsg.delta > 0 ? "+" : ""}{eloMsg.delta} elo · now {eloMsg.newElo}</div>}
       <div className="pm-scorecols">
-        <MoggerScoreCol title="You" build={you} s={sy} win={youWin} shown={ay} rank={myRank} />
-        <MoggerScoreCol title={oppName} build={opp} s={so} win={!youWin} shown={ao} rank={oppRank} />
+        <MoggerScoreCol title="You" build={you} s={sySD} win={youWin} shown={ay} rank={myRank} />
+        <MoggerScoreCol title={oppName} build={opp} s={soSD} win={!youWin} shown={ao} rank={oppRank} />
       </div>
+      {/* B4: efficiency medal */}
+      {effMedal && phase === "reveal" && <div className="pm-eff-medal">{effMedal} — Score {sy.total}/1000</div>}
+      {/* A5: Budget efficiency row */}
+      {phase === "reveal" && <div className="pm-budget-eff-row"><span>Budget used: <b style={{color: budgEff > 100 ? "var(--c-bad)" : budgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{budgEff}%</b> you · <b style={{color: oppBudgEff > 100 ? "var(--c-bad)" : oppBudgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{oppBudgEff}%</b> {oppName}</span></div>}
+      {mvpCat && <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? "you" : oppName}</div>}
+      <button className="rf-btn rf-ghost-btn pm-breakdown-toggle" onClick={() => setShowBreakdown((v) => !v)}>{showBreakdown ? "▲ Hide" : "▼ Show"} part-by-part breakdown</button>
+      {showBreakdown && (
+        <div className="pm-breakdown">
+          <div className="pm-breakdown-head"><span>You</span><span>Part</span><span>{oppName}</span></div>
+          {CATEGORY_ORDER.map((c) => {
+            const yp = you[c], op = opp[c];
+            const Icon = CAT_META[c].Icon;
+            const yMvp = youWin && mvpCat === c;
+            const oMvp = !youWin && mvpCat === c;
+            const maxP = ucMaxPerf(c, round.useCase);
+            const yPct = yp && maxP ? Math.round(ucPerf(c, yp, round.useCase) / maxP * 100) : 0;
+            const oPct = op && maxP ? Math.round(ucPerf(c, op, round.useCase) / maxP * 100) : 0;
+            const allocW = USE_CASES[round.useCase].alloc[c] || 0;
+            const yAhead = yPct > oPct, tied = yPct === oPct;
+            return (
+              <div key={c} className="pm-breakdown-row">
+                <span className={"pm-breakdown-part" + (yMvp ? " mvp" : "")}>
+                  {yp ? (yp.model || yp.name) : "—"}
+                  {yMvp && <span className="pm-mvp-tag">🏅</span>}
+                  {yp && allocW > 0 && <span className={"pm-bd-pct" + (yAhead ? " win" : tied ? "" : " lose")}>{yPct}%</span>}
+                </span>
+                <span className="pm-breakdown-cat"><Icon size={11} /> {CAT_META[c].label}{allocW > 0 && <span className="pm-bd-alloc"> {allocW}%</span>}</span>
+                <span className={"pm-breakdown-part opp" + (oMvp ? " mvp" : "")}>
+                  {op ? (op.model || op.name) : "—"}
+                  {oMvp && <span className="pm-mvp-tag">🏅</span>}
+                  {op && allocW > 0 && <span className={"pm-bd-pct" + (!yAhead && !tied ? " win" : tied ? "" : " lose")}>{oPct}%</span>}
+                </span>
+              </div>
+            );
+          })}
+          <div className="pm-breakdown-note">% = how good that part is for <b>{USE_CASES[round.useCase].label}</b> vs best possible · alloc% = weight in score</div>
+        </div>
+      )}
       {onSaveBuild && phase === "reveal" && (
         <div className="pm-save-row">
           <span className="pm-save-label">Like a build? Save it to My Rigs:</span>
@@ -2262,7 +2660,27 @@ function MoggerResult({ round, you, opp, oppName, oppElo, myElo, myCrank, eloMsg
           </div>
         </div>
       )}
-      <div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={onMenu}>Menu</button><button className="rf-btn" onClick={onAgain}><Repeat2 size={16} /> Play again</button></div>
+      {/* Rate this duel */}
+      {phase === "reveal" && (
+        <div className="pm-rate-row">
+          <span className="pm-rate-label">Rate this duel:</span>
+          <button className={"pm-rate-btn" + (rateVal === "up" ? " on" : "")} onClick={() => { if (rateVal !== "up") { setRateVal("up"); try { const arr = JSON.parse(localStorage.getItem("mogger_ratings")||"[]"); arr.push({ date: new Date().toLocaleDateString(), useCase: round.useCase, budget: round.budget, rating: "up" }); localStorage.setItem("mogger_ratings", JSON.stringify(arr)); } catch(e) {} } }}>👍</button>
+          <button className={"pm-rate-btn" + (rateVal === "down" ? " on" : "")} onClick={() => { if (rateVal !== "down") { setRateVal("down"); try { const arr = JSON.parse(localStorage.getItem("mogger_ratings")||"[]"); arr.push({ date: new Date().toLocaleDateString(), useCase: round.useCase, budget: round.budget, rating: "down" }); localStorage.setItem("mogger_ratings", JSON.stringify(arr)); } catch(e) {} } }}>👎</button>
+          {rateVal && <span className="pm-rate-thanks">Thanks for rating!</span>}
+        </div>
+      )}
+      {/* B5: share result */}
+      {phase === "reveal" && <div className="pm-row" style={{justifyContent:"center",marginBottom:"4px"}}><button className="rf-btn rf-ghost-btn" onClick={shareRes}>{rCopied ? <><Check size={14}/> Copied!</> : <>📤 Share result</>}</button></div>}
+      <div className="pm-row pm-center-row">
+        <button className="rf-btn rf-ghost-btn" onClick={onMenu}>Menu</button>
+        {onMirror && <button className="rf-btn rf-ghost-btn" onClick={onMirror}><Repeat2 size={16} /> Mirror</button>}
+        <button className="rf-btn rf-ghost-btn" onClick={() => { onMenu(); setTimeout(() => { /* History screen accessed from menu */ }, 50); }} style={{display:"none"}} />
+        <button className="rf-btn" onClick={onAgain}><Repeat2 size={16} /> Play again</button>
+      </div>
+      <div style={{textAlign:"center",marginTop:"6px",display:"flex",justifyContent:"center",gap:"16px"}}>
+        <button style={{fontSize:"0.75rem",color:"var(--c-muted)",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}} onClick={onMenu}>← Menu</button>
+        {onHistory && <button style={{fontSize:"0.75rem",color:"var(--c-accent)",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}} onClick={onHistory}>📜 View History</button>}
+      </div>
     </div>
   );
 }
@@ -2272,30 +2690,32 @@ function MoggerLobby({ mode, onStart, onBack }) {
   const [uc, setUc] = useState(MOGGER_UCS[0]);
   const [budget, setBudget] = useState(1500);
   const [timer, setTimer] = useState(0);
+  const [suddenDeath, setSuddenDeath] = useState(false);
   const host = mode === "local";
   const begin = () => {
     const useCase = (host && pick) ? uc : mRand(MOGGER_UCS);
     const bud = (host && pick) ? budget : mRand(MOGGER_BUDGETS);
     const secs = (host && timer) ? timer : (50 + Math.floor(Math.random() * 370));
-    onStart({ useCase, budget: bud, secs });
+    onStart({ useCase, budget: bud, secs, suddenDeath });
   };
   return (
-    <div className="pm-card rf-fade">
+    <div className="pm-card pm-lobby-wide rf-fade">
       <h2 className="pm-h2">{mode === "ai" ? <><Bot size={20} /> vs AI</> : <><Gamepad2 size={20} /> Pass &amp; Play</>}</h2>
       {host && <label className="pm-toggle"><input type="checkbox" checked={pick} onChange={(e) => setPick(e.target.checked)} /><span>Host picks the challenge (off = random)</span></label>}
       {host && pick ? (
         <div className="pm-setup">
           <div className="pm-field"><span className="pm-field-l">Use case</span><div className="pm-chips">{MOGGER_UCS.map((k) => <button key={k} className={"pm-chip" + (uc === k ? " on" : "")} onClick={() => setUc(k)}>{USE_CASES[k].label}</button>)}</div></div>
-          <div className="pm-field"><span className="pm-field-l">Budget: {fmt(budget)}</span><input type="range" min="600" max="4000" step="100" value={budget} onChange={(e) => setBudget(+e.target.value)} className="pm-range" /></div>
-          <div className="pm-field"><span className="pm-field-l">Timer: {timer ? timer + "s" : "random (50s–7m)"}</span><input type="range" min="0" max="420" step="10" value={timer} onChange={(e) => setTimer(+e.target.value)} className="pm-range" /></div>
+          <div className="pm-field"><span className="pm-field-l">Budget: {fmt(budget)}</span><input type="range" min="600" max="4000" step="50" value={budget} onChange={(e) => setBudget(+e.target.value)} className="pm-range" /></div>
+          <div className="pm-field"><span className="pm-field-l">Timer: {timer ? timer + "s" : "random (50s–7m)"}</span><input type="range" min="0" max="420" step="5" value={timer} onChange={(e) => setTimer(+e.target.value)} className="pm-range" /></div>
         </div>
       ) : <p className="pm-p">The challenge — use case, budget, and a random 50s–7m timer — is revealed when the round starts. Same parts and live prices as the builder. Build fast.</p>}
-      <div className="pm-row"><button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button><button className="rf-btn" onClick={begin}>Start round <ChevronRight size={16} /></button></div>
+      <label className="pm-toggle" style={{marginTop:"8px"}}><input type="checkbox" checked={suddenDeath} onChange={e => setSuddenDeath(e.target.checked)} /><span>☠️ Sudden Death — loser gets 0 points if they go over budget</span></label>
+      <div className="pm-row"><button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button><button className="rf-btn" onClick={begin}>Start round <ChevronRight size={16} /></button><button className="rf-ghost-btn rf-btn" onClick={() => onStart({ useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 60 + Math.floor(Math.random() * 240) })}>⚡ Quick Start</button></div>
     </div>
   );
 }
 
-function MoggerIntro({ round, player, onGo }) {
+function MoggerIntro({ round, player, oppName, oppTag, onGo }) {
   const [n, setN] = useState(3);
   const UC = USE_CASES[round.useCase];
   useEffect(() => {
@@ -2306,6 +2726,13 @@ function MoggerIntro({ round, player, onGo }) {
   return (
     <div className="pm-intro">
       {player && <div className="pm-intro-player">{player}</div>}
+      {oppName && (
+        <div className="pm-intro-opp">
+          <span className="pm-intro-opp-vs">vs</span>
+          <span className="pm-intro-opp-name">{oppName}</span>
+          {oppTag && <span className="pm-intro-opp-tag">{oppTag}</span>}
+        </div>
+      )}
       <div className="pm-intro-label">YOUR CHALLENGE</div>
       <div className="pm-intro-uc" key={"uc"}><UC.Icon size={36} /> {UC.label}</div>
       <div className="pm-intro-budget">{fmt(round.budget)} budget</div>
@@ -2666,11 +3093,12 @@ function MoggerOnline({ onExit, user, setUser, onNeedAuth, onSaveBuild }) {
   };
   const reset = () => { cleanup(); startedRef.current = false; pairedRef.current = false; rankedRef.current = false; eloAppliedRef.current = false; oppRef.current = null; roundRef.current = null; myBuildRef.current = null; setOppBuild(null); setOppLiveScore(null); setOppElo(null); setEloMsg(null); setAiOpp(null); setRound(null); setOppPresent(false); setCode(""); setJoinCode(""); setPhase("menu"); };
 
-  const oppName = aiOpp ? "AI Opponent" : "Opponent";
+  const aiPers = aiOpp ? aiPersona(aiOppElo) : null;
+  const oppName = aiPers ? aiPers.name : "Opponent";
   if (phase === "tournament") return <MoggerTournament onExit={() => setPhase("menu")} />;
-  if (phase === "intro" && round) return <MoggerIntro round={round} player={null} onGo={() => setPhase("build")} />;
+  if (phase === "intro" && round) return <MoggerIntro round={round} player={null} oppName={oppName} oppTag={aiPers ? aiPers.tag : null} onGo={() => setPhase("build")} />;
   if (phase === "build" && round) return <MoggerBuild round={round} player="You" oppLabel={oppName} oppBuild={aiOpp || null} oppIsAI={!!aiOpp} oppLocked={false} liveOpp={!aiOpp} oppLiveScore={oppLiveScore} oppLiveDone={!!oppBuild} onMyScore={aiOpp ? undefined : broadcastScore} myElo={myElo} oppElo={aiOpp ? aiOppElo : oppElo} onDone={onBuildDone} />;
-  if (phase === "result" && round && myBuildRef.current && (aiOpp || oppBuild)) return <MoggerResult round={round} you={myBuildRef.current} opp={aiOpp || oppBuild} oppName={oppName} oppElo={aiOpp ? aiOppElo : oppElo} myElo={myElo} myCrank={user ? user.crank : null} eloMsg={eloMsg} onAgain={reset} onMenu={() => { cleanup(); onExit(); }} onSaveBuild={onSaveBuild} />;
+  if (phase === "result" && round && myBuildRef.current && (aiOpp || oppBuild)) return <MoggerResult round={round} you={myBuildRef.current} opp={aiOpp || oppBuild} oppName={oppName} oppElo={aiOpp ? aiOppElo : oppElo} oppTag={aiPers ? aiPers.tag : null} oppPersona={aiPers} myElo={myElo} myCrank={user ? user.crank : null} eloMsg={eloMsg} onAgain={reset} onMenu={() => { cleanup(); onExit(); }} onSaveBuild={onSaveBuild} />;
 
   return (
     <div className="pm-card pm-center rf-fade">
@@ -2707,8 +3135,8 @@ function MoggerOnline({ onExit, user, setUser, onNeedAuth, onSaveBuild }) {
         <label className="pm-toggle"><input type="checkbox" checked={pick} onChange={(e) => setPick(e.target.checked)} /><span>Pick the challenge (off = random)</span></label>
         {pick && (<div className="pm-setup">
           <div className="pm-field"><span className="pm-field-l">Use case</span><div className="pm-chips">{MOGGER_UCS.map((k) => <button key={k} className={"pm-chip" + (uc === k ? " on" : "")} onClick={() => setUc(k)}>{USE_CASES[k].label}</button>)}</div></div>
-          <div className="pm-field"><span className="pm-field-l">Budget: {fmt(budget)}</span><input type="range" min="600" max="4000" step="100" value={budget} onChange={(e) => setBudget(+e.target.value)} className="pm-range" /></div>
-          <div className="pm-field"><span className="pm-field-l">Timer: {timer ? timer + "s" : "random"}</span><input type="range" min="0" max="420" step="10" value={timer} onChange={(e) => setTimer(+e.target.value)} className="pm-range" /></div>
+          <div className="pm-field"><span className="pm-field-l">Budget: {fmt(budget)}</span><input type="range" min="600" max="4000" step="50" value={budget} onChange={(e) => setBudget(+e.target.value)} className="pm-range" /></div>
+          <div className="pm-field"><span className="pm-field-l">Timer: {timer ? timer + "s" : "random"}</span><input type="range" min="0" max="420" step="5" value={timer} onChange={(e) => setTimer(+e.target.value)} className="pm-range" /></div>
         </div>)}
         <div className="pm-row"><button className="rf-btn rf-ghost-btn" onClick={reset}><ChevronLeft size={16} /> Cancel</button><button className="rf-btn" disabled={!oppPresent} onClick={() => beginRound(true)}>Start round <ChevronRight size={16} /></button></div>
       </>)}
@@ -2912,6 +3340,98 @@ function MoggerLeaderboard({ onBack, meName }) {
   );
 }
 
+// B2: Confetti
+function Confetti() {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const ctx = el.getContext("2d");
+    el.width = window.innerWidth;
+    el.height = window.innerHeight;
+    const pieces = Array.from({length:120}, () => ({
+      x: Math.random() * el.width, y: Math.random() * -el.height,
+      r: 6 + Math.random() * 8, vx: (Math.random()-0.5)*4, vy: 2+Math.random()*4,
+      color: ["#19e8db","#7c5cff","#ffd24a","#ff7ae0","#46e0a0"][Math.floor(Math.random()*5)],
+      angle: Math.random()*360, spin: (Math.random()-0.5)*8,
+    }));
+    let raf;
+    const draw = () => {
+      ctx.clearRect(0,0,el.width,el.height);
+      pieces.forEach(p => {
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.angle*Math.PI/180);
+        ctx.fillStyle = p.color; ctx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); ctx.restore();
+        p.x += p.vx; p.y += p.vy; p.angle += p.spin;
+        if (p.y > el.height) { p.y = -20; p.x = Math.random()*el.width; }
+      });
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    const t = setTimeout(() => cancelAnimationFrame(raf), 4000);
+    return () => { cancelAnimationFrame(raf); clearTimeout(t); };
+  }, []);
+  return <canvas ref={canvasRef} style={{position:"fixed",top:0,left:0,pointerEvents:"none",zIndex:9999}} />;
+}
+
+// B1: Achievements
+const PRETAUNTS = [
+  "I'll build circles around you 🔥",
+  "My build will make yours cry 😂",
+  "GG before it even starts 🏆",
+  "Your parts list is a wish list 💀",
+  "Budget? More like a donation to me 💸",
+  "I optimize while you agonize 🧠",
+];
+
+function getAchievements(hist) {
+  const achs = [];
+  const wins = hist.filter(h => h.won).length;
+  const total = hist.length;
+  if (total >= 1) achs.push({ id: "first_blood", icon: "🩸", name: "First Blood", desc: "Played your first duel" });
+  if (wins >= 1) achs.push({ id: "first_win", icon: "🏆", name: "First Win", desc: "Won your first duel" });
+  if (wins >= 5) achs.push({ id: "five_wins", icon: "⭐", name: "Five Star", desc: "Won 5 duels" });
+  if (wins >= 10) achs.push({ id: "veteran", icon: "🎖️", name: "Veteran", desc: "Won 10 duels" });
+  const bestScore = hist.reduce((m, h) => Math.max(m, h.myScore || 0), 0);
+  if (bestScore >= 900) achs.push({ id: "perfectionist", icon: "💎", name: "Perfectionist", desc: "Scored 900+ in a duel" });
+  if (bestScore >= 1000) achs.push({ id: "god_tier", icon: "👑", name: "God Tier", desc: "Scored 1000/1000" });
+  const streak = (() => { let max=0,cur=0; [...hist].reverse().forEach(h=>{ if(h.won){cur++;max=Math.max(max,cur);}else cur=0; }); return max; })();
+  if (streak >= 3) achs.push({ id: "on_fire", icon: "🔥", name: "On Fire", desc: "3-game win streak" });
+  if (streak >= 5) achs.push({ id: "unstoppable", icon: "⚡", name: "Unstoppable", desc: "5-game win streak" });
+  return achs;
+}
+
+function MoggerAchievements({ onBack }) {
+  const hist = useMemo(() => { try { return JSON.parse(localStorage.getItem("mogger_history") || "[]"); } catch(e) { return []; } }, []);
+  const achs = useMemo(() => getAchievements(hist), [hist]);
+  const ALL_ACHS = [
+    { id: "first_blood", icon: "🩸", name: "First Blood", desc: "Play your first duel" },
+    { id: "first_win", icon: "🏆", name: "First Win", desc: "Win your first duel" },
+    { id: "five_wins", icon: "⭐", name: "Five Star", desc: "Win 5 duels" },
+    { id: "veteran", icon: "🎖️", name: "Veteran", desc: "Win 10 duels" },
+    { id: "perfectionist", icon: "💎", name: "Perfectionist", desc: "Score 900+ in a duel" },
+    { id: "god_tier", icon: "👑", name: "God Tier", desc: "Score 1000/1000" },
+    { id: "on_fire", icon: "🔥", name: "On Fire", desc: "3-game win streak" },
+    { id: "unstoppable", icon: "⚡", name: "Unstoppable", desc: "5-game win streak" },
+  ];
+  const unlockedIds = new Set(achs.map(a => a.id));
+  return (
+    <div className="pm-card rf-fade">
+      <h2 className="pm-h2">🏅 Achievements</h2>
+      <p className="pm-p pm-dim">{achs.length}/{ALL_ACHS.length} unlocked</p>
+      <div className="pm-ach-grid">
+        {ALL_ACHS.map(a => (
+          <div key={a.id} className={"pm-ach-item" + (unlockedIds.has(a.id) ? " unlocked" : " locked")}>
+            <div className="pm-ach-icon">{a.icon}</div>
+            <div className="pm-ach-name">{a.name}</div>
+            <div className="pm-ach-desc">{a.desc}</div>
+          </div>
+        ))}
+      </div>
+      <button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button>
+    </div>
+  );
+}
+
 function MoggerGame({ onExit, onSaveBuild }) {
   const [screen, setScreen] = useState(() => { try { const p = window.location.pathname.replace(/\/+$/, "").split("/").pop(); if (p === "admin") return "admin"; if (p === "coadmin") return "coadmin"; } catch (e) {} return "menu"; });
   const [mode, setMode] = useState("ai");
@@ -2927,6 +3447,39 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const [custom, setCustom] = useState(1500);
   const [eloMsg, setEloMsg] = useState(null);
   const eloAppliedRef = useRef(false);
+  const [streak, setStreak] = useState(() => { try { return +(localStorage.getItem("mogger_streak") || 0); } catch(e) { return 0; } });
+  const [bestStreak, setBestStreak] = useState(() => { try { return +(localStorage.getItem("mogger_best_streak") || 0); } catch(e) { return 0; } });
+  const historyAppliedRef = useRef(false);
+  // A7: Pre-match taunt
+  const [selectedTaunt, setSelectedTaunt] = useState(null);
+  // B2: confetti on win
+  const [showConfetti, setShowConfetti] = useState(false);
+  // Rivals data
+  const rivalsData = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("mogger_rivals") || "{}"); } catch(e) { return {}; }
+  }, [screen]);
+  const topRival = useMemo(() => {
+    const entries = Object.entries(rivalsData).filter(([, v]) => (v.w + v.l) > 0);
+    if (!entries.length) return null;
+    return entries.sort((a, b) => (b[1].w + b[1].l) - (a[1].w + a[1].l))[0];
+  }, [rivalsData]);
+  // A3: stats
+  const histStats = useMemo(() => {
+    try {
+      const h = JSON.parse(localStorage.getItem("mogger_history") || "[]");
+      const wins = h.filter(x => x.won).length;
+      const avg = h.length > 0 ? Math.round(h.reduce((s, x) => s + (x.myScore || 0), 0) / h.length) : 0;
+      const best = h.reduce((m, x) => Math.max(m, x.myScore || 0), 0);
+      const hardestAI = +(localStorage.getItem("mogger_hardest_ai") || "0");
+      return { total: h.length, wins, losses: h.length - wins, avg, best, hardestAI };
+    } catch(e) { return { total:0, wins:0, losses:0, avg:0, best:0, hardestAI:0 }; }
+  }, [screen]);
+  // B3: daily challenge seed
+  const dailyChallenge = useMemo(() => {
+    const d = new Date(); const seed = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+    const ucs = MOGGER_UCS; const buds = MOGGER_BUDGETS;
+    return { useCase: ucs[seed % ucs.length], budget: buds[seed % buds.length], secs: 120 + (seed % 4) * 60 };
+  }, []);
 
   const persist = (u) => { setUser(u); try { if (u) localStorage.setItem("mogger_user", JSON.stringify(u)); else localStorage.removeItem("mogger_user"); } catch (e) {} };
   const refreshMe = useCallback(() => {
@@ -2941,9 +3494,9 @@ function MoggerGame({ onExit, onSaveBuild }) {
     if (d.k === "custom") { setAiElo(custom); setAiHidden(false); }
     else if (d.k === "random") { setAiElo(100 + Math.floor(Math.random() * 2900)); setAiHidden(true); }
     else { setAiElo(d.elo); setAiHidden(false); }
-    setScreen("lobby");
+    setScreen("taunt-pick");
   };
-  const start = (r) => { setRound(r); eloAppliedRef.current = false; setEloMsg(null); if (mode === "ai") setOpp(moggerAI(r.useCase, r.budget, aiElo)); setScreen("intro"); };
+  const start = (r) => { setRound(r); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); if (mode === "ai") setOpp(moggerAI(r.useCase, r.budget, aiElo)); setScreen("intro"); };
   const finishP1 = (b) => { setYou(b); if (mode === "ai") setScreen("result"); else setScreen("handoff"); };
   const finishP2 = (b) => { setOpp(b); setScreen("result"); };
   const again = () => { setYou(null); setOpp(null); setEloMsg(null); eloAppliedRef.current = false; setScreen(mode === "ai" ? "diff" : "lobby"); };
@@ -2952,6 +3505,48 @@ function MoggerGame({ onExit, onSaveBuild }) {
     try { if (typeof window !== "undefined" && window.history) { const p = window.location.pathname.replace(/\/+$/, "").split("/").pop(); if (p === "admin" || p === "coadmin") window.history.replaceState(null, "", "/"); } } catch (e) {}
     onExit();
   };
+
+  // save duel history + update streak after any result
+  useEffect(() => {
+    if (screen !== "result" || !you || !opp || historyAppliedRef.current) return;
+    historyAppliedRef.current = true;
+    const sy = moggerScore(you, round.useCase, round.budget).total;
+    const so = moggerScore(opp, round.useCase, round.budget).total;
+    const won = sy >= so;
+    const oName = mode === "ai" ? aiPersona(aiElo).name : "Player 2";
+    const entry = { won, myScore: sy, oppScore: so, oppName: oName, useCase: round.useCase, budget: round.budget, date: new Date().toLocaleDateString() };
+    entry.you = JSON.parse(JSON.stringify(you || {}));
+    entry.opp = JSON.parse(JSON.stringify(opp || {}));
+    try {
+      const hist = JSON.parse(localStorage.getItem("mogger_history") || "[]");
+      hist.push(entry);
+      if (hist.length > 10) hist.splice(0, hist.length - 10);
+      localStorage.setItem("mogger_history", JSON.stringify(hist));
+    } catch(e) {}
+    // Rival tracker
+    if (mode === "ai") {
+      try {
+        const eloTier = aiElo < 600 ? "Beginner" : aiElo < 1200 ? "Novice" : aiElo < 1800 ? "Skilled" : aiElo < 2400 ? "Expert" : "Grandmaster";
+        const rivals = JSON.parse(localStorage.getItem("mogger_rivals") || "{}");
+        if (!rivals[eloTier]) rivals[eloTier] = { w: 0, l: 0 };
+        if (won) rivals[eloTier].w += 1; else rivals[eloTier].l += 1;
+        localStorage.setItem("mogger_rivals", JSON.stringify(rivals));
+      } catch(e) {}
+    }
+    // A4: Track best score + hardest AI
+    const prevBest = +(localStorage.getItem("mogger_best_score") || "0");
+    if (sy > prevBest) localStorage.setItem("mogger_best_score", String(sy));
+    if (won && mode === "ai") {
+      const prevH = +(localStorage.getItem("mogger_hardest_ai") || "0");
+      if (aiElo > prevH) localStorage.setItem("mogger_hardest_ai", String(aiElo));
+    }
+    const newStreak = won ? streak + 1 : 0;
+    const newBest = Math.max(bestStreak, newStreak);
+    setStreak(newStreak);
+    setBestStreak(newBest);
+    if (won) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 4500); }
+    try { localStorage.setItem("mogger_streak", newStreak); localStorage.setItem("mogger_best_streak", newBest); } catch(e) {}
+  }, [screen]);
 
   // apply elo after a vs-AI result
   useEffect(() => {
@@ -2970,23 +3565,62 @@ function MoggerGame({ onExit, onSaveBuild }) {
 
   return (
     <div className="pm-mogger rf-fade">
+      {showConfetti && <Confetti />}
       {screen === "menu" && (
         <div className="pm-menu">
           <div className="pm-account">{user ? <><span className="pm-acct-name">{user.name}</span><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo} elo</span><button className="pm-acct-btn" onClick={() => persist(null)}>Log out</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in / Sign up</button>}</div>
           <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
           <p className="pm-tag">Build the best PC for the challenge. AI judges. One winner.</p>
+          {streak > 0 && <div className="pm-streak-banner">🔥 Win streak: <b>{streak}</b>{bestStreak > 1 && <span className="pm-streak-best"> · Best: {bestStreak}</span>}</div>}
+          {/* A3: Stats row */}
+          {histStats.total > 0 && (
+            <div className="pm-stats-row">
+              <span>W <b>{histStats.wins}</b></span>
+              <span>L <b>{histStats.losses}</b></span>
+              <span>Avg <b>{histStats.avg}</b></span>
+              <span>Best <b>{histStats.best}</b></span>
+              {histStats.hardestAI > 0 && <span>Hardest AI <b>{histStats.hardestAI} elo</b></span>}
+            </div>
+          )}
+          {topRival && (
+            <div className="pm-rivals-row" style={{fontSize:"0.72rem",color:"var(--c-muted)",textAlign:"center",marginBottom:"4px"}}>
+              🎯 Rivals — vs <b style={{color:"var(--c-text)"}}>{topRival[0]}</b>: <span style={{color:"var(--c-good)"}}>{topRival[1].w}W</span> <span style={{color:"var(--c-bad)"}}>{topRival[1].l}L</span>
+            </div>
+          )}
+          {/* Sparkline: last 10 results */}
+          {(() => {
+            try {
+              const h = JSON.parse(localStorage.getItem("mogger_history") || "[]");
+              const last10 = h.slice(-10);
+              if (last10.length < 3) return null;
+              return (
+                <div className="pm-spark-row">
+                  <span style={{fontSize:"0.7rem",color:"var(--c-muted)",marginRight:"6px"}}>Last 10:</span>
+                  {last10.map((e, i) => <span key={i} className={"pm-spark-dot " + (e.won ? "win" : "lose")} />)}
+                </div>
+              );
+            } catch(e) { return null; }
+          })()}
+          {/* Quick-access row — always visible at the top of the grid */}
+          <div className="pm-quick-row">
+            <button className="pm-quick-btn" onClick={() => setScreen("history")}>📜 History</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("achievements")}>🏅 Achievements</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("leaderboard")}>🏆 Leaderboard</button>
+          </div>
           <div className="pm-mode-grid">
             <button className="pm-mode" onClick={() => { setMode("ai"); setScreen("diff"); }}><span className="pm-mode-icon"><Bot size={24} /></span><span className="pm-mode-name">Play vs AI</span><span className="pm-mode-sub">Ranked or practice</span></button>
             <button className="pm-mode" onClick={() => { setMode("local"); setScreen("lobby"); }}><span className="pm-mode-icon"><Gamepad2 size={24} /></span><span className="pm-mode-name">Pass &amp; Play</span><span className="pm-mode-sub">2 players, one device</span></button>
             <button className="pm-mode" onClick={() => setScreen("online")}><span className="pm-mode-icon">🌐</span><span className="pm-mode-name">Online Multiplayer</span><span className="pm-mode-sub">Play friends or random people</span></button>
-            <button className="pm-mode" onClick={() => setScreen("leaderboard")}><span className="pm-mode-icon">🏆</span><span className="pm-mode-name">Leaderboard</span><span className="pm-mode-sub">Global elo rankings</span></button>
+            <button className="pm-mode" onClick={() => { setMode("ai"); setPractice(true); start({ useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 60 }); }}><span className="pm-mode-icon">⚡</span><span className="pm-mode-name">Speed Duel</span><span className="pm-mode-sub">60 seconds, random challenge</span></button>
+            {/* B3: Daily Challenge */}
+            <button className="pm-mode pm-daily" onClick={() => { setMode("ai"); setPractice(true); start(dailyChallenge); }}><span className="pm-mode-icon">📅</span><span className="pm-mode-name">Daily Challenge</span><span className="pm-mode-sub">{USE_CASES[dailyChallenge.useCase]?.label} · {fmt(dailyChallenge.budget)}</span></button>
           </div>
           <button className="rf-ghost pm-exit" onClick={onExit}><ChevronLeft size={15} /> Back to builder</button>
         </div>
       )}
       {showAuth && <MoggerAuth onClose={() => setShowAuth(false)} onAuth={(u) => { persist(u); setShowAuth(false); }} />}
       {screen === "diff" && (
-        <div className="pm-card pm-center rf-fade">
+        <div className="pm-card pm-lobby-wide pm-center rf-fade">
           <h2 className="pm-h2"><Bot size={20} /> Choose AI difficulty</h2>
           <div className="pm-seg">
             <button className={(!practice && user ? "on" : "") + (!user ? " pm-seg-disabled" : "")} onClick={() => { if (!user) { setRankedAsk(true); } else { setPractice(false); setRankedAsk(false); } }}>Ranked</button>
@@ -3006,6 +3640,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
           )}
           <div className="pm-diff-grid">
             {DIFFS.map((d) => <button key={d.k} className="pm-diff" onClick={() => chooseDiff(d)}><span className="pm-diff-name">{d.label}</span><span className="pm-diff-elo">{d.k === "random" ? "? elo" : d.k === "custom" ? custom + " elo" : d.elo + " elo"}</span></button>)}
+            <button className="pm-mode" onClick={() => { const d = DIFFS[Math.floor(Math.random() * (DIFFS.length - 1))]; chooseDiff(d); }}><span className="pm-mode-icon">🎲</span><span className="pm-mode-name">Surprise Me</span><span className="pm-mode-sub">Random difficulty, let fate decide</span></button>
           </div>
           <div className="pm-field"><span className="pm-field-l">Custom elo: {custom}</span><input type="range" min="100" max="3000" step="50" value={custom} onChange={(e) => setCustom(+e.target.value)} className="pm-range" /></div>
           <button className="rf-btn rf-ghost-btn" onClick={menu}><ChevronLeft size={16} /> Back</button>
@@ -3014,6 +3649,24 @@ function MoggerGame({ onExit, onSaveBuild }) {
       {screen === "admin" && <MoggerAdmin onBack={exitToRoot} user={user} />}
       {screen === "coadmin" && <MoggerCoAdmin onBack={exitToRoot} />}
       {screen === "leaderboard" && <MoggerLeaderboard onBack={menu} meName={user ? user.name : null} />}
+      {screen === "history" && <MoggerHistory onBack={menu} />}
+      {screen === "achievements" && <MoggerAchievements onBack={menu} />}
+      {/* A7: Taunt picker */}
+      {screen === "taunt-pick" && (
+        <div className="pm-card pm-center rf-fade">
+          <h2 className="pm-h2">🗣️ Pick your pre-match taunt</h2>
+          <p className="pm-p pm-dim">Choose a line to send to your opponent (or skip)</p>
+          <div className="pm-taunt-grid">
+            {PRETAUNTS.map((t, i) => (
+              <button key={i} className={"pm-taunt-btn" + (selectedTaunt === t ? " on" : "")} onClick={() => setSelectedTaunt(t === selectedTaunt ? null : t)}>{t}</button>
+            ))}
+          </div>
+          <div className="pm-row pm-center-row">
+            <button className="rf-btn rf-ghost-btn" onClick={() => setScreen("diff")}><ChevronLeft size={16} /> Back</button>
+            <button className="rf-btn" onClick={() => setScreen("lobby")}>{selectedTaunt ? "Taunt sent! → Lobby" : "Skip → Lobby"} <ChevronRight size={16} /></button>
+          </div>
+        </div>
+      )}
       {screen === "online" && (user ? <MoggerOnline onExit={menu} user={user} setUser={persist} onNeedAuth={() => setShowAuth(true)} onSaveBuild={onSaveBuild} /> : (
         <div className="pm-card pm-center rf-fade">
           <h2 className="pm-h2">🌐 Online Multiplayer</h2>
@@ -3027,7 +3680,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
       {screen === "handoff" && <div className="pm-card pm-center rf-fade"><h2 className="pm-h2"><Repeat2 size={20} /> Pass the device</h2><p className="pm-p">Player 1 is locked in. Hand the device to <b>Player 2</b> — same challenge, same clock. No peeking.</p><button className="rf-btn" onClick={() => setScreen("intro2")}>I am Player 2 — start <ChevronRight size={16} /></button></div>}
       {screen === "intro2" && round && <MoggerIntro round={round} player="Player 2" onGo={() => setScreen("p2")} />}
       {screen === "p2" && round && <MoggerBuild round={round} player="Player 2" oppLabel="Player 1" oppBuild={you} oppIsAI={false} oppLocked={true} onDone={finishP2} />}
-      {screen === "result" && round && you && opp && <MoggerResult round={round} you={you} opp={opp} oppName={mode === "ai" ? "AI Opponent" : "Player 2"} oppElo={mode === "ai" ? aiElo : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} onAgain={again} onMenu={menu} onSaveBuild={onSaveBuild} />}
+      {screen === "result" && round && you && opp && <MoggerResult round={round} you={you} opp={opp} oppName={mode === "ai" ? aiPersona(aiElo).name : "Player 2"} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} onAgain={again} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); setScreen("result"); }} />}
     </div>
   );
 }
@@ -3117,7 +3770,30 @@ function ForgeArt() {
     </div>
   );
 }
-function Home({ saved, loading, onNew, onOpen, onDelete, priceInfo, onMogger }) {
+function CompletenessRing({ parts, useCase }) {
+  const total = CATEGORY_ORDER.length;
+  const filled = CATEGORY_ORDER.filter(c => parts && parts[c]).length;
+  const pct = filled / total;
+  const r = 14, cx = 16, cy = 16, circ = 2 * Math.PI * r;
+  const dash = circ * pct;
+  const color = pct === 1 ? "var(--c-good)" : pct >= 0.625 ? "var(--c-accent)" : "var(--c-warn)";
+  return (
+    <svg width="32" height="32" viewBox="0 0 32 32" style={{flexShrink:0}}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--c-border)" strokeWidth="3" />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="3"
+        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+        transform={`rotate(-90 ${cx} ${cy})`} />
+      <text x={cx} y={cy+4} textAnchor="middle" fontSize="9" fill={color} fontWeight="bold">{filled}/{total}</text>
+    </svg>
+  );
+}
+
+function Home({ saved, loading, onNew, onOpen, onDelete, priceInfo, onMogger, onClone }) {
+  const [search, setSearch] = useState("");
+  const [pins, setPins] = useState(() => { try { return JSON.parse(localStorage.getItem("rf_pins") || "[]"); } catch(e) { return []; } });
+  const togglePin = (id, e) => { e.stopPropagation(); const next = pins.includes(id) ? pins.filter(x => x !== id) : [...pins, id]; setPins(next); try { localStorage.setItem("rf_pins", JSON.stringify(next)); } catch(e2) {} };
+  const filtered = saved.filter(b => !search || (b.name || "").toLowerCase().includes(search.toLowerCase()));
+  const sorted = [...filtered].sort((a, b2) => { const ap = pins.includes(a.id) ? 1 : 0; const bp = pins.includes(b2.id) ? 1 : 0; return bp - ap; });
   return (
     <div className="rf-fade">
       <div className="rf-hero rf-hero-flash">
@@ -3155,6 +3831,12 @@ function Home({ saved, loading, onNew, onOpen, onDelete, priceInfo, onMogger }) 
         <span className="rf-muted">{saved.length} {t("savedWord")}</span>
       </div>
 
+      {!loading && saved.length > 0 && (
+        <div style={{padding:"0 0 12px 0",maxWidth:"340px"}}>
+          <input className="rf-input" placeholder="Search rigs…" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+      )}
+
       {loading ? (
         <div className="rf-muted rf-pad">{t("loadingRigs")}</div>
       ) : saved.length === 0 ? (
@@ -3164,17 +3846,26 @@ function Home({ saved, loading, onNew, onOpen, onDelete, priceInfo, onMogger }) 
         </div>
       ) : (
         <div className="rf-saved-grid">
-          {saved.map((b, i) => {
+          {sorted.map((b, i) => {
             const UC = USE_CASES[b.useCase];
+            const pinned = pins.includes(b.id);
             return (
-              <div key={b.id} className="rf-saved-card rf-pop" style={{ animationDelay: i * 60 + "ms" }} onClick={() => onOpen(b)}>
+              <div key={b.id} className={"rf-saved-card rf-pop" + (pinned ? " rf-pinned" : "")} style={{ animationDelay: i * 60 + "ms" }} onClick={() => onOpen(b)}>
                 <div className="rf-saved-top">
                   <div className="rf-saved-uc"><UC.Icon size={15} /> {tUC(b.useCase)}</div>
-                  <button className="rf-icon-btn" onClick={(e) => { e.stopPropagation(); onDelete(b.id); }}>
-                    <Trash2 size={15} />
-                  </button>
+                  <div style={{display:"flex",gap:"4px",alignItems:"center"}}>
+                    <button className="rf-icon-btn" title={pinned ? "Unpin" : "Pin to top"} onClick={(e) => togglePin(b.id, e)} style={{color: pinned ? "var(--c-accent)" : undefined}}>⭐</button>
+                    {onClone && <button className="rf-icon-btn" title="Clone build" onClick={(e) => { e.stopPropagation(); onClone(b); }}>⧉</button>}
+                    <button className="rf-icon-btn" onClick={(e) => { e.stopPropagation(); onDelete(b.id); }}>
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
-                <div className="rf-saved-name">{b.name}</div>
+                <div className="rf-saved-name" style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                  <CompletenessRing parts={b.parts} useCase={b.useCase} />
+                  <span>{b.name}</span>
+                </div>
+                {b.note && <div className="rf-build-note">{b.note}</div>}
                 <div className="rf-saved-scores">
                   <div className="rf-mini-score">
                     <span className="rf-mini-num" style={{ color: scoreColor(b.overallScore / 10) }}>{b.overallScore}</span>
@@ -3694,6 +4385,14 @@ function ToolsView({ parts, analysis, useCase, budget, onBack }) {
   const [payMonths, setPayMonths] = useState(12);
   const [payInterest, setPayInterest] = useState(0);
   const [listCopied, setListCopied] = useState(false);
+  // C12: Monthly cost planner, cashback, tax
+  const [monthlySavings, setMonthlySavings] = useState(200);
+  const [cashbackPct, setCashbackPct] = useState(2);
+  const [taxRate, setTaxRate] = useState(8.5);
+  const monthsToSave = total > 0 && monthlySavings > 0 ? Math.ceil(total / monthlySavings) : null;
+  const cashbackAmt = total > 0 ? (total * cashbackPct / 100).toFixed(2) : "0.00";
+  const totalWithTax = total > 0 ? (total * (1 + taxRate / 100)).toFixed(2) : "0.00";
+  const taxAmt = total > 0 ? (total * taxRate / 100).toFixed(2) : "0.00";
 
   // 14 — budget breakdown
   const breakdown = parts ? CATEGORY_ORDER.filter(c => parts[c]).map(c => ({
@@ -3895,6 +4594,60 @@ function ToolsView({ parts, analysis, useCase, budget, onBack }) {
                   <div style={{fontSize:"1.3rem",fontWeight:700,color:"var(--c-bad)"}}>${totalWithInterest}</div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* C12 — Monthly Savings Planner */}
+          <div className="rf-pe-card">
+            <div className="rf-analyze-title">🗓️ Monthly Savings Planner</div>
+            <div style={{marginBottom:"10px"}}>
+              <div style={{fontSize:"0.75rem",color:"var(--c-muted)",marginBottom:"5px"}}>Monthly savings: {fmt(monthlySavings)}</div>
+              <input type="range" min={50} max={1000} step={25} value={monthlySavings} onChange={e=>setMonthlySavings(+e.target.value)} className="pm-range" style={{width:"100%"}} />
+            </div>
+            {monthsToSave && (
+              <div style={{display:"flex",gap:"12px",flexWrap:"wrap"}}>
+                <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(25,232,219,0.07)",border:"1px solid rgba(25,232,219,0.2)",textAlign:"center"}}>
+                  <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginBottom:"4px"}}>Months to save</div>
+                  <div style={{fontSize:"2rem",fontWeight:700,color:"var(--c-accent)",fontFamily:"'JetBrains Mono'"}}>{monthsToSave}</div>
+                </div>
+                <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(124,92,255,0.07)",border:"1px solid rgba(124,92,255,0.2)",textAlign:"center"}}>
+                  <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginBottom:"4px"}}>Target total</div>
+                  <div style={{fontSize:"1.6rem",fontWeight:700,color:"var(--c-accent2)"}}>{fmt(total)}</div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* C12 — Cashback & Tax Calculator */}
+          <div className="rf-pe-card">
+            <div className="rf-analyze-title">💸 Cashback &amp; Tax Calculator</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"12px"}}>
+              <div>
+                <div style={{fontSize:"0.75rem",color:"var(--c-muted)",marginBottom:"5px"}}>Cashback %: {cashbackPct}%</div>
+                <input type="range" min={0} max={10} step={0.5} value={cashbackPct} onChange={e=>setCashbackPct(+e.target.value)} className="pm-range" style={{width:"100%"}} />
+              </div>
+              <div>
+                <div style={{fontSize:"0.75rem",color:"var(--c-muted)",marginBottom:"5px"}}>Sales tax %: {taxRate}%</div>
+                <input type="range" min={0} max={15} step={0.5} value={taxRate} onChange={e=>setTaxRate(+e.target.value)} className="pm-range" style={{width:"100%"}} />
+              </div>
+            </div>
+            <div style={{display:"flex",gap:"10px",flexWrap:"wrap"}}>
+              <div style={{flex:1,padding:"10px",borderRadius:"10px",background:"rgba(70,224,160,0.08)",border:"1px solid rgba(70,224,160,0.2)",textAlign:"center"}}>
+                <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginBottom:"4px"}}>Cashback earned</div>
+                <div style={{fontSize:"1.5rem",fontWeight:700,color:"var(--c-good)",fontFamily:"'JetBrains Mono'"}}>${cashbackAmt}</div>
+              </div>
+              <div style={{flex:1,padding:"10px",borderRadius:"10px",background:"rgba(255,194,75,0.07)",border:"1px solid rgba(255,194,75,0.2)",textAlign:"center"}}>
+                <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginBottom:"4px"}}>Tax ({taxRate}%)</div>
+                <div style={{fontSize:"1.5rem",fontWeight:700,color:"var(--c-warn)",fontFamily:"'JetBrains Mono'"}}>${taxAmt}</div>
+              </div>
+              <div style={{flex:1,padding:"10px",borderRadius:"10px",background:"rgba(255,255,255,0.04)",border:"1px solid var(--c-border)",textAlign:"center"}}>
+                <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginBottom:"4px"}}>Total (with tax)</div>
+                <div style={{fontSize:"1.5rem",fontWeight:700,fontFamily:"'JetBrains Mono'"}}>${totalWithTax}</div>
+              </div>
+            </div>
+            <div className="rf-analyze-row" style={{marginTop:"10px",paddingTop:"8px",borderTop:"1px solid var(--c-border)"}}>
+              <span style={{fontWeight:700}}>Net after cashback + tax</span>
+              <span style={{fontWeight:700,color:"var(--c-accent)"}}>${(parseFloat(totalWithTax) - parseFloat(cashbackAmt)).toFixed(2)}</span>
             </div>
           </div>
 
@@ -4244,6 +4997,47 @@ function ExportMoreView({ parts, analysis, useCase, budget, onBack }) {
   );
 }
 
+function noiseEstimate(parts) {
+  if (!parts || !parts.cooler) return null;
+  const coolerName = (parts.cooler.name || "").toLowerCase();
+  const isAio = coolerName.includes("aio") || coolerName.includes("liquid") || coolerName.includes("240") || coolerName.includes("360");
+  const isPassive = coolerName.includes("passive") || coolerName.includes("fanless");
+  const gpuName = (parts.gpu ? parts.gpu.name || "" : "").toLowerCase();
+  const isZeroFan = gpuName.includes("zero-fan") || gpuName.includes("silent");
+  let dbEst = isPassive ? 22 : isAio ? 32 : 38;
+  if (!isZeroFan && parts.gpu) dbEst += 4;
+  const label = dbEst < 28 ? "Near-silent" : dbEst < 35 ? "Quiet" : dbEst < 42 ? "Moderate" : "Loud";
+  const color = dbEst < 28 ? "var(--c-good)" : dbEst < 35 ? "var(--c-accent)" : dbEst < 42 ? "var(--c-warn)" : "var(--c-bad)";
+  return { dbEst, label, color, isAio, isPassive };
+}
+function weightEstimate(parts) {
+  const weights = { cpu: 0.1, gpu: parts && parts.gpu ? (parts.gpu.vram >= 16 ? 1.8 : parts.gpu.vram >= 8 ? 1.3 : 0.9) : 0, mobo: 0.8, ram: 0.08, storage: 0.07, psu: parts && parts.psu ? (parts.psu.wattage >= 1000 ? 2.4 : parts.psu.wattage >= 750 ? 1.8 : 1.4) : 0, cooler: 0.7, case: 6.5 };
+  if (!parts) return null;
+  const total = Object.keys(weights).reduce((s, k) => s + (parts[k] ? weights[k] : 0), 0);
+  return { kg: total.toFixed(1), lbs: (total * 2.205).toFixed(1), hasCase: !!parts.case };
+}
+function streamingQuality(parts) {
+  if (!parts) return null;
+  const cpuScore = parts.cpu ? (parts.cpu.cores >= 16 ? 95 : parts.cpu.cores >= 12 ? 85 : parts.cpu.cores >= 8 ? 70 : 50) : 0;
+  const gpuScore = parts.gpu ? Math.min(100, parts.gpu.perf || 50) : 0;
+  const ramScore = parts.ram ? (parts.ram.gb >= 32 ? 100 : parts.ram.gb >= 16 ? 80 : 50) : 0;
+  const total = Math.round((cpuScore * 0.5 + gpuScore * 0.3 + ramScore * 0.2));
+  const label = total >= 90 ? "Excellent (4K60 stream)" : total >= 75 ? "Great (1080p60 stream)" : total >= 55 ? "Good (1080p30 stream)" : "Basic (720p stream)";
+  const color = total >= 90 ? "var(--c-good)" : total >= 75 ? "var(--c-accent)" : total >= 55 ? "var(--c-warn)" : "var(--c-bad)";
+  return { score: total, label, color, cpuScore, gpuScore, ramScore };
+}
+function upgradeSuggestions(parts, useCase, budget) {
+  const sugs = [];
+  if (!parts) return sugs;
+  if (parts.cpu && parts.cpu.cores < 8) sugs.push({ cat: "CPU", reason: "More cores = better multitasking & streaming. Aim for 8+ cores.", priority: "high" });
+  if (parts.gpu && parts.gpu.vram < 8) sugs.push({ cat: "GPU", reason: "8GB+ VRAM handles 1080p/1440p modern titles comfortably.", priority: "high" });
+  if (!parts.gpu && useCase !== "office") sugs.push({ cat: "GPU", reason: "A dedicated GPU will massively improve gaming & creative work.", priority: "high" });
+  if (parts.ram && parts.ram.gb < 16) sugs.push({ cat: "RAM", reason: "16GB is the modern minimum. 32GB future-proofs for years.", priority: "medium" });
+  if (parts.storage && (parts.storage.type || "").toLowerCase().includes("hdd")) sugs.push({ cat: "Storage", reason: "Upgrade to NVMe SSD for 30–50× faster load times.", priority: "medium" });
+  if (!parts.cooler) sugs.push({ cat: "Cooler", reason: "An aftermarket cooler keeps temps 10–20°C lower for better boost clocks.", priority: "low" });
+  return sugs.slice(0, 4);
+}
+
 /* ----------------------------- ANALYZE VIEW ----------------------------- */
 function AnalyzeView({ parts, analysis, useCase, onBack }) {
   if (!parts || !analysis) return (
@@ -4261,6 +5055,10 @@ function AnalyzeView({ parts, analysis, useCase, onBack }) {
   const oc = overclockSim(parts);
   const mem = memBandwidth(parts);
   const stor = storageTier(parts);
+  const noise = noiseEstimate(parts);
+  const weight = weightEstimate(parts);
+  const streamQ = streamingQuality(parts);
+  const upgrades = upgradeSuggestions(parts, useCase, analysis ? analysis.total : 0);
 
   const TempBar = ({ val, max = 100 }) => {
     const pct = Math.min(100, (val / max) * 100);
@@ -4499,6 +5297,93 @@ function AnalyzeView({ parts, analysis, useCase, onBack }) {
           );
         })()}
 
+        {/* C7: Noise Estimate */}
+        <div className="rf-pe-card">
+          <div className="rf-analyze-title">🔊 Noise Estimate</div>
+          {noise ? (
+            <>
+              <div style={{fontSize:"2rem",fontWeight:700,color:noise.color,fontFamily:"'JetBrains Mono'"}}>{noise.dbEst}<span style={{fontSize:"1rem",color:"var(--c-muted)",marginLeft:"4px"}}>dB est.</span></div>
+              <div className="rf-analyze-row" style={{marginTop:"8px"}}><span className="rf-muted">Rating</span><span style={{fontWeight:700,color:noise.color}}>{noise.label}</span></div>
+              {noise.isPassive && <p className="rf-muted" style={{fontSize:"0.78rem",marginTop:"6px"}}>Passive cooler — near-silent operation</p>}
+              {noise.isAio && <p className="rf-muted" style={{fontSize:"0.78rem",marginTop:"6px"}}>AIO liquid cooler runs quieter than air towers</p>}
+            </>
+          ) : <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add a cooler to estimate noise level</p>}
+        </div>
+
+        {/* C8: Weight Estimate */}
+        <div className="rf-pe-card">
+          <div className="rf-analyze-title">⚖️ Weight Estimate</div>
+          {weight ? (
+            <>
+              <div style={{fontSize:"2rem",fontWeight:700,color:"var(--c-accent)",fontFamily:"'JetBrains Mono'"}}>{weight.kg}<span style={{fontSize:"1rem",color:"var(--c-muted)",marginLeft:"4px"}}>kg</span></div>
+              <div className="rf-analyze-row" style={{marginTop:"8px"}}><span className="rf-muted">Imperial</span><span>{weight.lbs} lbs</span></div>
+              {!weight.hasCase && <p className="rf-muted" style={{fontSize:"0.78rem",marginTop:"6px"}}>Add a case for a full weight estimate (case is ~50% of total)</p>}
+              <p className="rf-muted" style={{fontSize:"0.76rem",marginTop:"6px"}}>Estimate — actual weight varies by exact parts</p>
+            </>
+          ) : <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add parts to estimate build weight</p>}
+        </div>
+
+        {/* C9: Streaming Quality */}
+        <div className="rf-pe-card">
+          <div className="rf-analyze-title">📺 Streaming Quality</div>
+          {streamQ && (streamQ.cpuScore > 0 || streamQ.gpuScore > 0) ? (
+            <>
+              <div style={{fontSize:"1.8rem",fontWeight:700,color:streamQ.color,fontFamily:"'JetBrains Mono'"}}>{streamQ.score}<span style={{fontSize:"0.9rem",color:"var(--c-muted)",marginLeft:"4px"}}>/100</span></div>
+              <div className="rf-analyze-row" style={{marginTop:"6px"}}><span className="rf-muted">Tier</span><span style={{fontWeight:700,color:streamQ.color,fontSize:"0.82rem"}}>{streamQ.label}</span></div>
+              <div className="rf-analyze-row"><span className="rf-muted">CPU score</span><span>{streamQ.cpuScore}/100</span></div>
+              <div className="rf-analyze-row"><span className="rf-muted">GPU score</span><span>{streamQ.gpuScore}/100</span></div>
+              <div className="rf-analyze-row"><span className="rf-muted">RAM score</span><span>{streamQ.ramScore}/100</span></div>
+            </>
+          ) : <p className="rf-muted" style={{fontSize:"0.85rem"}}>Add CPU & GPU to evaluate streaming quality</p>}
+        </div>
+
+        {/* C10: Upgrade Path */}
+        <div className="rf-pe-card">
+          <div className="rf-analyze-title">🚀 Upgrade Path</div>
+          {upgrades.length === 0 ? (
+            <p style={{color:"var(--c-good)",fontSize:"0.85rem"}}>✅ Build looks well-optimised — no obvious bottlenecks</p>
+          ) : upgrades.map((u, i) => (
+            <div key={i} style={{display:"flex",gap:"10px",padding:"8px 0",borderBottom:"1px solid var(--c-border)"}}>
+              <span style={{fontWeight:700,color:u.priority==="high"?"var(--c-bad)":u.priority==="medium"?"var(--c-warn)":"var(--c-accent)",minWidth:"62px",fontSize:"0.8rem"}}>{u.cat}</span>
+              <span style={{fontSize:"0.81rem",color:"var(--c-muted)"}}>{u.reason}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* C13: Streaming Setup Checklist */}
+        <div className="rf-pe-card">
+          <div className="rf-analyze-title">🎙️ Streaming Setup Checklist</div>
+          {[
+            { label: "CPU 8+ cores", ok: parts.cpu && parts.cpu.cores >= 8 },
+            { label: "32GB+ RAM", ok: parts.ram && parts.ram.gb >= 32 },
+            { label: "Dedicated GPU", ok: !!parts.gpu },
+            { label: "NVMe SSD", ok: parts.storage && (parts.storage.type || "").toLowerCase().includes("nvme") },
+            { label: "Quiet cooler", ok: !!noise && noise.dbEst < 40 },
+          ].map((item, i) => (
+            <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid var(--c-border)",fontSize:"0.84rem"}}>
+              <span>{item.ok ? "✅" : "❌"} {item.label}</span>
+            </div>
+          ))}
+          <p className="rf-muted" style={{fontSize:"0.76rem",marginTop:"8px"}}>For a dedicated streaming/content PC alongside a gaming rig, you can prioritise CPU over GPU.</p>
+        </div>
+
+        {/* C13: LAN Party Checklist */}
+        <div className="rf-pe-card">
+          <div className="rf-analyze-title">🌐 LAN Party Checklist</div>
+          {[
+            { label: "Portable (under 10 kg)", ok: weight && +weight.kg < 10 },
+            { label: "Quiet cooler (<40 dB)", ok: noise && noise.dbEst < 40 },
+            { label: "Modular PSU (easier cables)", ok: parts.psu && (parts.psu.name || "").toLowerCase().includes("modular") },
+            { label: "Mid/ITX case", ok: parts.case && /(itx|mini|micro|slim)/i.test(parts.case.name || "") },
+            { label: "Gaming GPU", ok: !!parts.gpu && parts.gpu.perf >= 70 },
+          ].map((item, i) => (
+            <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid var(--c-border)",fontSize:"0.84rem"}}>
+              <span>{item.ok ? "✅" : "❌"} {item.label}</span>
+            </div>
+          ))}
+          <p className="rf-muted" style={{fontSize:"0.76rem",marginTop:"8px"}}>A compact, lighter build makes LAN events much more enjoyable.</p>
+        </div>
+
       </div>
     </div>
   );
@@ -4606,8 +5491,15 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
   const [shareOpen, setShareOpen] = useState(false);
   const [shareTitle, setShareTitle] = useState("");
   const [shareStatus, setShareStatus] = useState(null); // null | "posting" | "done" | "error"
+  const [textCopied, setTextCopied] = useState(false);
   const shownTotal = CATEGORY_ORDER.reduce((s, c) => { const p = parts[c]; return s + (p && !partOOS(p) ? p.price : 0); }, 0);
   const overBudget = shownTotal > budget;
+  const copyAsText = () => {
+    const lines = [`ForgeAPC Build — ${USE_CASES[useCase].label} · ${fmt(budget)} budget`, ""];
+    CATEGORY_ORDER.forEach(c => { const p = parts[c]; if (p) lines.push(`${CAT_META[c].label}: ${p.name} (${fmt(p.price)})`); });
+    lines.push("", `Total: ${fmt(shownTotal)}`, `Performance: ${a.score}/1000 · Price/Perf: ${a.ppScore}/100`);
+    navigator.clipboard.writeText(lines.join("\n")).then(() => { setTextCopied(true); setTimeout(() => setTextCopied(false), 2500); });
+  };
 
   const doShare = async () => {
     if (!shareTitle.trim()) return;
@@ -4718,6 +5610,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
             <div className="rf-build-actions-row">
               <button className="rf-ghost rf-sm-btn" onClick={onPower}>⚡ Power cost</button>
               <button className="rf-ghost rf-sm-btn" onClick={onShareLink}>{shareCopied ? <><Check size={12} /> Copied!</> : <><Globe size={12} /> Share link</>}</button>
+              <button className="rf-ghost rf-sm-btn" onClick={copyAsText}>{textCopied ? <><Check size={12} /> Copied text!</> : <>📋 Copy as text</>}</button>
             </div>
           </div>
         );
