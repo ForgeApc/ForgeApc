@@ -1788,7 +1788,7 @@ function mBuildCandidate(ucKey, budget, cap, metric, topK) {
   // 1) Valid, complete, cheap base.
   for (const c of order) {
     if (catCap[c] === 0) continue; // skip zero-alloc categories (e.g. gpu for office)
-    const opts = [...moggerOptions(c)].sort((a, b) => a.price - b.price);
+    const opts = [...moggerOptions(c)].sort((a, b) => a.price - b.price || up(c, b) - up(c, a));
     if (c === "cpu" && W.gpu === 0) {
       // GPU-less build: must use a CPU with integrated graphics
       const iOpts = opts.filter((o) => o.igpu);
@@ -1820,10 +1820,12 @@ function mBuildCandidate(ucKey, budget, cap, metric, topK) {
       const vceil = Math.min(VALUE_CEILING[c] ?? Infinity, catCap[c] || Infinity);
       for (const o of moggerOptions(c)) {
         if (!ok(c, o) || up(c, o) <= up(c, cur)) continue;
-        const delta = o.price - cur.price; if (delta <= 0) continue;
+        const delta = o.price - cur.price;
+        if (delta < 0) continue; // cheaper AND better is never available by construction
         if (vceil !== Infinity && o.price > vceil) continue;
         if (spent() - cur.price + o.price > cap) continue;
-        moves.push({ kind: "one", c, part: o, gain: gainOf(c, cur, o, delta) });
+        // delta === 0: free perf upgrade (same price, better part) — always take it
+        moves.push({ kind: "one", c, part: o, gain: delta === 0 ? 1e9 : gainOf(c, cur, o, delta) });
       }
     }
     if (build.cpu) {
@@ -2620,7 +2622,12 @@ function MoggerResult({ round, you, opp, oppName, oppElo, oppTag, oppPersona, my
         </div>
       )}
       <div className="pm-verdict-box"><span className="pm-verdict-tag"><Sparkles size={12} /> AI JUDGE</span>{busy && !verdict ? <p className="pm-dim">Writing the verdict…</p> : <p>{verdict}</p>}</div>
-      {eloMsg && <div className={"pm-elo-result " + (eloMsg.delta > 0 ? "up" : eloMsg.delta < 0 ? "down" : "")}>{eloMsg.delta > 0 ? "+" : ""}{eloMsg.delta} elo · now {eloMsg.newElo}</div>}
+      {eloMsg && (
+        <div className={"pm-elo-result " + (eloMsg.delta > 0 ? "up" : eloMsg.delta < 0 ? "down" : "")}>
+          <span className="pm-elo-delta">{eloMsg.delta > 0 ? "+" : ""}{eloMsg.delta} ELO</span>
+          <span className="pm-elo-now">{eloMsg.newElo} total</span>
+        </div>
+      )}
       <div className="pm-scorecols">
         <MoggerScoreCol title="You" build={you} s={sySD} win={youWin} shown={ay} rank={myRank} />
         <MoggerScoreCol title={oppName} build={opp} s={soSD} win={!youWin} shown={ao} rank={oppRank} />
@@ -3486,6 +3493,14 @@ function MoggerGame({ onExit, onSaveBuild }) {
       return { total: h.length, wins, losses: h.length - wins, avg, best, hardestAI };
     } catch(e) { return { total:0, wins:0, losses:0, avg:0, best:0, hardestAI:0 }; }
   }, [screen]);
+  // Daily elo change (sum of all elo deltas today)
+  const todayEloChange = useMemo(() => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const log = JSON.parse(localStorage.getItem("mogger_elo_log") || "[]");
+      return log.filter((e) => e.date === today).reduce((s, e) => s + e.delta, 0);
+    } catch(e) { return 0; }
+  }, [screen]);
   // B3: daily challenge seed
   const dailyChallenge = useMemo(() => {
     const d = new Date(); const seed = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
@@ -3573,6 +3588,14 @@ function MoggerGame({ onExit, onSaveBuild }) {
     persist({ ...user, elo: newElo });
     netSaveElo(user.id, newElo);
     setEloMsg({ delta, newElo });
+    // Track daily elo changes
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const log = JSON.parse(localStorage.getItem("mogger_elo_log") || "[]");
+      log.push({ date: today, delta, newElo });
+      if (log.length > 200) log.splice(0, log.length - 200);
+      localStorage.setItem("mogger_elo_log", JSON.stringify(log));
+    } catch(e) {}
   }, [screen]);
 
   return (
@@ -3584,6 +3607,11 @@ function MoggerGame({ onExit, onSaveBuild }) {
           <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
           <p className="pm-tag">Build the best PC for the challenge. AI judges. One winner.</p>
           {streak > 0 && <div className="pm-streak-banner">🔥 Win streak: <b>{streak}</b>{bestStreak > 1 && <span className="pm-streak-best"> · Best: {bestStreak}</span>}</div>}
+          {user && todayEloChange !== 0 && (
+            <div className={"pm-daily-elo " + (todayEloChange > 0 ? "up" : "down")}>
+              {todayEloChange > 0 ? "+" : ""}{todayEloChange} elo today
+            </div>
+          )}
           {/* A3: Stats row */}
           {histStats.total > 0 && (
             <div className="pm-stats-row">
