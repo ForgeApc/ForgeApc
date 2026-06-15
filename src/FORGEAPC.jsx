@@ -1585,6 +1585,7 @@ export default function RigForge() {
             on3D={() => setView3D(true)}
             onAnalyze={() => setView("analyze")}
             onTools={() => setView("tools")}
+            onNavigate={(v) => setView(v)}
             onPower={() => setPowerOpen(true)}
             onShareLink={() => {
               const enc = encodeBuild(useCase, budget, parts);
@@ -5715,13 +5716,14 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
 }
 
 /* ----------------------------- RESULTS ----------------------------- */
-function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline, onAnalyze, onTools }) {
+function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline, onAnalyze, onTools, onNavigate }) {
   const UC = USE_CASES[useCase];
   const a = analysis;
   const [shareOpen, setShareOpen] = useState(false);
   const [shareTitle, setShareTitle] = useState("");
   const [shareStatus, setShareStatus] = useState(null); // null | "posting" | "done" | "error"
   const [textCopied, setTextCopied] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const shownTotal = CATEGORY_ORDER.reduce((s, c) => { const p = parts[c]; return s + (p && !partOOS(p) ? p.price : 0); }, 0);
   const overBudget = shownTotal > budget;
   const copyAsText = () => {
@@ -5749,8 +5751,27 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
         <div className="rf-results-actions">
           <button className="rf-ghost" onClick={onRegen}><Sparkles size={15} /> Auto-forge</button>
           <button className="rf-ghost" onClick={on3D}><LayoutGrid size={15} /> 3D View</button>
-          <button className="rf-ghost" onClick={onAnalyze}><Zap size={15} /> Analyze</button>
-          <button className="rf-ghost" onClick={onTools}><DollarSign size={15} /> Cost Tools</button>
+          <div style={{position:"relative"}}>
+            <button className="rf-ghost" onClick={() => setMoreMenuOpen((o) => !o)}>
+              <LayoutGrid size={15} /> More {moreMenuOpen ? "▲" : "▾"}
+            </button>
+            {moreMenuOpen && (
+              <div className="rf-more-dropdown" onClick={() => setMoreMenuOpen(false)}>
+                {[
+                  { icon: <Zap size={14}/>,         label: "Analyze",           view: "analyze" },
+                  { icon: <DollarSign size={14}/>,   label: "Cost Tools",        view: "tools" },
+                  { icon: <Gamepad2 size={14}/>,     label: "FPS & Games",       view: "fps-games" },
+                  { icon: <Sparkles size={14}/>,     label: "Build Stats",       view: "build-stats" },
+                  { icon: <Zap size={14}/>,          label: "Power & Peripherals", view: "power-peripherals" },
+                  { icon: <Save size={14}/>,         label: "Export & More",     view: "export-more" },
+                ].map(({ icon, label, view }) => (
+                  <button key={view} className="rf-more-dropdown-item" onClick={() => onNavigate && onNavigate(view)}>
+                    {icon} {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {onShare ? (
             <button className="rf-ghost" onClick={() => { setShareTitle(""); setShareStatus(null); setShareOpen(true); }}><Globe size={15} /> Share</button>
           ) : (
