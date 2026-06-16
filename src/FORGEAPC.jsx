@@ -2542,7 +2542,7 @@ function partJudgeSummary(cat, part, ucKey) {
   }
 }
 
-function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, onAgain, onMenu, onHistory, onSaveBuild, onMirror }) {
+function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, onAgain, onMenu, onHistory, onSaveBuild, onMirror, onRematch }) {
   const sy = useMemo(() => moggerScore(you, round.useCase, round.budget), [you, opp]);
   const so = useMemo(() => moggerScore(opp, round.useCase, round.budget), [you, opp]);
   // B7: Sudden Death — zero score if over budget
@@ -2553,6 +2553,21 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
   const youWin = sySD.total >= soSD.total;
   const winnerBuild = youWin ? you : opp;
   const mvpCat = useMemo(() => duelMVP(winnerBuild, round.useCase, round.budget), [you, opp]);
+  // Coaching tag: on a loss, find the category that cost the most score (weighted by alloc%)
+  const weakCat = useMemo(() => {
+    if (youWin) return null;
+    let worst = null, worstGap = 0;
+    for (const c of CATEGORY_ORDER) {
+      const allocW = USE_CASES[round.useCase].alloc[c] || 0;
+      if (!allocW) continue;
+      const maxP = ucMaxPerf(c, round.useCase);
+      const yPct = you[c] && maxP ? (ucPerf(c, you[c], round.useCase) / maxP) * 100 : 0;
+      const oPct = opp[c] && maxP ? (ucPerf(c, opp[c], round.useCase) / maxP) * 100 : 0;
+      const gap = (oPct - yPct) * allocW;
+      if (gap > worstGap) { worstGap = gap; worst = c; }
+    }
+    return worst;
+  }, [you, opp, youWin]);
   // Open breakdown automatically when you lose so the player sees why
   const [showBreakdown, setShowBreakdown] = useState(!youWin);
   // AI persona post-match quip
@@ -2658,6 +2673,7 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
       {/* A5: Budget efficiency row */}
       {phase === "reveal" && <div className="pm-budget-eff-row"><span>Budget used: <b style={{color: budgEff > 100 ? "var(--c-bad)" : budgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{budgEff}%</b> {youLabel} · <b style={{color: oppBudgEff > 100 ? "var(--c-bad)" : oppBudgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{oppBudgEff}%</b> {oppName}</span></div>}
       {mvpCat && <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? youLabel : oppName}</div>}
+      {weakCat && <div className="pm-weak-banner">📉 Costliest category: <b>{CAT_META[weakCat].label}</b> — {oppName}'s pick scored higher here, worth {USE_CASES[round.useCase].alloc[weakCat]}% of your total score.</div>}
       <button className="rf-btn rf-ghost-btn pm-breakdown-toggle" onClick={() => setShowBreakdown((v) => !v)}>{showBreakdown ? "▲ Hide" : "▼ Show"} part-by-part breakdown</button>
       {showBreakdown && (
         <div className="pm-breakdown">
@@ -2714,6 +2730,7 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
       <div className="pm-row pm-center-row">
         <button className="rf-btn rf-ghost-btn" onClick={onMenu}>Menu</button>
         {onMirror && <button className="rf-btn rf-ghost-btn" onClick={onMirror}><Repeat2 size={16} /> Mirror</button>}
+        {onRematch && <button className="rf-btn rf-ghost-btn" onClick={onRematch}><RotateCcw size={16} /> Rematch</button>}
         <button className="rf-btn rf-ghost-btn" onClick={() => { onMenu(); setTimeout(() => { /* History screen accessed from menu */ }, 50); }} style={{display:"none"}} />
         <button className="rf-btn" onClick={onAgain}><Repeat2 size={16} /> Play again</button>
       </div>
@@ -3648,8 +3665,22 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const dailyChallenge = useMemo(() => {
     const d = new Date(); const seed = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
     const ucs = MOGGER_UCS; const buds = MOGGER_BUDGETS;
-    return { useCase: ucs[seed % ucs.length], budget: buds[seed % buds.length], secs: 120 + (seed % 4) * 60 };
+    return { useCase: ucs[seed % ucs.length], budget: buds[seed % buds.length], secs: 120 + (seed % 4) * 60, isDaily: true };
   }, []);
+  // Daily Challenge streak — consecutive days played (Wordle-style)
+  const dailyStreakInfo = useMemo(() => {
+    try {
+      const log = JSON.parse(localStorage.getItem("mogger_daily_log") || "[]");
+      const set = new Set(log);
+      const today = new Date(); const todayKey = today.toISOString().slice(0, 10);
+      const playedToday = set.has(todayKey);
+      let streakCount = 0;
+      const cursor = new Date(today);
+      if (!playedToday) cursor.setDate(cursor.getDate() - 1);
+      while (set.has(cursor.toISOString().slice(0, 10))) { streakCount++; cursor.setDate(cursor.getDate() - 1); }
+      return { streak: streakCount, playedToday };
+    } catch (e) { return { streak: 0, playedToday: false }; }
+  }, [screen]);
 
   const persist = (u) => { setUser(u); try { if (u) localStorage.setItem("mogger_user", JSON.stringify(u)); else localStorage.removeItem("mogger_user"); } catch (e) {} };
   const refreshMe = useCallback(() => {
@@ -3670,6 +3701,13 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const finishP1 = (b) => { setYou(b); if (mode === "ai") setScreen("result"); else setScreen("handoff"); };
   const finishP2 = (b) => { setOpp(b); setScreen("result"); };
   const again = () => { setYou(null); setOpp(null); setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; setScreen(mode === "ai" ? "diff" : "lobby"); };
+  // Rematch — exact same use case / budget / opponent elo, skip difficulty re-pick
+  const rematch = () => {
+    setYou(null); setOpp(null); setEloMsg(null); setMirrored(false);
+    eloAppliedRef.current = false; historyAppliedRef.current = false;
+    if (mode === "ai") setOpp(moggerAI(round.useCase, round.budget, aiElo));
+    setScreen("intro");
+  };
   const menu = () => { setYou(null); setOpp(null); setRound(null); setEloMsg(null); setMirrored(false); setScreen("menu"); };
   const exitToRoot = () => {
     try { if (typeof window !== "undefined" && window.history) { const p = window.location.pathname.replace(/\/+$/, "").split("/").pop(); if (p === "admin" || p === "coadmin") window.history.replaceState(null, "", "/"); } } catch (e) {}
@@ -3716,6 +3754,14 @@ function MoggerGame({ onExit, onSaveBuild }) {
     setBestStreak(newBest);
     if (won) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 4500); }
     try { localStorage.setItem("mogger_streak", newStreak); localStorage.setItem("mogger_best_streak", newBest); } catch(e) {}
+    // Daily Challenge streak — log today's date once
+    if (round.isDaily) {
+      try {
+        const log = JSON.parse(localStorage.getItem("mogger_daily_log") || "[]");
+        const todayKey = new Date().toISOString().slice(0, 10);
+        if (!log.includes(todayKey)) { log.push(todayKey); if (log.length > 365) log.splice(0, log.length - 365); localStorage.setItem("mogger_daily_log", JSON.stringify(log)); }
+      } catch (e) {}
+    }
   }, [screen]);
 
   // apply elo after a vs-AI result
@@ -3751,6 +3797,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
           <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
           <p className="pm-tag">Build the best PC for the challenge. AI judges. One winner.</p>
           {streak > 0 && <div className="pm-streak-banner">🔥 Win streak: <b>{streak}</b>{bestStreak > 1 && <span className="pm-streak-best"> · Best: {bestStreak}</span>}</div>}
+          {dailyStreakInfo.streak > 0 && <div className="pm-daily-streak-banner">📅 Daily streak: <b>{dailyStreakInfo.streak}</b> day{dailyStreakInfo.streak === 1 ? "" : "s"}{dailyStreakInfo.playedToday && <span className="pm-daily-done"> · ✓ done today</span>}</div>}
           {user && todayEloChange !== 0 && (
             <div className={"pm-daily-elo " + (todayEloChange > 0 ? "up" : "down")}>
               {todayEloChange > 0 ? "+" : ""}{todayEloChange} elo today
@@ -3798,7 +3845,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
             <button className="pm-mode" onClick={() => setScreen("online")}><span className="pm-mode-icon">🌐</span><span className="pm-mode-name">Online Multiplayer</span><span className="pm-mode-sub">Play friends or random people</span></button>
             <button className="pm-mode" onClick={() => { setMode("ai"); setPractice(true); start({ useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 60 }); }}><span className="pm-mode-icon">⚡</span><span className="pm-mode-name">Speed Duel</span><span className="pm-mode-sub">60 seconds, random challenge</span></button>
             {/* B3: Daily Challenge */}
-            <button className="pm-mode pm-daily" onClick={() => { setMode("ai"); setPractice(true); start(dailyChallenge); }}><span className="pm-mode-icon">📅</span><span className="pm-mode-name">Daily Challenge</span><span className="pm-mode-sub">{USE_CASES[dailyChallenge.useCase]?.label} · {fmt(dailyChallenge.budget)}</span></button>
+            <button className={"pm-mode pm-daily" + (dailyStreakInfo.playedToday ? " done" : "")} onClick={() => { setMode("ai"); setPractice(true); start(dailyChallenge); }}><span className="pm-mode-icon">📅</span><span className="pm-mode-name">Daily Challenge{dailyStreakInfo.playedToday ? " ✓" : ""}</span><span className="pm-mode-sub">{USE_CASES[dailyChallenge.useCase]?.label} · {fmt(dailyChallenge.budget)}{dailyStreakInfo.streak > 0 ? ` · 🔥${dailyStreakInfo.streak}` : ""}</span></button>
           </div>
           <button className="rf-ghost pm-exit" onClick={onExit}><ChevronLeft size={15} /> Back to builder</button>
         </div>
@@ -3824,10 +3871,20 @@ function MoggerGame({ onExit, onSaveBuild }) {
             <p className="pm-seg-note">{practice ? "Practice — your elo never changes, win or lose." : "Ranked — win to gain elo, lose to drop it."}</p>
           )}
           <div className="pm-diff-grid">
-            {DIFFS.map((d) => <button key={d.k} className="pm-diff" onClick={() => chooseDiff(d)}><span className="pm-diff-name">{d.label}</span><span className="pm-diff-elo">{d.k === "random" ? "? elo" : d.k === "custom" ? custom + " elo" : d.elo + " elo"}</span></button>)}
+            {DIFFS.map((d) => {
+              const oppElo = d.k === "custom" ? custom : d.elo;
+              const winPct = (user && d.k !== "random") ? Math.round(100 / (1 + Math.pow(10, (oppElo - user.elo) / 400))) : null;
+              return (
+                <button key={d.k} className="pm-diff" onClick={() => chooseDiff(d)}>
+                  <span className="pm-diff-name">{d.label}</span>
+                  <span className="pm-diff-elo">{d.k === "random" ? "? elo" : d.k === "custom" ? custom + " elo" : d.elo + " elo"}</span>
+                  {winPct != null && <span className={"pm-diff-winpct" + (winPct >= 50 ? " fav" : " under")}>{winPct}% win chance</span>}
+                </button>
+              );
+            })}
             <button className="pm-mode" onClick={() => { const d = DIFFS[Math.floor(Math.random() * (DIFFS.length - 1))]; chooseDiff(d); }}><span className="pm-mode-icon">🎲</span><span className="pm-mode-name">Surprise Me</span><span className="pm-mode-sub">Random difficulty, let fate decide</span></button>
           </div>
-          <div className="pm-field"><span className="pm-field-l">Custom elo: {custom}</span><input type="range" min="100" max="3000" step="50" value={custom} onChange={(e) => setCustom(+e.target.value)} className="pm-range" /></div>
+          <div className="pm-field"><span className="pm-field-l">Custom elo: {custom}{user && <span className="pm-diff-winpct-inline"> · {Math.round(100 / (1 + Math.pow(10, (custom - user.elo) / 400)))}% win chance</span>}</span><input type="range" min="100" max="3000" step="50" value={custom} onChange={(e) => setCustom(+e.target.value)} className="pm-range" /></div>
           <button className="rf-btn rf-ghost-btn" onClick={menu}><ChevronLeft size={16} /> Back</button>
         </div>
       )}
@@ -3869,7 +3926,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
         const aiName = mode === "ai" ? aiPersona(aiElo).name : "Player 2";
         const resultYouLabel = mirrored ? aiName : "You";
         const resultOppName  = mirrored ? "You" : aiName;
-        return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} onAgain={again} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
+        return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} onAgain={again} onRematch={mode === "ai" ? rematch : undefined} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
       })()}
     </div>
   );
