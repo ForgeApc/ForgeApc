@@ -2427,6 +2427,20 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
       </div>
       <div className="pm-challenge-row"><span className="pm-uc"><UC.Icon size={16} /> {UC.label}</span><span className="pm-budget">Budget {fmt(round.budget)}</span></div>
       <div className={"pm-spend" + (over ? " over" : "")}>Spent {fmt(spent)} / {fmt(round.budget)}{over && <b> · OVER BUDGET (penalized)</b>} · hard cap {fmt(round.budget + 50)}</div>
+      {round.secs <= 60 && (() => {
+        const spendPct = Math.min(100, (spent / round.budget) * 100);
+        const timePct = Math.min(100, ((round.secs - left) / round.secs) * 100);
+        const behind = spendPct < timePct - 15;
+        return (
+          <div className="pm-pace-wrap">
+            <div className="pm-pace-bar">
+              <div className={"pm-pace-fill" + (over ? " over" : behind ? " behind" : "")} style={{ width: spendPct + "%" }} />
+              <div className="pm-pace-marker" style={{ left: timePct + "%" }} title="Where you should be by now" />
+            </div>
+            <div className="pm-pace-label">⏱ Pace: {Math.round(spendPct)}% of budget allocated · {Math.round(timePct)}% of time used{behind && !over ? <span className="pm-pace-warn"> · falling behind pace</span> : ""}</div>
+          </div>
+        );
+      })()}
       <div className="pm-arena">
         <div className="pm-col you">
           <div className="pm-col-h">YOUR BUILD</div>
@@ -2542,7 +2556,48 @@ function partJudgeSummary(cat, part, ucKey) {
   }
 }
 
-function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, onAgain, onMenu, onHistory, onSaveBuild, onMirror, onRematch }) {
+// Five versatility dimensions for the post-match radar chart. Gaming/productivity are
+// evaluated against fixed reference use cases (regardless of the actual match's use case)
+// so the chart shows how each build would generalize; value/efficiency/balance reflect
+// how the build did against the use case it was actually built for.
+function radarDims(build, ucKey, budget) {
+  const gaming = analyzeBuild(build, "gaming", budget).fitNorm * 100;
+  const productivity = (analyzeBuild(build, "content", budget).fitNorm * 100 + analyzeBuild(build, "workstation", budget).fitNorm * 100) / 2;
+  const a = analyzeBuild(build, ucKey, budget);
+  return { gaming: Math.round(gaming), productivity: Math.round(productivity), value: Math.round(a.ppScore), efficiency: Math.round(a.budgetAdh), balance: Math.round(a.balance) };
+}
+
+function DuelRadarChart({ you, opp, youLabel = "You", oppName, useCase, budget }) {
+  const dims = ["gaming", "productivity", "value", "efficiency", "balance"];
+  const labels = ["Gaming", "Productivity", "Value", "Efficiency", "Balance"];
+  const yd = useMemo(() => radarDims(you, useCase, budget), [you, useCase, budget]);
+  const od = useMemo(() => radarDims(opp, useCase, budget), [opp, useCase, budget]);
+  const n = dims.length, size = 230, cx = size / 2, cy = size / 2, r = 80;
+  const angle = (i) => (Math.PI * 2 * i) / n - Math.PI / 2;
+  const pt = (i, val) => { const a = angle(i); const rad = (clamp(val, 0, 100) / 100) * r; return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)]; };
+  const ring = (frac) => dims.map((_, i) => { const a = angle(i); return `${cx + r * frac * Math.cos(a)},${cy + r * frac * Math.sin(a)}`; }).join(" ");
+  const poly = (d) => dims.map((k, i) => pt(i, d[k]).join(",")).join(" ");
+  return (
+    <div className="pm-radar-wrap">
+      <svg className="pm-radar" width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {[0.25, 0.5, 0.75, 1].map((f, i) => <polygon key={i} points={ring(f)} fill="none" stroke="var(--c-border)" strokeWidth="1" />)}
+        {dims.map((_, i) => { const [x, y] = pt(i, 100); return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--c-border)" strokeWidth="1" />; })}
+        <polygon points={poly(od)} fill="var(--c-bad)" fillOpacity="0.16" stroke="var(--c-bad)" strokeWidth="1.5" />
+        <polygon points={poly(yd)} fill="var(--c-accent)" fillOpacity="0.22" stroke="var(--c-accent)" strokeWidth="1.5" />
+        {dims.map((_, i) => {
+          const a = angle(i); const lx = cx + (r + 22) * Math.cos(a), ly = cy + (r + 22) * Math.sin(a);
+          return <text key={i} x={lx} y={ly} fontSize="9.5" fill="var(--c-muted)" textAnchor="middle" dominantBaseline="middle" fontFamily="'JetBrains Mono',monospace">{labels[i]}</text>;
+        })}
+      </svg>
+      <div className="pm-radar-legend">
+        <span className="pm-radar-legend-item you"><i /> {youLabel}</span>
+        <span className="pm-radar-legend-item opp"><i /> {oppName}</span>
+      </div>
+    </div>
+  );
+}
+
+function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, practice, series, onAgain, onMenu, onHistory, onSaveBuild, onMirror, onRematch, onNextGame, onAvenge }) {
   const sy = useMemo(() => moggerScore(you, round.useCase, round.budget), [you, opp]);
   const so = useMemo(() => moggerScore(opp, round.useCase, round.budget), [you, opp]);
   // B7: Sudden Death — zero score if over budget
@@ -2568,6 +2623,17 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
     }
     return worst;
   }, [you, opp, youWin]);
+  // Avenge the Rival: surfaced on a loss vs an AI tier you already have a losing record against
+  const rivalInfo = useMemo(() => {
+    if (youWin || oppElo == null || !onAvenge) return null;
+    try {
+      const tier = eloTierName(oppElo);
+      const rivals = JSON.parse(localStorage.getItem("mogger_rivals") || "{}");
+      const r = rivals[tier];
+      if (r && r.l >= 2) return { tier, w: r.w, l: r.l };
+    } catch (e) {}
+    return null;
+  }, [youWin, oppElo, onAvenge]);
   // Open breakdown automatically when you lose so the player sees why
   const [showBreakdown, setShowBreakdown] = useState(!youWin);
   // AI persona post-match quip
@@ -2662,18 +2728,34 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
         <div className={"pm-elo-result " + (eloMsg.delta > 0 ? "up" : eloMsg.delta < 0 ? "down" : "")}>
           <span className="pm-elo-delta">{eloMsg.delta > 0 ? "+" : ""}{eloMsg.delta} ELO</span>
           <span className="pm-elo-now">{eloMsg.newElo} total</span>
+          {eloMsg.streakMult > 1 && <span className="pm-streak-mult">🔥 {eloMsg.streak}-win streak · +{Math.round((eloMsg.streakMult - 1) * 100)}% bonus</span>}
+        </div>
+      )}
+      {series && (
+        <div className="pm-series-banner">
+          <span className="pm-series-score">🏆 Series: {youLabel} <b>{series.wins.you}</b> – <b>{series.wins.opp}</b> {oppName}</span>
+          {series.done
+            ? <span className={"pm-series-result " + (series.winner === "you" ? "win" : "lose")}>{series.winner === "you" ? "You won the series!" : `${oppName} won the series!`}</span>
+            : <span className="pm-series-game">Game {series.game} of 3</span>}
         </div>
       )}
       <div className="pm-scorecols">
         <MoggerScoreCol title={youLabel} build={you} s={sySD} win={youWin} shown={ay} rank={myRank} />
         <MoggerScoreCol title={oppName} build={opp} s={soSD} win={!youWin} shown={ao} rank={oppRank} />
       </div>
+      <DuelRadarChart you={you} opp={opp} oppName={oppName} youLabel={youLabel} useCase={round.useCase} budget={round.budget} />
       {/* B4: efficiency medal */}
       {effMedal && phase === "reveal" && <div className="pm-eff-medal">{effMedal} — Score {sy.total}/1000</div>}
       {/* A5: Budget efficiency row */}
       {phase === "reveal" && <div className="pm-budget-eff-row"><span>Budget used: <b style={{color: budgEff > 100 ? "var(--c-bad)" : budgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{budgEff}%</b> {youLabel} · <b style={{color: oppBudgEff > 100 ? "var(--c-bad)" : oppBudgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{oppBudgEff}%</b> {oppName}</span></div>}
       {mvpCat && <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? youLabel : oppName}</div>}
       {weakCat && <div className="pm-weak-banner">📉 Costliest category: <b>{CAT_META[weakCat].label}</b> — {oppName}'s pick scored higher here, worth {USE_CASES[round.useCase].alloc[weakCat]}% of your total score.</div>}
+      {rivalInfo && (
+        <div className="pm-avenge-row">
+          <span className="pm-avenge-label">⚔️ Rival alert — you're {rivalInfo.l}-{rivalInfo.w} down vs <b>{rivalInfo.tier}</b> tier opponents.</span>
+          <button className="rf-btn pm-avenge-btn" onClick={() => onAvenge(rivalInfo.tier)}>⚔️ Avenge the Rival</button>
+        </div>
+      )}
       <button className="rf-btn rf-ghost-btn pm-breakdown-toggle" onClick={() => setShowBreakdown((v) => !v)}>{showBreakdown ? "▲ Hide" : "▼ Show"} part-by-part breakdown</button>
       {showBreakdown && (
         <div className="pm-breakdown">
@@ -2730,9 +2812,18 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
       <div className="pm-row pm-center-row">
         <button className="rf-btn rf-ghost-btn" onClick={onMenu}>Menu</button>
         {onMirror && <button className="rf-btn rf-ghost-btn" onClick={onMirror}><Repeat2 size={16} /> Mirror</button>}
-        {onRematch && <button className="rf-btn rf-ghost-btn" onClick={onRematch}><RotateCcw size={16} /> Rematch</button>}
-        <button className="rf-btn rf-ghost-btn" onClick={() => { onMenu(); setTimeout(() => { /* History screen accessed from menu */ }, 50); }} style={{display:"none"}} />
-        <button className="rf-btn" onClick={onAgain}><Repeat2 size={16} /> Play again</button>
+        {series && !series.done && onNextGame ? (
+          <button className="rf-btn pm-next-game-btn" onClick={onNextGame}><ChevronRight size={16} /> Next Game ({series.game + 1} of 3)</button>
+        ) : (
+          <>
+            {onRematch && (
+              practice
+                ? <button className="rf-btn pm-quick-rematch" onClick={onRematch}><RotateCcw size={16} /> Quick Rematch</button>
+                : <button className="rf-btn rf-ghost-btn" onClick={onRematch}><RotateCcw size={16} /> Rematch</button>
+            )}
+            <button className="rf-btn" onClick={onAgain}><Repeat2 size={16} /> Play again</button>
+          </>
+        )}
       </div>
       <div style={{textAlign:"center",marginTop:"6px",display:"flex",justifyContent:"center",gap:"16px"}}>
         <button style={{fontSize:"0.75rem",color:"var(--c-muted)",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}} onClick={onMenu}>← Menu</button>
@@ -3241,6 +3332,11 @@ function MoggerAuth({ onClose, onAuth }) {
 
 const DIFFS = [{ k: "easy", label: "Easy", elo: 250 }, { k: "medium", label: "Medium", elo: 550 }, { k: "hard", label: "Hard", elo: 1000 }, { k: "random", label: "Random", elo: 0 }, { k: "custom", label: "Custom", elo: 1500 }];
 
+// Rival tiers — same bands used for the rival tracker and the "avenge" rematch.
+const ELO_TIERS = [{ name: "Beginner", min: 0, max: 599 }, { name: "Novice", min: 600, max: 1199 }, { name: "Skilled", min: 1200, max: 1799 }, { name: "Expert", min: 1800, max: 2399 }, { name: "Grandmaster", min: 2400, max: 3000 }];
+function eloTierName(elo) { return (ELO_TIERS.find((t) => elo >= t.min && elo <= t.max) || ELO_TIERS[0]).name; }
+function eloTierRandom(tierName) { const t = ELO_TIERS.find((x) => x.name === tierName) || ELO_TIERS[0]; return t.min + Math.floor(Math.random() * (t.max - t.min + 1)); }
+
 const ADMIN_PASS = "Admin2014"; // change this to your own secret
 const COADMIN_PASS = "Coadmin2014"; // co-admin password — limited access
 
@@ -3628,6 +3724,9 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const [streak, setStreak] = useState(() => { try { return +(localStorage.getItem("mogger_streak") || 0); } catch(e) { return 0; } });
   const [bestStreak, setBestStreak] = useState(() => { try { return +(localStorage.getItem("mogger_best_streak") || 0); } catch(e) { return 0; } });
   const historyAppliedRef = useRef(false);
+  // Best-of-3 series (vs AI): seriesPick is the pre-match toggle, series tracks an active series
+  const [seriesPick, setSeriesPick] = useState(false);
+  const [series, setSeries] = useState(null); // { wins:{you,opp}, game, done, winner }
   // A7: Pre-match taunt
   const [selectedTaunt, setSelectedTaunt] = useState(null);
   // B2: confetti on win
@@ -3697,10 +3796,16 @@ function MoggerGame({ onExit, onSaveBuild }) {
     else { setAiElo(d.elo); setAiHidden(false); }
     setScreen("taunt-pick");
   };
-  const start = (r) => { setRound(r); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); if (mode === "ai") setOpp(moggerAI(r.useCase, r.budget, aiElo)); setScreen("intro"); };
+  const start = (r) => {
+    setRound(r); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null);
+    if (mode === "ai") setOpp(moggerAI(r.useCase, r.budget, aiElo));
+    if (seriesPick && mode === "ai") { setSeries({ wins: { you: 0, opp: 0 }, game: 1, done: false, winner: null }); setSeriesPick(false); }
+    else setSeries(null);
+    setScreen("intro");
+  };
   const finishP1 = (b) => { setYou(b); if (mode === "ai") setScreen("result"); else setScreen("handoff"); };
   const finishP2 = (b) => { setOpp(b); setScreen("result"); };
-  const again = () => { setYou(null); setOpp(null); setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; setScreen(mode === "ai" ? "diff" : "lobby"); };
+  const again = () => { setYou(null); setOpp(null); setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; setSeries(null); setScreen(mode === "ai" ? "diff" : "lobby"); };
   // Rematch — exact same use case / budget / opponent elo, skip difficulty re-pick
   const rematch = () => {
     setYou(null); setOpp(null); setEloMsg(null); setMirrored(false);
@@ -3708,7 +3813,25 @@ function MoggerGame({ onExit, onSaveBuild }) {
     if (mode === "ai") setOpp(moggerAI(round.useCase, round.budget, aiElo));
     setScreen("intro");
   };
-  const menu = () => { setYou(null); setOpp(null); setRound(null); setEloMsg(null); setMirrored(false); setScreen("menu"); };
+  // Best-of-3: advance to the next game in the active series — same use case/budget/opponent
+  const nextSeriesGame = () => {
+    setYou(null); setOpp(null); setEloMsg(null); setMirrored(false);
+    eloAppliedRef.current = false; historyAppliedRef.current = false;
+    setSeries((s) => (s ? { ...s, game: s.game + 1 } : s));
+    if (mode === "ai") setOpp(moggerAI(round.useCase, round.budget, aiElo));
+    setScreen("intro");
+  };
+  const menu = () => { setYou(null); setOpp(null); setRound(null); setEloMsg(null); setMirrored(false); setSeries(null); setSeriesPick(false); setScreen("menu"); };
+  // Avenge the Rival — fresh challenge, opponent re-rolled within the same rival elo tier
+  const avengeRival = (tierName) => {
+    const newAiElo = eloTierRandom(tierName);
+    setAiElo(newAiElo); setAiHidden(false);
+    const r = { useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 50 + Math.floor(Math.random() * 370) };
+    setRound(r); setYou(null); setOpp(moggerAI(r.useCase, r.budget, newAiElo));
+    setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; historyAppliedRef.current = false;
+    setSeries(null);
+    setScreen("intro");
+  };
   const exitToRoot = () => {
     try { if (typeof window !== "undefined" && window.history) { const p = window.location.pathname.replace(/\/+$/, "").split("/").pop(); if (p === "admin" || p === "coadmin") window.history.replaceState(null, "", "/"); } } catch (e) {}
     onExit();
@@ -3734,12 +3857,22 @@ function MoggerGame({ onExit, onSaveBuild }) {
     // Rival tracker
     if (mode === "ai") {
       try {
-        const eloTier = aiElo < 600 ? "Beginner" : aiElo < 1200 ? "Novice" : aiElo < 1800 ? "Skilled" : aiElo < 2400 ? "Expert" : "Grandmaster";
+        const eloTier = eloTierName(aiElo);
         const rivals = JSON.parse(localStorage.getItem("mogger_rivals") || "{}");
         if (!rivals[eloTier]) rivals[eloTier] = { w: 0, l: 0 };
         if (won) rivals[eloTier].w += 1; else rivals[eloTier].l += 1;
         localStorage.setItem("mogger_rivals", JSON.stringify(rivals));
       } catch(e) {}
+    }
+    // Best-of-3 series: tally this game's result, declare a series winner at 2 wins
+    if (series && !series.done) {
+      setSeries((s) => {
+        if (!s || s.done) return s;
+        const key = won ? "you" : "opp";
+        const wins = { ...s.wins, [key]: s.wins[key] + 1 };
+        const done = wins.you >= 2 || wins.opp >= 2;
+        return { ...s, wins, done, winner: done ? (wins.you >= 2 ? "you" : "opp") : null };
+      });
     }
     // A4: Track best score + hardest AI
     const prevBest = +(localStorage.getItem("mogger_best_score") || "0");
@@ -3770,13 +3903,17 @@ function MoggerGame({ onExit, onSaveBuild }) {
     eloAppliedRef.current = true;
     const sy = moggerScore(you, round.useCase, round.budget).total;
     const so = moggerScore(opp, round.useCase, round.budget).total;
+    // Win-streak ELO bonus: every 3 consecutive wins adds +10% to the gain, capped at +50%.
+    const newStreak = sy >= so ? streak + 1 : 0;
+    const streakLevel = Math.floor(newStreak / 3);
+    const streakMult = sy > so ? Math.min(1 + streakLevel * 0.10, 1.5) : 1;
     let delta = 0;
-    if (sy > so) delta = netEloGain(user.elo, aiElo);
+    if (sy > so) delta = Math.round(netEloGain(user.elo, aiElo) * streakMult);
     else if (sy < so) delta = -netEloGain(aiElo, user.elo);
     const newElo = Math.max(0, user.elo + delta);
     persist({ ...user, elo: newElo });
     netSaveElo(user.id, newElo);
-    setEloMsg({ delta, newElo });
+    setEloMsg({ delta, newElo, streak: newStreak, streakMult });
     // Track daily elo changes
     try {
       const today = new Date().toISOString().slice(0, 10);
@@ -3796,7 +3933,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
           <div className="pm-account">{user ? <><span className="pm-acct-name">{user.name}</span><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo} elo</span><button className="pm-acct-btn" onClick={() => persist(null)}>Log out</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in / Sign up</button>}</div>
           <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
           <p className="pm-tag">Build the best PC for the challenge. AI judges. One winner.</p>
-          {streak > 0 && <div className="pm-streak-banner">🔥 Win streak: <b>{streak}</b>{bestStreak > 1 && <span className="pm-streak-best"> · Best: {bestStreak}</span>}</div>}
+          {streak > 0 && <div className="pm-streak-banner">🔥 Win streak: <b>{streak}</b>{streak >= 3 && <span className="pm-streak-mult-badge"> · {Math.round((Math.min(1 + Math.floor(streak / 3) * 0.10, 1.5) - 1) * 100)}% ELO bonus</span>}{bestStreak > 1 && <span className="pm-streak-best"> · Best: {bestStreak}</span>}</div>}
           {dailyStreakInfo.streak > 0 && <div className="pm-daily-streak-banner">📅 Daily streak: <b>{dailyStreakInfo.streak}</b> day{dailyStreakInfo.streak === 1 ? "" : "s"}{dailyStreakInfo.playedToday && <span className="pm-daily-done"> · ✓ done today</span>}</div>}
           {user && todayEloChange !== 0 && (
             <div className={"pm-daily-elo " + (todayEloChange > 0 ? "up" : "down")}>
@@ -3870,6 +4007,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
           ) : (
             <p className="pm-seg-note">{practice ? "Practice — your elo never changes, win or lose." : "Ranked — win to gain elo, lose to drop it."}</p>
           )}
+          <label className="pm-toggle pm-series-toggle"><input type="checkbox" checked={seriesPick} onChange={(e) => setSeriesPick(e.target.checked)} /><span>🏆 Best-of-3 series — same challenge, same opponent, first to 2 wins</span></label>
           <div className="pm-diff-grid">
             {DIFFS.map((d) => {
               const oppElo = d.k === "custom" ? custom : d.elo;
@@ -3926,7 +4064,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
         const aiName = mode === "ai" ? aiPersona(aiElo).name : "Player 2";
         const resultYouLabel = mirrored ? aiName : "You";
         const resultOppName  = mirrored ? "You" : aiName;
-        return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} onAgain={again} onRematch={mode === "ai" ? rematch : undefined} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
+        return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} practice={practice} series={series} onAgain={again} onRematch={mode === "ai" ? rematch : undefined} onNextGame={mode === "ai" ? nextSeriesGame : undefined} onAvenge={mode === "ai" ? avengeRival : undefined} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
       })()}
     </div>
   );
