@@ -6,7 +6,7 @@ import {
   ChevronLeft, Zap, DollarSign, RotateCcw, ShieldCheck, ShieldAlert, Repeat2, Wrench, Send, Bot, MessageCircle, Maximize, Minimize, Settings, Sun, Moon, Search, Users, Upload, Globe, Columns2, PackageSearch, LayoutGrid
 } from "lucide-react";
 import { MEDIA, MEDIA_NE } from "../data/part-media.js";
-import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity, submitFeedback as netSubmitFeedback, listFeedback as netListFeedback, deleteFeedback as netDeleteFeedback } from "./moggerNet.js";
+import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity, submitFeedback as netSubmitFeedback, listFeedback as netListFeedback, deleteFeedback as netDeleteFeedback, recordFactionPoints as netRecordFactionPoints, fetchFactionTotals as netFactionTotals, recordGauntletScore as netRecordGauntletScore, gauntletLeaderboard as netGauntletLeaderboard } from "./moggerNet.js";
 /* ----------------------------- i18n ----------------------------- */
 const LANGS = [{"code": "en", "name": "English"}, {"code": "es", "name": "Español"}, {"code": "zh", "name": "中文"}, {"code": "hi", "name": "हिन्दी"}, {"code": "ar", "name": "العربية"}, {"code": "pt", "name": "Português"}, {"code": "fr", "name": "Français"}, {"code": "ru", "name": "Русский"}, {"code": "ja", "name": "日本語"}, {"code": "de", "name": "Deutsch"}];
 const I18N = {"en": {"myRigs": "My Rigs", "settings": "Settings", "appearance": "Appearance", "language": "Language", "theme": "Theme", "dark": "Dark", "light": "Light", "back": "Back", "saveRig": "Save rig", "select": "Select", "selected": "Selected", "moreInfo": "More info", "hideInfo": "Hide info", "autoForge": "Auto-Forge", "buildYourself": "Build It Yourself", "yourBuild": "Your build", "budgetQ": "What's your budget?", "useCaseQ": "What will this PC be for?", "livePrices": "Live prices", "samplePrices": "sample prices", "updated": "updated", "componentsDb": "components in the database", "overBudgetCat": "Over your {x} budget", "performance": "PERFORMANCE", "pricePerf": "PRICE / PERF", "pros": "PROS", "cons": "CONS"}, "es": {"myRigs": "Mis Equipos", "settings": "Ajustes", "appearance": "Apariencia", "language": "Idioma", "theme": "Tema", "dark": "Oscuro", "light": "Claro", "back": "Atrás", "saveRig": "Guardar", "select": "Elegir", "selected": "Elegido", "moreInfo": "Más info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Hazlo tú mismo", "yourBuild": "Tu equipo", "budgetQ": "¿Cuál es tu presupuesto?", "useCaseQ": "¿Para qué será este PC?", "livePrices": "Precios en vivo", "samplePrices": "precios de muestra", "updated": "actualizado", "componentsDb": "componentes en la base de datos", "overBudgetCat": "Supera tu presupuesto de {x}", "performance": "RENDIMIENTO", "pricePerf": "PRECIO / REND", "pros": "PROS", "cons": "CONTRAS"}, "zh": {"myRigs": "我的配置", "settings": "设置", "appearance": "外观", "language": "语言", "theme": "主题", "dark": "深色", "light": "浅色", "back": "返回", "saveRig": "保存配置", "select": "选择", "selected": "已选", "moreInfo": "更多信息", "hideInfo": "隐藏", "autoForge": "自动配置", "buildYourself": "自己组装", "yourBuild": "你的配置", "budgetQ": "你的预算是多少？", "useCaseQ": "这台电脑用来做什么？", "livePrices": "实时价格", "samplePrices": "示例价格", "updated": "更新于", "componentsDb": "个组件已入库", "overBudgetCat": "超出{x}预算", "performance": "性能", "pricePerf": "性价比", "pros": "优点", "cons": "缺点"}, "hi": {"myRigs": "मेरे रिग", "settings": "सेटिंग्स", "appearance": "रूप", "language": "भाषा", "theme": "थीम", "dark": "गहरा", "light": "हल्का", "back": "वापस", "saveRig": "सहेजें", "select": "चुनें", "selected": "चयनित", "moreInfo": "और जानकारी", "hideInfo": "छिपाएं", "autoForge": "ऑटो-फोर्ज", "buildYourself": "खुद बनाएं", "yourBuild": "आपका बिल्ड", "budgetQ": "आपका बजट क्या है?", "useCaseQ": "यह पीसी किसलिए होगा?", "livePrices": "लाइव कीमतें", "samplePrices": "नमूना कीमतें", "updated": "अपडेट", "componentsDb": "घटक डेटाबेस में", "overBudgetCat": "{x} बजट से अधिक", "performance": "प्रदर्शन", "pricePerf": "मूल्य/प्रदर्शन", "pros": "फायदे", "cons": "नुकसान"}, "ar": {"myRigs": "أجهزتي", "settings": "الإعدادات", "appearance": "المظهر", "language": "اللغة", "theme": "السمة", "dark": "داكن", "light": "فاتح", "back": "رجوع", "saveRig": "حفظ", "select": "اختيار", "selected": "محدد", "moreInfo": "المزيد", "hideInfo": "إخفاء", "autoForge": "تجميع تلقائي", "buildYourself": "اصنعه بنفسك", "yourBuild": "تجميعتك", "budgetQ": "ما هي ميزانيتك؟", "useCaseQ": "لأي غرض هذا الحاسوب؟", "livePrices": "أسعار حية", "samplePrices": "أسعار تجريبية", "updated": "محدّث", "componentsDb": "مكوّن في قاعدة البيانات", "overBudgetCat": "يتجاوز ميزانية {x}", "performance": "الأداء", "pricePerf": "السعر/الأداء", "pros": "الإيجابيات", "cons": "السلبيات"}, "pt": {"myRigs": "Meus PCs", "settings": "Configurações", "appearance": "Aparência", "language": "Idioma", "theme": "Tema", "dark": "Escuro", "light": "Claro", "back": "Voltar", "saveRig": "Salvar", "select": "Selecionar", "selected": "Selecionado", "moreInfo": "Mais info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Faça você mesmo", "yourBuild": "Sua build", "budgetQ": "Qual é o seu orçamento?", "useCaseQ": "Para que será este PC?", "livePrices": "Preços ao vivo", "samplePrices": "preços de exemplo", "updated": "atualizado", "componentsDb": "componentes no banco de dados", "overBudgetCat": "Acima do orçamento de {x}", "performance": "DESEMPENHO", "pricePerf": "PREÇO / DESEMP", "pros": "PRÓS", "cons": "CONTRAS"}, "fr": {"myRigs": "Mes Configs", "settings": "Réglages", "appearance": "Apparence", "language": "Langue", "theme": "Thème", "dark": "Sombre", "light": "Clair", "back": "Retour", "saveRig": "Enregistrer", "select": "Choisir", "selected": "Choisi", "moreInfo": "Plus d'infos", "hideInfo": "Masquer", "autoForge": "Auto-Forge", "buildYourself": "Faites-le vous-même", "yourBuild": "Votre config", "budgetQ": "Quel est votre budget ?", "useCaseQ": "À quoi servira ce PC ?", "livePrices": "Prix en direct", "samplePrices": "prix indicatifs", "updated": "mis à jour", "componentsDb": "composants dans la base", "overBudgetCat": "Au-dessus du budget {x}", "performance": "PERFORMANCE", "pricePerf": "PRIX / PERF", "pros": "ATOUTS", "cons": "INCONVÉNIENTS"}, "ru": {"myRigs": "Мои сборки", "settings": "Настройки", "appearance": "Вид", "language": "Язык", "theme": "Тема", "dark": "Тёмная", "light": "Светлая", "back": "Назад", "saveRig": "Сохранить", "select": "Выбрать", "selected": "Выбрано", "moreInfo": "Подробнее", "hideInfo": "Скрыть", "autoForge": "Авто-сборка", "buildYourself": "Собрать самому", "yourBuild": "Ваша сборка", "budgetQ": "Каков ваш бюджет?", "useCaseQ": "Для чего этот ПК?", "livePrices": "Цены в реальном времени", "samplePrices": "примерные цены", "updated": "обновлено", "componentsDb": "компонентов в базе", "overBudgetCat": "Сверх бюджета на {x}", "performance": "ПРОИЗВОДИТ.", "pricePerf": "ЦЕНА/КАЧ.", "pros": "ПЛЮСЫ", "cons": "МИНУСЫ"}, "ja": {"myRigs": "マイ構成", "settings": "設定", "appearance": "外観", "language": "言語", "theme": "テーマ", "dark": "ダーク", "light": "ライト", "back": "戻る", "saveRig": "保存", "select": "選択", "selected": "選択済", "moreInfo": "詳細", "hideInfo": "隠す", "autoForge": "自動構成", "buildYourself": "自分で組む", "yourBuild": "あなたの構成", "budgetQ": "予算はいくらですか？", "useCaseQ": "このPCの用途は？", "livePrices": "ライブ価格", "samplePrices": "サンプル価格", "updated": "更新", "componentsDb": "個のパーツを収録", "overBudgetCat": "{x}予算オーバー", "performance": "性能", "pricePerf": "価格性能", "pros": "長所", "cons": "短所"}, "de": {"myRigs": "Meine Builds", "settings": "Einstellungen", "appearance": "Darstellung", "language": "Sprache", "theme": "Thema", "dark": "Dunkel", "light": "Hell", "back": "Zurück", "saveRig": "Speichern", "select": "Wählen", "selected": "Gewählt", "moreInfo": "Mehr Info", "hideInfo": "Verbergen", "autoForge": "Auto-Forge", "buildYourself": "Selbst bauen", "yourBuild": "Dein Build", "budgetQ": "Wie hoch ist dein Budget?", "useCaseQ": "Wofür ist dieser PC?", "livePrices": "Live-Preise", "samplePrices": "Beispielpreise", "updated": "aktualisiert", "componentsDb": "Komponenten in der Datenbank", "overBudgetCat": "Über dem {x}-Budget", "performance": "LEISTUNG", "pricePerf": "PREIS / LEIST", "pros": "VORTEILE", "cons": "NACHTEILE"}};
@@ -99,6 +99,24 @@ const MAX_PERF = Object.fromEntries(
   CATEGORY_ORDER.map((c) => [c, Math.max(...CATALOG[c].map((p) => p.perf))])
 );
 const CATALOG_COUNT = Object.values(CATALOG).reduce((s, a) => s + a.length, 0);
+
+/* ----------------------------- META SHIFT ALERTS ----------------------------- */
+// Snapshot of the single best raw-perf pick and best perf-per-dollar pick in each
+// category. Diffed against the last snapshot (localStorage) on load to flag when a
+// catalog change (price/perf edit, new part) moved the "optimal" pick.
+function catalogTopPicks() {
+  const out = {};
+  for (const c of CATEGORY_ORDER) {
+    const parts = CATALOG[c];
+    let bestPerf = parts[0], bestValue = null, bestRatio = -1;
+    for (const p of parts) {
+      if (p.perf > bestPerf.perf) bestPerf = p;
+      if (p.price > 0) { const r = p.perf / p.price; if (r > bestRatio) { bestRatio = r; bestValue = p; } }
+    }
+    out[c] = { bestPerfId: bestPerf.id, bestPerfName: bestPerf.model || bestPerf.name, bestValueId: bestValue ? bestValue.id : null, bestValueName: bestValue ? (bestValue.model || bestValue.name) : null };
+  }
+  return out;
+}
 
 // Attach product image + link to each part (refreshed live by /api/prices when available).
 for (const _c in CATALOG) for (const _p of CATALOG[_c]) { const _m = MEDIA[_p.id]; if (_m) { _p.img = _m.img; _p.url = _m.url; } }
@@ -719,6 +737,55 @@ function analyzeBuild(parts, useCaseKey, budget) {
       : null;
 
   return { compat, total, fitNorm, balance, budgetAdh, completeness, missing, complete, score, ppScore, bottleneck };
+}
+
+/* ----------------------------- ARCHETYPE CLASSIFIER ----------------------------- */
+// Tags a finished build with a flavor archetype from its score breakdown + parts.
+// Checked in priority order — first match wins — then falls back to "Balanced Build".
+function classifyArchetype(build, ucKey, budget) {
+  if (!build || !budget) return null;
+  const a = analyzeBuild(build, ucKey, budget);
+  if (!a.compat.pass || !a.complete) return null; // nothing to classify on a broken/incomplete build
+  const cpu = build.cpu, cooler = build.cooler, ram = build.ram, storage = build.storage;
+  const spendPct = a.total / budget;
+  if (spendPct <= 0.8 && a.ppScore >= 70) return { tag: "Budget Slayer", emoji: "💰", desc: "Elite value — huge performance for the price." };
+  if (cooler && cooler.type === "aio" && cpu && (cpu.tdp || 0) <= 105) return { tag: "Thermal Monster", emoji: "🧊", desc: "Liquid-cooled overkill for a CPU that barely runs warm." };
+  if ((ram && ram.cap >= 64) || (storage && storage.cap >= 2000)) return { tag: "Bandwidth Hog", emoji: "📡", desc: "Stacked on memory and storage capacity." };
+  if (cpu && (cpu.tdp || 0) <= 65 && a.score >= 550) return { tag: "Silent Beast", emoji: "🤫", desc: "Strong performance from a low-power chip." };
+  if (a.bottleneck === "gpu") return { tag: "Glass Cannon", emoji: "🔮", desc: "GPU-heavy — a stronger CPU would back it up better." };
+  if (a.bottleneck === "cpu") return { tag: "Workhorse", emoji: "⚙️", desc: "CPU-heavy — there's GPU headroom left to spend." };
+  if (a.budgetAdh >= 96) return { tag: "Min-Maxer", emoji: "🎯", desc: "Spent the budget down to the last dollar." };
+  return { tag: "Balanced Build", emoji: "⚖️", desc: "Even allocation across every category." };
+}
+
+/* ----------------------------- BUILD MENTOR AI ----------------------------- */
+// Finds the single one-category swap (any catalog part for that slot) that moves the
+// build's total score the most, so a loss can be explained as "this swap would have
+// closed it" rather than a vague stat dump.
+function bestMentorSwap(build, ucKey, budget) {
+  const current = moggerScore(build, ucKey, budget);
+  let best = null;
+  for (const c of CATEGORY_ORDER) {
+    const cur = build[c]; if (!cur) continue;
+    for (const o of moggerOptions(c)) {
+      if (o.id === cur.id) continue;
+      const trial = { ...build, [c]: o };
+      const s = moggerScore(trial, ucKey, budget);
+      const delta = s.total - current.total;
+      if (delta <= 0) continue;
+      if (!best || delta > best.delta) best = { cat: c, from: cur, to: o, delta, newTotal: s.total };
+    }
+  }
+  return best;
+}
+function mentorExplain(swap, ucKey) {
+  const { cat, from, to } = swap;
+  const maxP = ucMaxPerf(cat, ucKey);
+  const fromPct = from && maxP ? Math.round(ucPerf(cat, from, ucKey) / maxP * 100) : 0;
+  const toPct = to && maxP ? Math.round(ucPerf(cat, to, ucKey) / maxP * 100) : 0;
+  const priceDelta = to.price - from.price;
+  const priceNote = priceDelta === 0 ? "for the same price" : priceDelta > 0 ? `for $${priceDelta} more` : `for $${-priceDelta} less`;
+  return `${CAT_META[cat].label}: ${to.model || to.name} scores ${toPct}% for ${USE_CASES[ucKey].label} vs your ${from.model || from.name}'s ${fromPct}% — ${priceNote}.`;
 }
 
 /* HYBRID verdict: the engine owns the number, this narrates it.
@@ -1720,6 +1787,37 @@ const MOGGER_BUDGETS = [800, 1000, 1200, 1500, 1800, 2200, 2800, 3500];
 const MOGGER_UCS = ["gaming", "content", "streaming", "workstation", "ai", "office"];
 const mRand = (a) => a[Math.floor(Math.random() * a.length)];
 
+/* ----------------------------- CONSTRAINT GAUNTLET ----------------------------- */
+// Solo daily score-attack: build under a rotating hard constraint. Violating it zeroes
+// the score, same mechanism as an incompatible build or going over budget.
+const GAUNTLET_CONSTRAINTS = [
+  { id: "gpu-300", label: "No GPU over $300", violates: (b) => !!(b.gpu && b.gpu.price > 300) },
+  { id: "tdp-65", label: "CPU TDP cap: 65W", violates: (b) => !!(b.cpu && b.cpu.tdp > 65) },
+  { id: "itx-only", label: "ITX only", violates: (b) => !!(b.mobo && b.mobo.form !== "ITX") },
+  { id: "no-gpu", label: "No discrete GPU — iGPU only", violates: (b) => !!b.gpu },
+  { id: "ram-32", label: "RAM cap: 32GB", violates: (b) => !!(b.ram && b.ram.cap > 32) },
+  { id: "stock-cooler", label: "Cooler budget: $40 max", violates: (b) => !!(b.cooler && b.cooler.price > 40) },
+  { id: "air-only", label: "Air cooling only — no AIOs", violates: (b) => !!(b.cooler && b.cooler.type === "aio") },
+];
+function dailyGauntlet() {
+  const d = new Date(); const dayKey = d.toISOString().slice(0, 10);
+  const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  const constraint = GAUNTLET_CONSTRAINTS[(seed + 7) % GAUNTLET_CONSTRAINTS.length];
+  // "no-gpu" only pairs with a use case that doesn't require a discrete GPU — otherwise
+  // the build is permanently incomplete and the day is unwinnable no matter the skill.
+  const useCase = constraint.id === "no-gpu" ? "office" : MOGGER_UCS[(seed + 3) % MOGGER_UCS.length];
+  const budget = MOGGER_BUDGETS[(seed + 5) % MOGGER_BUDGETS.length];
+  return { dayKey, constraint, useCase, budget, secs: 150 };
+}
+// Same shape as moggerScore(), but a constraint violation zeroes the build like any other issue.
+function gauntletScore(build, ucKey, budget, constraint) {
+  const s = moggerScore(build, ucKey, budget);
+  if (constraint && constraint.violates(build) && s.issues.length === 0) {
+    return { ...s, total: 0, issues: ["Constraint violated: " + constraint.label] };
+  }
+  return s;
+}
+
 // deduped, cheapest-per-model options for a category (uses live prices)
 function moggerOptions(cat) {
   const pool = CATALOG[cat];
@@ -2212,7 +2310,7 @@ function MoggerHistory({ onBack }) {
               <span className="pm-hist-result">{h.won ? "🏆 WIN" : "💀 LOSS"}</span>
               <span className="pm-hist-info">{(USE_CASES[h.useCase] || {}).label || h.useCase} · {fmt(h.budget)}</span>
               <span className="pm-hist-score">{h.myScore} vs {h.oppScore}</span>
-              <span className="pm-hist-opp">vs {h.oppName}</span>
+              <span className="pm-hist-opp">vs {h.oppName}{h.you && <ArchetypeBadge build={h.you} useCase={h.useCase} budget={h.budget} />}</span>
               <span className="pm-hist-date">{h.date}</span>
               <button className="rf-btn rf-ghost-btn" style={{fontSize:"0.75rem",padding:"2px 8px"}} onClick={() => setViewEntry(h)}>▶ View</button>
             </div>
@@ -2220,6 +2318,159 @@ function MoggerHistory({ onBack }) {
         </div>
       )}
       <div className="pm-row"><button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button>{hist.length > 0 && <button className="rf-btn rf-ghost-btn" style={{color:"var(--c-bad)"}} onClick={clear}>Clear history</button>}</div>
+    </div>
+  );
+}
+
+// Ghost Duel Replay — challenge any past build (yours or an AI opponent's you've faced),
+// the AI side replays its real recorded parts move-by-move instead of generating a fresh build.
+function MoggerGhosts({ onBack, onChallenge }) {
+  const [ghosts, setGhosts] = useState(() => {
+    try { return [...JSON.parse(localStorage.getItem("mogger_ghosts") || "[]")].reverse(); } catch (e) { return []; }
+  });
+  const removeGhost = (id) => {
+    try {
+      const all = JSON.parse(localStorage.getItem("mogger_ghosts") || "[]").filter((g) => g.id !== id);
+      localStorage.setItem("mogger_ghosts", JSON.stringify(all));
+    } catch (e) {}
+    setGhosts((g) => g.filter((x) => x.id !== id));
+  };
+  return (
+    <div className="pm-card rf-fade">
+      <h2 className="pm-h2">👻 Ghost Duels</h2>
+      <p className="pm-p pm-dim">Challenge a recorded build from a past duel — the AI side replays its real parts, move by move.</p>
+      {ghosts.length === 0 ? <p className="pm-p pm-dim">No ghosts yet — finish a duel to bank one.</p> : (
+        <div className="pm-ghost-list">
+          {ghosts.map((g) => (
+            <div key={g.id} className="pm-ghost-row">
+              <div className="pm-ghost-info">
+                <span className="pm-ghost-label">{g.label}</span>
+                <span className="pm-ghost-meta">{(USE_CASES[g.useCase] || {}).label || g.useCase} · {fmt(g.budget)} · Score {g.score}</span>
+                {g.build && <ArchetypeBadge build={g.build} useCase={g.useCase} budget={g.budget} />}
+              </div>
+              <div className="pm-ghost-actions">
+                <button className="rf-btn pm-ghost-challenge" onClick={() => onChallenge(g)}>⚔️ Challenge</button>
+                <button className="rf-icon-btn" onClick={() => removeGhost(g.id)} title="Remove ghost"><Trash2 size={14} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button>
+    </div>
+  );
+}
+
+// Faction Wars — monthly event, pick a side, ranked wins earn it points, dominance bar
+// shows the live split, and last month's winner gets a cosmetic trophy badge.
+function FactionDominanceBar({ totals }) {
+  const total = Math.max(1, (totals.a || 0) + (totals.b || 0));
+  const aPct = Math.round((totals.a || 0) / total * 100);
+  return (
+    <div className="pm-faction-bar">
+      <div className="pm-faction-bar-fill a" style={{ width: aPct + "%" }} />
+      <div className="pm-faction-bar-fill b" style={{ width: (100 - aPct) + "%" }} />
+    </div>
+  );
+}
+function MoggerFactions({ onBack, user }) {
+  const { war, monthKey } = useMemo(() => currentFactionWar(), []);
+  const localKey = "mogger_faction_local_" + monthKey + "_" + war.id;
+  const [pick, setPick] = useState(() => {
+    try { const p = JSON.parse(localStorage.getItem("mogger_faction_pick") || "null"); return (p && p.monthKey === monthKey && p.warId === war.id) ? p.faction : null; } catch (e) { return null; }
+  });
+  const [totals, setTotals] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(localKey) || '{"a":0,"b":0}'); } catch (e) { return { a: 0, b: 0 }; }
+  });
+  const [remote, setRemote] = useState(false);
+  const [trophy, setTrophy] = useState(null);
+  useEffect(() => {
+    netFactionTotals(monthKey, war.id).then((r) => { if (r) { setTotals(r); setRemote(true); } });
+    const { war: pw, monthKey: pmk } = previousFactionWar();
+    netFactionTotals(pmk, pw.id).then((r) => {
+      const t = r || (() => { try { return JSON.parse(localStorage.getItem("mogger_faction_local_" + pmk + "_" + pw.id) || "null"); } catch (e) { return null; } })();
+      if (t && (t.a > 0 || t.b > 0)) setTrophy({ war: pw, monthKey: pmk, winner: t.a >= t.b ? "a" : "b" });
+    });
+  }, [monthKey, war.id]);
+  const choose = (faction) => {
+    setPick(faction);
+    try { localStorage.setItem("mogger_faction_pick", JSON.stringify({ monthKey, warId: war.id, faction })); } catch (e) {}
+  };
+  const sideCard = (side, key) => (
+    <button key={key} className={"pm-faction-card" + (pick === key ? " on" : "")} onClick={() => choose(key)}>
+      <span className="pm-faction-emoji">{side.emoji}</span>
+      <span className="pm-faction-name">{side.label}</span>
+      <span className="pm-faction-pts">{totals[key] || 0} pts</span>
+      {pick === key && <span className="pm-faction-joined">✓ Your faction</span>}
+    </button>
+  );
+  return (
+    <div className="pm-card rf-fade">
+      <h2 className="pm-h2">⚔️ {war.label}</h2>
+      <p className="pm-p pm-dim">This month's faction event — pick a side. Every ranked win earns your faction points (+bonus if your build's hardware matches).{!remote && " Showing this device's local tally — global standings need the Supabase migration applied."}</p>
+      <div className="pm-faction-grid">
+        {sideCard(war.a, "a")}
+        {sideCard(war.b, "b")}
+      </div>
+      <FactionDominanceBar totals={totals} />
+      {!user && <p className="pm-seg-note">Log in and play ranked duels for your picks to actually earn points.</p>}
+      {trophy && (
+        <div className="pm-faction-trophy">
+          🏆 Last month's {trophy.war.label} went to <b>{trophy.winner === "a" ? trophy.war.a.label : trophy.war.b.label}</b>
+        </div>
+      )}
+      <button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button>
+    </div>
+  );
+}
+
+// Constraint Gauntlet result — solo score-attack, personal best, and a local/global leaderboard.
+function MoggerGauntletResult({ round, build, user, onMenu, onPlayAgain }) {
+  const s = useMemo(() => gauntletScore(build, round.useCase, round.budget, round.constraint), [build, round]);
+  const violated = s.issues.length > 0;
+  const [best, setBest] = useState(0);
+  const [isNewBest, setIsNewBest] = useState(false);
+  const [rows, setRows] = useState([]);
+  const savedRef = useRef(false);
+  useEffect(() => {
+    if (savedRef.current) return;
+    savedRef.current = true;
+    try {
+      const prevBest = +(localStorage.getItem("mogger_gauntlet_best") || "0");
+      setBest(Math.max(prevBest, s.total));
+      if (s.total > prevBest) { localStorage.setItem("mogger_gauntlet_best", String(s.total)); setIsNewBest(true); }
+      const all = JSON.parse(localStorage.getItem("mogger_gauntlet_scores") || "[]");
+      all.push({ user_name: user ? user.name : "You", day_key: round.dayKey, constraint_id: round.constraint.id, use_case: round.useCase, budget: round.budget, score: s.total });
+      if (all.length > 100) all.splice(0, all.length - 100);
+      localStorage.setItem("mogger_gauntlet_scores", JSON.stringify(all));
+      const today = all.filter((r) => r.day_key === round.dayKey).sort((a, b) => b.score - a.score).slice(0, 10);
+      setRows(today);
+    } catch (e) {}
+    netRecordGauntletScore(user ? user.id : null, user ? user.name : "Anonymous", round.dayKey, round.constraint.id, round.useCase, round.budget, s.total);
+    netGauntletLeaderboard(round.dayKey, 10).then((r) => { if (r && r.length) setRows(r); });
+  }, []);
+  return (
+    <div className="pm-result pm-gauntlet-result rf-fade">
+      <h2 className="pm-h2">🎯 Constraint Gauntlet</h2>
+      <p className="pm-p pm-dim">{round.constraint.label} · {USE_CASES[round.useCase].label} · {fmt(round.budget)}</p>
+      <div className={"pm-gauntlet-score" + (violated ? " pm-gauntlet-violated" : "")}>{s.total}<small style={{ fontSize: "1rem" }}>/1000</small></div>
+      {violated ? <p className="pm-p" style={{ color: "var(--c-bad)" }}>{s.issues.join(" · ")}</p> : <ArchetypeBadge build={build} useCase={round.useCase} budget={round.budget} />}
+      <div className="pm-gauntlet-best">{isNewBest ? "🏆 New personal best!" : <>Personal best: <b>{best}</b></>}</div>
+      {rows.length > 0 && (
+        <div className="pm-gauntlet-lb">
+          {rows.slice(0, 10).map((r, i) => (
+            <div key={i} className="pm-gauntlet-lb-row">
+              <span className="pm-gauntlet-lb-rank">#{i + 1}</span>
+              <span>{r.user_name || "You"} — {(GAUNTLET_CONSTRAINTS.find((c) => c.id === r.constraint_id) || {}).label || ""}</span>
+              <span className="pm-gauntlet-lb-score">{r.score}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="pm-row pm-center-row">
+        <button className="rf-btn rf-ghost-btn" onClick={onMenu}>Menu</button>
+        <button className="rf-btn" onClick={onPlayAgain}><Repeat2 size={16} /> Retry today's gauntlet</button>
+      </div>
     </div>
   );
 }
@@ -2335,7 +2586,7 @@ const DUEL_TIPS = [
   "For AI/ML, GPU VRAM matters more than clock speed",
 ];
 
-function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, liveOpp, oppLiveScore, oppLiveDone, onMyScore, myElo, oppElo, onDone }) {
+function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, ghostMode, liveOpp, oppLiveScore, oppLiveDone, onMyScore, myElo, oppElo, onDone, solo, constraint }) {
   const oppFinal = useMemo(() => (oppBuild ? moggerScore(oppBuild, round.useCase, round.budget).total : null), []);
   const [build, setBuild] = useState({});
   const [open, setOpen] = useState(null);
@@ -2372,7 +2623,7 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
   // AI opponent: score fluctuates upward (chunky +50-120, occasional -50-120), then locks in.
   // Each score tick swaps exactly ONE part in its (blurred) build — not all at once.
   useEffect(() => {
-    if (oppFinal == null || oppLocked) return;
+    if (oppFinal == null || oppLocked || ghostMode) return;
     const lockAt = round.secs * (0.55 + Math.random() * 0.3); // seconds elapsed when AI locks
     const ceiling = Math.max(0, oppFinal); // climb toward the AI's real score (0 if its build is incompatible)
     const t0 = Date.now();
@@ -2394,37 +2645,70 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
     iv = setTimeout(step, 900);
     return () => clearTimeout(iv);
   }, []);
+  // Ghost Duel Replay: instead of random decoys, reveal the ghost's REAL parts one
+  // category at a time (in build order) so it genuinely replays move-by-move.
+  useEffect(() => {
+    if (!ghostMode || !oppBuild || oppFinal == null || oppLocked) return;
+    const lockAt = round.secs * (0.55 + Math.random() * 0.3);
+    const cats = CATEGORY_ORDER.filter((c) => oppBuild[c]);
+    const stepMs = cats.length ? Math.max(400, (lockAt * 1000) / cats.length) : 1000;
+    let revealed = 0;
+    let iv;
+    const step = () => {
+      revealed++;
+      setDecoy((prev) => {
+        const next = { ...prev };
+        for (let i = 0; i < revealed && i < cats.length; i++) next[cats[i]] = oppBuild[cats[i]];
+        return next;
+      });
+      if (revealed >= cats.length) { setOppShown(oppFinal); setOppDone(true); return; }
+      setOppShown(Math.round(oppFinal * (revealed / cats.length)));
+      iv = setTimeout(step, stepMs);
+    };
+    iv = setTimeout(step, stepMs);
+    return () => clearTimeout(iv);
+  }, []);
   const spent = CATEGORY_ORDER.reduce((s, c) => s + (build[c] ? build[c].price : 0), 0);
   const over = spent > round.budget;
   const filled = CATEGORY_ORDER.filter((c) => build[c]).length;
   const bottleneck = useMemo(() => analyzeBuild(build, round.useCase, round.budget).bottleneck, [build]);
-  const shownOpp = oppIsAI ? oppShown : oppLocked ? oppFinal : liveOpp ? (oppLiveScore == null ? null : oppLiveScore) : null;
-  const shownDone = oppIsAI ? oppDone : oppLocked ? true : liveOpp ? !!oppLiveDone : false;
+  const shownOpp = (oppIsAI || ghostMode) ? oppShown : oppLocked ? oppFinal : liveOpp ? (oppLiveScore == null ? null : oppLiveScore) : null;
+  const shownDone = (oppIsAI || ghostMode) ? oppDone : oppLocked ? true : liveOpp ? !!oppLiveDone : false;
   const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, "0");
   const low = left <= 15;
   const UC = USE_CASES[round.useCase];
   return (
     <div className="pm-game rf-fade">
-      <div className="pm-vs">
-        <div className="pm-board you">
-          <div className="pm-board-name">{player && player.startsWith("Player") ? player : "YOU"}</div>
-          {myElo != null && <div className="pm-board-elo">{myElo} elo</div>}
-          <div className="pm-board-score">?</div>
+      {solo ? (
+        <div className="pm-solo-header">
+          <div className="pm-solo-title">🎯 Constraint Gauntlet</div>
+          <div className={"pm-timer" + (low ? " low" : "")}>{mm}:{ss}</div>
+          {constraint && <div className="pm-constraint-banner">⚠️ {constraint.label}</div>}
           <div className="pm-board-sub">{filled}/{CATEGORY_ORDER.length} parts</div>
           {bottleneck && <div style={{fontSize:"0.7rem",color:"var(--c-warn)",marginTop:"2px"}}>⚠️ {bottleneck === "cpu" ? "CPU" : "GPU"} bottleneck</div>}
         </div>
-        <div className="pm-vs-mid">
-          <div className="pm-vs-word">VS</div>
-          <div className={"pm-timer" + (low ? " low" : "")}>{mm}:{ss}</div>
+      ) : (
+        <div className="pm-vs">
+          <div className="pm-board you">
+            <div className="pm-board-name">{player && player.startsWith("Player") ? player : "YOU"}</div>
+            {myElo != null && <div className="pm-board-elo">{myElo} elo</div>}
+            <div className="pm-board-score">?</div>
+            <div className="pm-board-sub">{filled}/{CATEGORY_ORDER.length} parts</div>
+            {bottleneck && <div style={{fontSize:"0.7rem",color:"var(--c-warn)",marginTop:"2px"}}>⚠️ {bottleneck === "cpu" ? "CPU" : "GPU"} bottleneck</div>}
+          </div>
+          <div className="pm-vs-mid">
+            <div className="pm-vs-word">VS</div>
+            <div className={"pm-timer" + (low ? " low" : "")}>{mm}:{ss}</div>
+          </div>
+          <div className="pm-board opp">
+            <div className="pm-board-name">{oppLabel}</div>
+            {oppElo != null && <div className="pm-board-elo">{oppElo === "?" ? "? elo" : oppElo + " elo"}</div>}
+            <div className="pm-board-score opp">{shownOpp == null ? "—" : shownOpp}</div>
+            <div className={"pm-board-sub" + (shownDone ? " locked" : "")}>{shownOpp == null ? "waiting" : shownDone ? "🔒 locked in — waiting for you" : "building…"}</div>
+            {oppIsAI && taunt && <div className="pm-taunt">💬 "{taunt}"</div>}
+          </div>
         </div>
-        <div className="pm-board opp">
-          <div className="pm-board-name">{oppLabel}</div>
-          {oppElo != null && <div className="pm-board-elo">{oppElo === "?" ? "? elo" : oppElo + " elo"}</div>}
-          <div className="pm-board-score opp">{shownOpp == null ? "—" : shownOpp}</div>
-          <div className={"pm-board-sub" + (shownDone ? " locked" : "")}>{shownOpp == null ? "waiting" : shownDone ? "🔒 locked in — waiting for you" : "building…"}</div>
-          {oppIsAI && taunt && <div className="pm-taunt">💬 "{taunt}"</div>}
-        </div>
-      </div>
+      )}
       <div className="pm-challenge-row"><span className="pm-uc"><UC.Icon size={16} /> {UC.label}</span><span className="pm-budget">Budget {fmt(round.budget)}</span></div>
       <div className={"pm-spend" + (over ? " over" : "")}>Spent {fmt(spent)} / {fmt(round.budget)}{over && <b> · OVER BUDGET (penalized)</b>} · hard cap {fmt(round.budget + 50)}</div>
       {round.secs <= 60 && (() => {
@@ -2441,7 +2725,7 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
           </div>
         );
       })()}
-      <div className="pm-arena">
+      <div className={"pm-arena" + (solo ? " solo" : "")}>
         <div className="pm-col you">
           <div className="pm-col-h">YOUR BUILD</div>
           {CATEGORY_ORDER.map((c) => { const Icon = CAT_META[c].Icon; const p = build[c]; return (
@@ -2452,18 +2736,20 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
             </button>
           ); })}
         </div>
-        <div className="pm-col opp">
-          <div className="pm-col-h">{oppLabel}{oppLocked ? " · locked in" : oppIsAI ? " · building" : ""}</div>
-          <div className={"pm-col-parts" + (hasOpp ? " blur" : "")}>
-            {CATEGORY_ORDER.map((c) => { const Icon = CAT_META[c].Icon; const p = hasOpp ? decoy[c] : null; return (
-              <div key={c} className="pm-ctile opp">
-                <span className="pm-ctile-img">{p && p.img ? <img src={p.img} alt="" /> : <Icon size={17} />}</span>
-                <span className="pm-ctile-body"><span className="pm-ctile-cat">{CAT_META[c].label}</span><span className="pm-ctile-name">{p ? (p.model || p.name) : "waiting…"}</span></span>
-              </div>
-            ); })}
+        {!solo && (
+          <div className="pm-col opp">
+            <div className="pm-col-h">{oppLabel}{oppLocked ? " · locked in" : oppIsAI ? " · building" : ghostMode ? " · replaying" : ""}</div>
+            <div className={"pm-col-parts" + (hasOpp ? " blur" : "")}>
+              {CATEGORY_ORDER.map((c) => { const Icon = CAT_META[c].Icon; const p = hasOpp ? decoy[c] : null; return (
+                <div key={c} className="pm-ctile opp">
+                  <span className="pm-ctile-img">{p && p.img ? <img src={p.img} alt="" /> : <Icon size={17} />}</span>
+                  <span className="pm-ctile-body"><span className="pm-ctile-cat">{CAT_META[c].label}</span><span className="pm-ctile-name">{p ? (p.model || p.name) : "waiting…"}</span></span>
+                </div>
+              ); })}
+            </div>
+            <div className="pm-duel-tip">💡 {DUEL_TIPS[tipIdx]}</div>
           </div>
-          <div className="pm-duel-tip">💡 {DUEL_TIPS[tipIdx]}</div>
-        </div>
+        )}
       </div>
       <button className="rf-btn rf-btn-lg pm-lockin" onClick={() => onDone(build)}><Check size={16} /> Lock in build</button>
       {open && <MoggerPicker cat={open} current={build[open]} budget={round.budget} spent={spent} useCase={round.useCase} onPick={(o) => { setBuild((b) => ({ ...b, [open]: o })); setOpen(null); }} onClose={() => setOpen(null)} />}
@@ -2471,7 +2757,14 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
   );
 }
 
-function MoggerScoreCol({ title, build, s, win, shown, rank }) {
+// Small flavor badge for an archetype tag, reused on result columns, history rows, and ghost cards.
+function ArchetypeBadge({ build, useCase, budget }) {
+  const arch = useMemo(() => classifyArchetype(build, useCase, budget), [build, useCase, budget]);
+  if (!arch) return null;
+  return <span className="pm-archetype-badge" title={arch.desc}>{arch.emoji} {arch.tag}</span>;
+}
+
+function MoggerScoreCol({ title, build, s, win, shown, rank, useCase, budget }) {
   const big = shown == null ? s.total : shown;
   const gpuName = (build && build.gpu) ? (build.gpu.brand || build.gpu.name || "") : "";
   const isNvidia = /nvidia|rtx|gtx/i.test(gpuName);
@@ -2481,6 +2774,7 @@ function MoggerScoreCol({ title, build, s, win, shown, rank }) {
     <div className={"pm-scorecol" + (win ? " win" : "")} style={glowStyle}>
       <div className="pm-scorecol-head"><span className="pm-scorecol-title">{title}</span>{win && <span className="pm-crown">WINNER</span>}</div>
       {rank && <div className={"pm-rank pm-rank-" + rank.cls + " pm-rank-col"} style={rank.custom ? { color: "#fff", background: hexToRgba(rank.color, 0.2), borderColor: rank.color, boxShadow: "0 0 12px " + hexToRgba(rank.color, 0.45) } : undefined}>{rank.icon} {rank.name}</div>}
+      {useCase && budget && <ArchetypeBadge build={build} useCase={useCase} budget={budget} />}
       <div className="pm-bigscore" style={rank ? { color: rank.color } : undefined}>{big}<small>/1000</small></div>
       <div className="pm-metrics"><span>Performance <b>{s.perf}</b></span><span>Compatibility <b>{s.compat}</b></span><span>Spent <b className={s.over ? "pm-red" : ""}>{fmt(s.spend)}</b></span></div>
       {s.issues.length > 0 && <div className="pm-issues">{s.issues.map((i, n) => <span key={n}><AlertTriangle size={11} /> {i}</span>)}</div>}
@@ -2634,6 +2928,13 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
     } catch (e) {}
     return null;
   }, [youWin, oppElo, onAvenge]);
+  // Build Mentor AI: on a loss, find the single component swap that moves the score the most
+  const mentorSwap = useMemo(() => {
+    if (youWin) return null;
+    const swap = bestMentorSwap(you, round.useCase, round.budget);
+    if (!swap) return null;
+    return { ...swap, wouldHaveWon: swap.newTotal > soSD.total };
+  }, [youWin, you, round.useCase, round.budget, soSD.total]);
   // Open breakdown automatically when you lose so the player sees why
   const [showBreakdown, setShowBreakdown] = useState(!youWin);
   // AI persona post-match quip
@@ -2740,8 +3041,8 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
         </div>
       )}
       <div className="pm-scorecols">
-        <MoggerScoreCol title={youLabel} build={you} s={sySD} win={youWin} shown={ay} rank={myRank} />
-        <MoggerScoreCol title={oppName} build={opp} s={soSD} win={!youWin} shown={ao} rank={oppRank} />
+        <MoggerScoreCol title={youLabel} build={you} s={sySD} win={youWin} shown={ay} rank={myRank} useCase={round.useCase} budget={round.budget} />
+        <MoggerScoreCol title={oppName} build={opp} s={soSD} win={!youWin} shown={ao} rank={oppRank} useCase={round.useCase} budget={round.budget} />
       </div>
       <DuelRadarChart you={you} opp={opp} oppName={oppName} youLabel={youLabel} useCase={round.useCase} budget={round.budget} />
       {/* B4: efficiency medal */}
@@ -2754,6 +3055,14 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
         <div className="pm-avenge-row">
           <span className="pm-avenge-label">⚔️ Rival alert — you're {rivalInfo.l}-{rivalInfo.w} down vs <b>{rivalInfo.tier}</b> tier opponents.</span>
           <button className="rf-btn pm-avenge-btn" onClick={() => onAvenge(rivalInfo.tier)}>⚔️ Avenge the Rival</button>
+        </div>
+      )}
+      {mentorSwap && (
+        <div className="pm-mentor-banner">
+          <div className="pm-mentor-head">🧠 Mentor tip{mentorSwap.wouldHaveWon ? " — this swap would have won it" : ""}</div>
+          <div className="pm-mentor-body">{mentorExplain(mentorSwap, round.useCase)}</div>
+          <div className="pm-mentor-score">Score: {sySD.total} → <b>{mentorSwap.newTotal}</b> ({mentorSwap.wouldHaveWon ? "beats" : "vs"} {oppName}'s {soSD.total})</div>
+          {(onRematch || onAgain) && <button className="rf-btn rf-ghost-btn pm-mentor-retry" onClick={onRematch || onAgain}><RotateCcw size={14} /> Retry the duel</button>}
         </div>
       )}
       <button className="rf-btn rf-ghost-btn pm-breakdown-toggle" onClick={() => setShowBreakdown((v) => !v)}>{showBreakdown ? "▲ Hide" : "▼ Show"} part-by-part breakdown</button>
@@ -3337,6 +3646,31 @@ const ELO_TIERS = [{ name: "Beginner", min: 0, max: 599 }, { name: "Novice", min
 function eloTierName(elo) { return (ELO_TIERS.find((t) => elo >= t.min && elo <= t.max) || ELO_TIERS[0]).name; }
 function eloTierRandom(tierName) { const t = ELO_TIERS.find((x) => x.name === tierName) || ELO_TIERS[0]; return t.min + Math.floor(Math.random() * (t.max - t.min + 1)); }
 
+/* ----------------------------- FACTION WARS ----------------------------- */
+// Monthly event — the war rotates by calendar month so there's always exactly one live.
+const FACTION_WARS = [
+  { id: "cpu-brand", label: "CPU Wars", a: { key: "intel", label: "Intel", emoji: "🔵" }, b: { key: "amd", label: "AMD", emoji: "🔴" } },
+  { id: "cooling", label: "Cooling Wars", a: { key: "air", label: "Air-Cooled", emoji: "💨" }, b: { key: "liquid", label: "Liquid", emoji: "💧" } },
+];
+function monthKeyOf(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
+function currentFactionWar() {
+  const now = new Date();
+  const idx = (now.getFullYear() * 12 + now.getMonth()) % FACTION_WARS.length;
+  return { war: FACTION_WARS[idx], monthKey: monthKeyOf(now) };
+}
+function previousFactionWar() {
+  const now = new Date(); const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const idx = (prev.getFullYear() * 12 + prev.getMonth()) % FACTION_WARS.length;
+  return { war: FACTION_WARS[idx], monthKey: monthKeyOf(prev) };
+}
+// Which side of the current war this build's relevant part actually belongs to (or null).
+function buildFactionMatch(build, warId) {
+  if (!build) return null;
+  if (warId === "cpu-brand") { const b = (build.cpu && build.cpu.brand || "").toLowerCase(); if (b === "intel") return "a"; if (b === "amd") return "b"; return null; }
+  if (warId === "cooling") { const t = build.cooler && build.cooler.type; if (t === "air") return "a"; if (t === "aio") return "b"; return null; }
+  return null;
+}
+
 const ADMIN_PASS = "Admin2014"; // change this to your own secret
 const COADMIN_PASS = "Coadmin2014"; // co-admin password — limited access
 
@@ -3766,6 +4100,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
     const ucs = MOGGER_UCS; const buds = MOGGER_BUDGETS;
     return { useCase: ucs[seed % ucs.length], budget: buds[seed % buds.length], secs: 120 + (seed % 4) * 60, isDaily: true };
   }, []);
+  const dailyGauntletInfo = useMemo(() => dailyGauntlet(), []);
   // Daily Challenge streak — consecutive days played (Wordle-style)
   const dailyStreakInfo = useMemo(() => {
     try {
@@ -3790,6 +4125,27 @@ function MoggerGame({ onExit, onSaveBuild }) {
   useEffect(() => { refreshMe(); }, [refreshMe]);
   useEffect(() => { if (screen === "menu") refreshMe(); }, [screen, refreshMe]);
 
+  // Meta Shift Alerts — diff the catalog's top picks against last session's snapshot once on load
+  const [metaShifts, setMetaShifts] = useState([]);
+  useEffect(() => {
+    try {
+      const current = catalogTopPicks();
+      const prevRaw = localStorage.getItem("mogger_meta_snapshot");
+      if (prevRaw) {
+        const prev = JSON.parse(prevRaw);
+        const shifts = [];
+        for (const c of CATEGORY_ORDER) {
+          const p = prev[c], n = current[c];
+          if (!p || !n) continue;
+          if (p.bestPerfId !== n.bestPerfId) shifts.push({ cat: c, type: "performance", from: p.bestPerfName, to: n.bestPerfName });
+          if (p.bestValueId !== n.bestValueId) shifts.push({ cat: c, type: "value", from: p.bestValueName, to: n.bestValueName });
+        }
+        if (shifts.length) setMetaShifts(shifts);
+      }
+      localStorage.setItem("mogger_meta_snapshot", JSON.stringify(current));
+    } catch (e) {}
+  }, []);
+
   const chooseDiff = (d) => {
     if (d.k === "custom") { setAiElo(custom); setAiHidden(false); }
     else if (d.k === "random") { setAiElo(100 + Math.floor(Math.random() * 2900)); setAiHidden(true); }
@@ -3803,9 +4159,20 @@ function MoggerGame({ onExit, onSaveBuild }) {
     else setSeries(null);
     setScreen("intro");
   };
-  const finishP1 = (b) => { setYou(b); if (mode === "ai") setScreen("result"); else setScreen("handoff"); };
+  const finishP1 = (b) => { setYou(b); if (mode === "ai" || mode === "ghost") setScreen("result"); else if (mode === "gauntlet") setScreen("gauntlet-result"); else setScreen("handoff"); };
   const finishP2 = (b) => { setOpp(b); setScreen("result"); };
-  const again = () => { setYou(null); setOpp(null); setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; setSeries(null); setScreen(mode === "ai" ? "diff" : "lobby"); };
+  const again = () => { setYou(null); setOpp(null); setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; setSeries(null); setScreen(mode === "ai" ? "diff" : mode === "ghost" ? "ghosts" : "lobby"); };
+  // Ghost Duel Replay — challenge a recorded build; the opponent column replays its real
+  // parts move-by-move instead of generating a fresh AI build.
+  const [activeGhost, setActiveGhost] = useState(null);
+  const challengeGhost = (ghost) => {
+    setMode("ghost"); setActiveGhost(ghost);
+    setRound({ useCase: ghost.useCase, budget: ghost.budget, secs: ghost.secs || 90 });
+    setYou(null); setOpp(ghost.build);
+    setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; historyAppliedRef.current = false; setSeries(null);
+    setScreen("intro");
+  };
+  const rematchGhost = () => { if (activeGhost) challengeGhost(activeGhost); };
   // Rematch — exact same use case / budget / opponent elo, skip difficulty re-pick
   const rematch = () => {
     setYou(null); setOpp(null); setEloMsg(null); setMirrored(false);
@@ -3821,7 +4188,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
     if (mode === "ai") setOpp(moggerAI(round.useCase, round.budget, aiElo));
     setScreen("intro");
   };
-  const menu = () => { setYou(null); setOpp(null); setRound(null); setEloMsg(null); setMirrored(false); setSeries(null); setSeriesPick(false); setScreen("menu"); };
+  const menu = () => { setYou(null); setOpp(null); setRound(null); setEloMsg(null); setMirrored(false); setSeries(null); setSeriesPick(false); setActiveGhost(null); setScreen("menu"); };
   // Avenge the Rival — fresh challenge, opponent re-rolled within the same rival elo tier
   const avengeRival = (tierName) => {
     const newAiElo = eloTierRandom(tierName);
@@ -3837,9 +4204,9 @@ function MoggerGame({ onExit, onSaveBuild }) {
     onExit();
   };
 
-  // save duel history + update streak after any result
+  // save duel history + update streak after any result (ghost duels are practice replays — skip)
   useEffect(() => {
-    if (screen !== "result" || !you || !opp || historyAppliedRef.current) return;
+    if (screen !== "result" || !you || !opp || historyAppliedRef.current || mode === "ghost") return;
     historyAppliedRef.current = true;
     const sy = moggerScore(you, round.useCase, round.budget).total;
     const so = moggerScore(opp, round.useCase, round.budget).total;
@@ -3854,6 +4221,15 @@ function MoggerGame({ onExit, onSaveBuild }) {
       if (hist.length > 10) hist.splice(0, hist.length - 10);
       localStorage.setItem("mogger_history", JSON.stringify(hist));
     } catch(e) {}
+    // Ghost Duel Replay: bank both builds from this match so they can be challenged later
+    try {
+      const ghosts = JSON.parse(localStorage.getItem("mogger_ghosts") || "[]");
+      const dateStr = new Date().toLocaleDateString();
+      ghosts.push({ id: "g" + Date.now() + "y", date: dateStr, useCase: round.useCase, budget: round.budget, secs: round.secs, build: entry.you, score: sy, label: "You — " + dateStr });
+      ghosts.push({ id: "g" + Date.now() + "o", date: dateStr, useCase: round.useCase, budget: round.budget, secs: round.secs, build: entry.opp, score: so, label: oName + " — " + dateStr });
+      if (ghosts.length > 30) ghosts.splice(0, ghosts.length - 30);
+      localStorage.setItem("mogger_ghosts", JSON.stringify(ghosts));
+    } catch (e) {}
     // Rival tracker
     if (mode === "ai") {
       try {
@@ -3914,6 +4290,22 @@ function MoggerGame({ onExit, onSaveBuild }) {
     persist({ ...user, elo: newElo });
     netSaveElo(user.id, newElo);
     setEloMsg({ delta, newElo, streak: newStreak, streakMult });
+    // Faction Wars: a ranked win earns points for your picked faction this month
+    // (+5 bonus if your build's relevant hardware actually matches your pick).
+    try {
+      if (sy > so) {
+        const { war, monthKey } = currentFactionWar();
+        const pick = JSON.parse(localStorage.getItem("mogger_faction_pick") || "null");
+        if (pick && pick.monthKey === monthKey && pick.warId === war.id) {
+          const pts = 10 + (buildFactionMatch(you, war.id) === pick.faction ? 5 : 0);
+          const localKey = "mogger_faction_local_" + monthKey + "_" + war.id;
+          const local = JSON.parse(localStorage.getItem(localKey) || '{"a":0,"b":0}');
+          local[pick.faction] = (local[pick.faction] || 0) + pts;
+          localStorage.setItem(localKey, JSON.stringify(local));
+          netRecordFactionPoints(user.id, monthKey, war.id, pick.faction, pts);
+        }
+      }
+    } catch (e) {}
     // Track daily elo changes
     try {
       const today = new Date().toISOString().slice(0, 10);
@@ -3931,6 +4323,16 @@ function MoggerGame({ onExit, onSaveBuild }) {
       {screen === "menu" && (
         <div className="pm-menu">
           <div className="pm-account">{user ? <><span className="pm-acct-name">{user.name}</span><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo} elo</span><button className="pm-acct-btn" onClick={() => persist(null)}>Log out</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in / Sign up</button>}</div>
+          {metaShifts.length > 0 && (
+            <div className="pm-meta-banner">
+              <div className="pm-meta-banner-head"><span>📊 Meta Shift detected</span><button className="pm-meta-dismiss" onClick={() => setMetaShifts([])}><X size={13} /></button></div>
+              {metaShifts.slice(0, 3).map((s, i) => (
+                <div key={i} className="pm-meta-shift-row">
+                  <b>{CAT_META[s.cat].label}</b> {s.type === "value" ? "best value" : "top pick"} is now <b className="pm-meta-new">{s.to}</b>{s.from ? <> (was {s.from})</> : null}
+                </div>
+              ))}
+            </div>
+          )}
           <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
           <p className="pm-tag">Build the best PC for the challenge. AI judges. One winner.</p>
           {streak > 0 && <div className="pm-streak-banner">🔥 Win streak: <b>{streak}</b>{streak >= 3 && <span className="pm-streak-mult-badge"> · {Math.round((Math.min(1 + Math.floor(streak / 3) * 0.10, 1.5) - 1) * 100)}% ELO bonus</span>}{bestStreak > 1 && <span className="pm-streak-best"> · Best: {bestStreak}</span>}</div>}
@@ -3974,6 +4376,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
             <button className="pm-quick-btn" onClick={() => setScreen("history")}>📜 History</button>
             <button className="pm-quick-btn" onClick={() => setScreen("achievements")}>🏅 Achievements</button>
             <button className="pm-quick-btn" onClick={() => setScreen("leaderboard")}>🏆 Leaderboard</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("ghosts")}>👻 Ghosts</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("factions")}>⚔️ Factions</button>
             <button className="pm-quick-btn" onClick={() => setFeedbackOpen(true)}>📩 Feedback</button>
           </div>
           <div className="pm-mode-grid">
@@ -3983,6 +4387,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
             <button className="pm-mode" onClick={() => { setMode("ai"); setPractice(true); start({ useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 60 }); }}><span className="pm-mode-icon">⚡</span><span className="pm-mode-name">Speed Duel</span><span className="pm-mode-sub">60 seconds, random challenge</span></button>
             {/* B3: Daily Challenge */}
             <button className={"pm-mode pm-daily" + (dailyStreakInfo.playedToday ? " done" : "")} onClick={() => { setMode("ai"); setPractice(true); start(dailyChallenge); }}><span className="pm-mode-icon">📅</span><span className="pm-mode-name">Daily Challenge{dailyStreakInfo.playedToday ? " ✓" : ""}</span><span className="pm-mode-sub">{USE_CASES[dailyChallenge.useCase]?.label} · {fmt(dailyChallenge.budget)}{dailyStreakInfo.streak > 0 ? ` · 🔥${dailyStreakInfo.streak}` : ""}</span></button>
+            <button className="pm-mode" onClick={() => { setMode("gauntlet"); start(dailyGauntletInfo); }}><span className="pm-mode-icon">🎯</span><span className="pm-mode-name">Constraint Gauntlet</span><span className="pm-mode-sub">{dailyGauntletInfo.constraint.label}</span></button>
           </div>
           <button className="rf-ghost pm-exit" onClick={onExit}><ChevronLeft size={15} /> Back to builder</button>
         </div>
@@ -4031,6 +4436,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
       {screen === "leaderboard" && <MoggerLeaderboard onBack={menu} meName={user ? user.name : null} />}
       {screen === "history" && <MoggerHistory onBack={menu} />}
       {screen === "achievements" && <MoggerAchievements onBack={menu} />}
+      {screen === "ghosts" && <MoggerGhosts onBack={menu} onChallenge={challengeGhost} />}
+      {screen === "factions" && <MoggerFactions onBack={menu} user={user} />}
       {/* A7: Taunt picker */}
       {screen === "taunt-pick" && (
         <div className="pm-card pm-center rf-fade">
@@ -4056,15 +4463,16 @@ function MoggerGame({ onExit, onSaveBuild }) {
       ))}
       {screen === "lobby" && <MoggerLobby mode={mode} onStart={start} onBack={menu} />}
       {screen === "intro" && round && <MoggerIntro round={round} player={mode === "local" ? "Player 1" : null} onGo={() => setScreen("p1")} />}
-      {screen === "p1" && round && <MoggerBuild round={round} player={mode === "local" ? "Player 1" : "You"} oppLabel={mode === "ai" ? "AI Opponent" : "Player 2"} oppBuild={mode === "ai" ? opp : null} oppIsAI={mode === "ai"} oppLocked={false} myElo={mode === "ai" && user ? user.elo : null} oppElo={mode === "ai" ? aiElo : null} onDone={finishP1} />}
+      {screen === "p1" && round && <MoggerBuild round={round} player={mode === "local" ? "Player 1" : "You"} oppLabel={mode === "ai" ? "AI Opponent" : mode === "ghost" ? ("👻 " + (activeGhost ? activeGhost.label : "Ghost")) : "Player 2"} oppBuild={(mode === "ai" || mode === "ghost") ? opp : null} oppIsAI={mode === "ai"} ghostMode={mode === "ghost"} solo={mode === "gauntlet"} constraint={mode === "gauntlet" ? round.constraint : undefined} oppLocked={false} myElo={mode === "ai" && user ? user.elo : null} oppElo={mode === "ai" ? aiElo : null} onDone={finishP1} />}
+      {screen === "gauntlet-result" && round && you && <MoggerGauntletResult round={round} build={you} user={user} onMenu={menu} onPlayAgain={() => { setYou(null); setScreen("intro"); }} />}
       {screen === "handoff" && <div className="pm-card pm-center rf-fade"><h2 className="pm-h2"><Repeat2 size={20} /> Pass the device</h2><p className="pm-p">Player 1 is locked in. Hand the device to <b>Player 2</b> — same challenge, same clock. No peeking.</p><button className="rf-btn" onClick={() => setScreen("intro2")}>I am Player 2 — start <ChevronRight size={16} /></button></div>}
       {screen === "intro2" && round && <MoggerIntro round={round} player="Player 2" onGo={() => setScreen("p2")} />}
       {screen === "p2" && round && <MoggerBuild round={round} player="Player 2" oppLabel="Player 1" oppBuild={you} oppIsAI={false} oppLocked={true} onDone={finishP2} />}
       {screen === "result" && round && you && opp && (() => {
-        const aiName = mode === "ai" ? aiPersona(aiElo).name : "Player 2";
+        const aiName = mode === "ai" ? aiPersona(aiElo).name : mode === "ghost" ? (activeGhost ? activeGhost.label : "Ghost") : "Player 2";
         const resultYouLabel = mirrored ? aiName : "You";
         const resultOppName  = mirrored ? "You" : aiName;
-        return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} practice={practice} series={series} onAgain={again} onRematch={mode === "ai" ? rematch : undefined} onNextGame={mode === "ai" ? nextSeriesGame : undefined} onAvenge={mode === "ai" ? avengeRival : undefined} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
+        return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} practice={practice || mode === "ghost"} series={series} onAgain={again} onRematch={mode === "ai" ? rematch : mode === "ghost" ? rematchGhost : undefined} onNextGame={mode === "ai" ? nextSeriesGame : undefined} onAvenge={mode === "ai" ? avengeRival : undefined} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
       })()}
     </div>
   );

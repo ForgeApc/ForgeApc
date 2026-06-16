@@ -240,3 +240,40 @@ export async function deleteFeedback(id) {
   } catch (e) { return { ok: false, error: "Could not delete." }; }
 }
 
+// ---- Faction Wars (table: mogger_faction_points, view: mogger_faction_totals) ----
+// Requires the supabase/migrations/20260616010000_faction_wars_and_gauntlet.sql migration
+// to have been run against the project — calls below fail silently (and the UI falls back
+// to a local-only tally) until then.
+export async function recordFactionPoints(userId, monthKey, warId, faction, points) {
+  try { await supabase.from("mogger_faction_points").insert({ user_id: userId || null, month_key: monthKey, war_id: warId, faction, points }); }
+  catch (e) { /* ignore */ }
+}
+export async function fetchFactionTotals(monthKey, warId) {
+  try {
+    const { data, error } = await supabase.from("mogger_faction_totals").select("faction,total").eq("month_key", monthKey).eq("war_id", warId);
+    if (error || !data) return null;
+    const out = { a: 0, b: 0 };
+    for (const row of data) if (row.faction === "a" || row.faction === "b") out[row.faction] = row.total;
+    return out;
+  } catch (e) { return null; }
+}
+
+// ---- Constraint Gauntlet (table: mogger_gauntlet_scores) ----
+// Same migration as Faction Wars above provisions this table.
+export async function recordGauntletScore(userId, userName, dayKey, constraintId, useCase, budget, score) {
+  try {
+    const { error } = await supabase.from("mogger_gauntlet_scores").insert({
+      user_id: userId || null, user_name: userName || "Anonymous", day_key: dayKey,
+      constraint_id: constraintId, use_case: useCase, budget, score,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e) { return { ok: false, error: "Could not record score." }; }
+}
+export async function gauntletLeaderboard(dayKey, limit = 20) {
+  try {
+    const { data, error } = await supabase.from("mogger_gauntlet_scores").select("user_name,score,constraint_id,use_case,budget,created_at").eq("day_key", dayKey).order("score", { ascending: false }).limit(limit);
+    if (error) return null;
+    return data || [];
+  } catch (e) { return null; }
+}
