@@ -240,21 +240,74 @@ export async function deleteFeedback(id) {
   } catch (e) { return { ok: false, error: "Could not delete." }; }
 }
 
-// ---- Faction Wars (table: mogger_faction_points, view: mogger_faction_totals) ----
-// Requires the supabase/migrations/20260616010000_faction_wars_and_gauntlet.sql migration
-// to have been run against the project — calls below fail silently (and the UI falls back
-// to a local-only tally) until then.
-export async function recordFactionPoints(userId, monthKey, warId, faction, points) {
-  try { await supabase.from("mogger_faction_points").insert({ user_id: userId || null, month_key: monthKey, war_id: warId, faction, points }); }
+// ---- Faction Wars (weekly) ----
+// Tables: mogger_faction_points (ledger), mogger_faction_picks (who picked what),
+// mogger_faction_week_results (reward audit). View: mogger_faction_totals.
+// RPC: apply_faction_week_reward — settles last week's winner; each member's ELO bonus =
+// contribution% capped at 5%×(contributors/10). See migration 20260616030000_*.sql.
+export async function recordFactionPoints(userId, weekKey, warId, faction, points) {
+  try { await supabase.from("mogger_faction_points").insert({ user_id: userId || null, week_key: weekKey, war_id: warId, faction, points }); }
   catch (e) { /* ignore */ }
 }
-export async function fetchFactionTotals(monthKey, warId) {
+export async function fetchFactionTotals(weekKey, warId) {
   try {
-    const { data, error } = await supabase.from("mogger_faction_totals").select("faction,total").eq("month_key", monthKey).eq("war_id", warId);
+    const { data, error } = await supabase.from("mogger_faction_totals").select("faction,total").eq("week_key", weekKey).eq("war_id", warId);
     if (error || !data) return null;
     const out = { a: 0, b: 0 };
     for (const row of data) if (row.faction === "a" || row.faction === "b") out[row.faction] = row.total;
     return out;
+  } catch (e) { return null; }
+}
+export async function setFactionPick(userId, weekKey, warId, faction) {
+  try { await supabase.from("mogger_faction_picks").upsert({ user_id: userId, week_key: weekKey, war_id: warId, faction, updated_at: new Date().toISOString() }); }
+  catch (e) { /* ignore */ }
+}
+// Opportunistically settles a past week — safe to call from any client at any time, any
+// number of times; the DB function itself guards against double-paying.
+export async function applyFactionWeekReward(weekKey) {
+  try { const { data, error } = await supabase.rpc("apply_faction_week_reward", { p_week_key: weekKey }); if (error) return null; return (data && data[0]) || null; }
+  catch (e) { return null; }
+}
+
+// ---- Spectator Betting Market (tables: mogger_currency, mogger_bets; RPC: settle_bet) ----
+export async function fetchBalance(userId) {
+  try {
+    const { data } = await supabase.from("mogger_currency").select("balance").eq("user_id", userId).single();
+    if (data) return data.balance;
+    await supabase.from("mogger_currency").insert({ user_id: userId, balance: 1000 });
+    return 1000;
+  } catch (e) { return 1000; }
+}
+export async function placeBet(userId, side, stake, odds) {
+  try {
+    const bal = await fetchBalance(userId);
+    if (bal < stake) return { ok: false, error: "Not enough coins." };
+    await supabase.from("mogger_currency").update({ balance: bal - stake }).eq("user_id", userId);
+    const { data, error } = await supabase.from("mogger_bets").insert({ user_id: userId, side, stake, odds }).select().single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, betId: data.id, newBalance: bal - stake };
+  } catch (e) { return { ok: false, error: "Could not place bet." }; }
+}
+export async function settleBet(betId, won) {
+  try { const { data, error } = await supabase.rpc("settle_bet", { p_bet_id: betId, p_won: won }); if (error) return null; return data; }
+  catch (e) { return null; }
+}
+
+// ---- Rogue Run (tables: mogger_rogue_runs, mogger_rogue_perks) ----
+export async function fetchRoguePerks(userId) {
+  try {
+    const { data } = await supabase.from("mogger_rogue_perks").select("perks,best_stage").eq("user_id", userId).single();
+    return data || { perks: [], best_stage: 0 };
+  } catch (e) { return { perks: [], best_stage: 0 }; }
+}
+export async function saveRogueRun(userId, stageReached, cleared, perksUnlocked) {
+  try {
+    await supabase.from("mogger_rogue_runs").insert({ user_id: userId, stage_reached: stageReached, cleared, perks_unlocked: perksUnlocked });
+    const cur = await fetchRoguePerks(userId);
+    const merged = [...new Set([...(cur.perks || []), ...(perksUnlocked || [])])];
+    const best = Math.max(cur.best_stage || 0, stageReached);
+    await supabase.from("mogger_rogue_perks").upsert({ user_id: userId, perks: merged, best_stage: best });
+    return { perks: merged, best_stage: best };
   } catch (e) { return null; }
 }
 

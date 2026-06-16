@@ -6,7 +6,7 @@ import {
   ChevronLeft, Zap, DollarSign, RotateCcw, ShieldCheck, ShieldAlert, Repeat2, Wrench, Send, Bot, MessageCircle, Maximize, Minimize, Settings, Sun, Moon, Search, Users, Upload, Globe, Columns2, PackageSearch, LayoutGrid
 } from "lucide-react";
 import { MEDIA, MEDIA_NE } from "../data/part-media.js";
-import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity, submitFeedback as netSubmitFeedback, listFeedback as netListFeedback, deleteFeedback as netDeleteFeedback, recordFactionPoints as netRecordFactionPoints, fetchFactionTotals as netFactionTotals, recordGauntletScore as netRecordGauntletScore, gauntletLeaderboard as netGauntletLeaderboard } from "./moggerNet.js";
+import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity, submitFeedback as netSubmitFeedback, listFeedback as netListFeedback, deleteFeedback as netDeleteFeedback, recordFactionPoints as netRecordFactionPoints, fetchFactionTotals as netFactionTotals, setFactionPick as netSetFactionPick, applyFactionWeekReward as netApplyFactionWeekReward, recordGauntletScore as netRecordGauntletScore, gauntletLeaderboard as netGauntletLeaderboard, fetchBalance as netFetchBalance, placeBet as netPlaceBet, settleBet as netSettleBet, fetchRoguePerks as netFetchRoguePerks, saveRogueRun as netSaveRogueRun } from "./moggerNet.js";
 /* ----------------------------- i18n ----------------------------- */
 const LANGS = [{"code": "en", "name": "English"}, {"code": "es", "name": "Español"}, {"code": "zh", "name": "中文"}, {"code": "hi", "name": "हिन्दी"}, {"code": "ar", "name": "العربية"}, {"code": "pt", "name": "Português"}, {"code": "fr", "name": "Français"}, {"code": "ru", "name": "Русский"}, {"code": "ja", "name": "日本語"}, {"code": "de", "name": "Deutsch"}];
 const I18N = {"en": {"myRigs": "My Rigs", "settings": "Settings", "appearance": "Appearance", "language": "Language", "theme": "Theme", "dark": "Dark", "light": "Light", "back": "Back", "saveRig": "Save rig", "select": "Select", "selected": "Selected", "moreInfo": "More info", "hideInfo": "Hide info", "autoForge": "Auto-Forge", "buildYourself": "Build It Yourself", "yourBuild": "Your build", "budgetQ": "What's your budget?", "useCaseQ": "What will this PC be for?", "livePrices": "Live prices", "samplePrices": "sample prices", "updated": "updated", "componentsDb": "components in the database", "overBudgetCat": "Over your {x} budget", "performance": "PERFORMANCE", "pricePerf": "PRICE / PERF", "pros": "PROS", "cons": "CONS"}, "es": {"myRigs": "Mis Equipos", "settings": "Ajustes", "appearance": "Apariencia", "language": "Idioma", "theme": "Tema", "dark": "Oscuro", "light": "Claro", "back": "Atrás", "saveRig": "Guardar", "select": "Elegir", "selected": "Elegido", "moreInfo": "Más info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Hazlo tú mismo", "yourBuild": "Tu equipo", "budgetQ": "¿Cuál es tu presupuesto?", "useCaseQ": "¿Para qué será este PC?", "livePrices": "Precios en vivo", "samplePrices": "precios de muestra", "updated": "actualizado", "componentsDb": "componentes en la base de datos", "overBudgetCat": "Supera tu presupuesto de {x}", "performance": "RENDIMIENTO", "pricePerf": "PRECIO / REND", "pros": "PROS", "cons": "CONTRAS"}, "zh": {"myRigs": "我的配置", "settings": "设置", "appearance": "外观", "language": "语言", "theme": "主题", "dark": "深色", "light": "浅色", "back": "返回", "saveRig": "保存配置", "select": "选择", "selected": "已选", "moreInfo": "更多信息", "hideInfo": "隐藏", "autoForge": "自动配置", "buildYourself": "自己组装", "yourBuild": "你的配置", "budgetQ": "你的预算是多少？", "useCaseQ": "这台电脑用来做什么？", "livePrices": "实时价格", "samplePrices": "示例价格", "updated": "更新于", "componentsDb": "个组件已入库", "overBudgetCat": "超出{x}预算", "performance": "性能", "pricePerf": "性价比", "pros": "优点", "cons": "缺点"}, "hi": {"myRigs": "मेरे रिग", "settings": "सेटिंग्स", "appearance": "रूप", "language": "भाषा", "theme": "थीम", "dark": "गहरा", "light": "हल्का", "back": "वापस", "saveRig": "सहेजें", "select": "चुनें", "selected": "चयनित", "moreInfo": "और जानकारी", "hideInfo": "छिपाएं", "autoForge": "ऑटो-फोर्ज", "buildYourself": "खुद बनाएं", "yourBuild": "आपका बिल्ड", "budgetQ": "आपका बजट क्या है?", "useCaseQ": "यह पीसी किसलिए होगा?", "livePrices": "लाइव कीमतें", "samplePrices": "नमूना कीमतें", "updated": "अपडेट", "componentsDb": "घटक डेटाबेस में", "overBudgetCat": "{x} बजट से अधिक", "performance": "प्रदर्शन", "pricePerf": "मूल्य/प्रदर्शन", "pros": "फायदे", "cons": "नुकसान"}, "ar": {"myRigs": "أجهزتي", "settings": "الإعدادات", "appearance": "المظهر", "language": "اللغة", "theme": "السمة", "dark": "داكن", "light": "فاتح", "back": "رجوع", "saveRig": "حفظ", "select": "اختيار", "selected": "محدد", "moreInfo": "المزيد", "hideInfo": "إخفاء", "autoForge": "تجميع تلقائي", "buildYourself": "اصنعه بنفسك", "yourBuild": "تجميعتك", "budgetQ": "ما هي ميزانيتك؟", "useCaseQ": "لأي غرض هذا الحاسوب؟", "livePrices": "أسعار حية", "samplePrices": "أسعار تجريبية", "updated": "محدّث", "componentsDb": "مكوّن في قاعدة البيانات", "overBudgetCat": "يتجاوز ميزانية {x}", "performance": "الأداء", "pricePerf": "السعر/الأداء", "pros": "الإيجابيات", "cons": "السلبيات"}, "pt": {"myRigs": "Meus PCs", "settings": "Configurações", "appearance": "Aparência", "language": "Idioma", "theme": "Tema", "dark": "Escuro", "light": "Claro", "back": "Voltar", "saveRig": "Salvar", "select": "Selecionar", "selected": "Selecionado", "moreInfo": "Mais info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Faça você mesmo", "yourBuild": "Sua build", "budgetQ": "Qual é o seu orçamento?", "useCaseQ": "Para que será este PC?", "livePrices": "Preços ao vivo", "samplePrices": "preços de exemplo", "updated": "atualizado", "componentsDb": "componentes no banco de dados", "overBudgetCat": "Acima do orçamento de {x}", "performance": "DESEMPENHO", "pricePerf": "PREÇO / DESEMP", "pros": "PRÓS", "cons": "CONTRAS"}, "fr": {"myRigs": "Mes Configs", "settings": "Réglages", "appearance": "Apparence", "language": "Langue", "theme": "Thème", "dark": "Sombre", "light": "Clair", "back": "Retour", "saveRig": "Enregistrer", "select": "Choisir", "selected": "Choisi", "moreInfo": "Plus d'infos", "hideInfo": "Masquer", "autoForge": "Auto-Forge", "buildYourself": "Faites-le vous-même", "yourBuild": "Votre config", "budgetQ": "Quel est votre budget ?", "useCaseQ": "À quoi servira ce PC ?", "livePrices": "Prix en direct", "samplePrices": "prix indicatifs", "updated": "mis à jour", "componentsDb": "composants dans la base", "overBudgetCat": "Au-dessus du budget {x}", "performance": "PERFORMANCE", "pricePerf": "PRIX / PERF", "pros": "ATOUTS", "cons": "INCONVÉNIENTS"}, "ru": {"myRigs": "Мои сборки", "settings": "Настройки", "appearance": "Вид", "language": "Язык", "theme": "Тема", "dark": "Тёмная", "light": "Светлая", "back": "Назад", "saveRig": "Сохранить", "select": "Выбрать", "selected": "Выбрано", "moreInfo": "Подробнее", "hideInfo": "Скрыть", "autoForge": "Авто-сборка", "buildYourself": "Собрать самому", "yourBuild": "Ваша сборка", "budgetQ": "Каков ваш бюджет?", "useCaseQ": "Для чего этот ПК?", "livePrices": "Цены в реальном времени", "samplePrices": "примерные цены", "updated": "обновлено", "componentsDb": "компонентов в базе", "overBudgetCat": "Сверх бюджета на {x}", "performance": "ПРОИЗВОДИТ.", "pricePerf": "ЦЕНА/КАЧ.", "pros": "ПЛЮСЫ", "cons": "МИНУСЫ"}, "ja": {"myRigs": "マイ構成", "settings": "設定", "appearance": "外観", "language": "言語", "theme": "テーマ", "dark": "ダーク", "light": "ライト", "back": "戻る", "saveRig": "保存", "select": "選択", "selected": "選択済", "moreInfo": "詳細", "hideInfo": "隠す", "autoForge": "自動構成", "buildYourself": "自分で組む", "yourBuild": "あなたの構成", "budgetQ": "予算はいくらですか？", "useCaseQ": "このPCの用途は？", "livePrices": "ライブ価格", "samplePrices": "サンプル価格", "updated": "更新", "componentsDb": "個のパーツを収録", "overBudgetCat": "{x}予算オーバー", "performance": "性能", "pricePerf": "価格性能", "pros": "長所", "cons": "短所"}, "de": {"myRigs": "Meine Builds", "settings": "Einstellungen", "appearance": "Darstellung", "language": "Sprache", "theme": "Thema", "dark": "Dunkel", "light": "Hell", "back": "Zurück", "saveRig": "Speichern", "select": "Wählen", "selected": "Gewählt", "moreInfo": "Mehr Info", "hideInfo": "Verbergen", "autoForge": "Auto-Forge", "buildYourself": "Selbst bauen", "yourBuild": "Dein Build", "budgetQ": "Wie hoch ist dein Budget?", "useCaseQ": "Wofür ist dieser PC?", "livePrices": "Live-Preise", "samplePrices": "Beispielpreise", "updated": "aktualisiert", "componentsDb": "Komponenten in der Datenbank", "overBudgetCat": "Über dem {x}-Budget", "performance": "LEISTUNG", "pricePerf": "PREIS / LEIST", "pros": "VORTEILE", "cons": "NACHTEILE"}};
@@ -1691,6 +1691,8 @@ export default function RigForge() {
               <button className="rf-icon-btn" onClick={() => setShowPatch(false)}><X size={16} /></button>
             </div>
             <div className="rf-patch-list">
+              <div className="rf-patch-entry"><span className="rf-patch-ver">v2.7</span><span className="rf-patch-date">Jun 2026</span><ul><li>PC Duels: Ghost Duel Replay — challenge any past build, the opponent replays its real parts move-by-move</li><li>PC Duels: Meta Shift Alerts — flags when the catalog's optimal pick for a category changes</li><li>PC Duels: Build Archetype Classifier — flavor badges like Budget Slayer, Thermal Monster, Glass Cannon</li><li>PC Duels: Faction Wars — monthly Intel vs AMD / Air vs Liquid event with a live dominance bar</li><li>PC Duels: Constraint Gauntlet — daily solo score-attack under a rotating hard constraint, own leaderboard</li><li>PC Duels: Build Mentor AI — after a loss, the single component swap that would have moved the score the most</li></ul></div>
+              <div className="rf-patch-entry"><span className="rf-patch-ver">v2.6</span><span className="rf-patch-date">Jun 2026</span><ul><li>PC Duels: Best-of-3 series mode against the same opponent</li><li>PC Duels: Win-streak ELO bonus multiplier (+10% per streak level, capped at +50%)</li><li>PC Duels: Radar-chart breakdown comparing both builds across gaming/productivity/value/efficiency/balance</li><li>PC Duels: "Avenge the Rival" instant rematch against a tier you have a losing record vs</li><li>PC Duels: Prominent Quick Rematch button in practice mode</li><li>PC Duels: Live build-pacing bar during Speed Duel showing budget spend vs time elapsed</li></ul></div>
               <div className="rf-patch-entry"><span className="rf-patch-ver">v2.5</span><span className="rf-patch-date">Jun 2026</span><ul><li>PC Duels: Match replay — re-watch any past duel part-by-part</li><li>PC Duels: Pre-match taunt picker</li><li>PC Duels: Confetti on win, Sudden Death mode, Mirror Match</li><li>PC Duels: Daily Challenge, achievement badges, build efficiency medal</li><li>My Rigs: Clone build, search, pin/favorite, build notes, completeness ring</li><li>Analyze: Noise estimate, weight estimate, streaming quality card, upgrade path</li><li>Analyze: Streaming &amp; LAN setup checklists</li><li>Tools: Monthly cost planner, cashback &amp; tax calculator</li><li>Share: Copy build as text or URL, share duel result</li><li>Parts: Sale badges in PC Duels picker</li><li>Shortcuts: Press D to jump to PC Duels</li></ul></div>
               <div className="rf-patch-entry"><span className="rf-patch-ver">v2.4</span><span className="rf-patch-date">Apr 2026</span><ul><li>Online multiplayer with real-time matchmaking</li><li>Global elo leaderboard</li><li>Ranked crank titles (Rookie → God Tier)</li><li>AI judge verdict after every duel</li></ul></div>
               <div className="rf-patch-entry"><span className="rf-patch-ver">v2.3</span><span className="rf-patch-date">Feb 2026</span><ul><li>3D build preview</li><li>Live price feeds</li><li>Streaming &amp; content creator use-case</li></ul></div>
@@ -2373,28 +2375,38 @@ function FactionDominanceBar({ totals }) {
     </div>
   );
 }
-function MoggerFactions({ onBack, user }) {
-  const { war, monthKey } = useMemo(() => currentFactionWar(), []);
-  const localKey = "mogger_faction_local_" + monthKey + "_" + war.id;
+function MoggerFactions({ onBack, user, onUserUpdate }) {
+  const { war, weekKey } = useMemo(() => currentFactionWar(), []);
+  const localKey = "mogger_faction_local_" + weekKey + "_" + war.id;
   const [pick, setPick] = useState(() => {
-    try { const p = JSON.parse(localStorage.getItem("mogger_faction_pick") || "null"); return (p && p.monthKey === monthKey && p.warId === war.id) ? p.faction : null; } catch (e) { return null; }
+    try { const p = JSON.parse(localStorage.getItem("mogger_faction_pick") || "null"); return (p && p.weekKey === weekKey && p.warId === war.id) ? p.faction : null; } catch (e) { return null; }
   });
   const [totals, setTotals] = useState(() => {
     try { return JSON.parse(localStorage.getItem(localKey) || '{"a":0,"b":0}'); } catch (e) { return { a: 0, b: 0 }; }
   });
   const [remote, setRemote] = useState(false);
   const [trophy, setTrophy] = useState(null);
+  const [rewardMsg, setRewardMsg] = useState(null);
   useEffect(() => {
-    netFactionTotals(monthKey, war.id).then((r) => { if (r) { setTotals(r); setRemote(true); } });
-    const { war: pw, monthKey: pmk } = previousFactionWar();
-    netFactionTotals(pmk, pw.id).then((r) => {
-      const t = r || (() => { try { return JSON.parse(localStorage.getItem("mogger_faction_local_" + pmk + "_" + pw.id) || "null"); } catch (e) { return null; } })();
-      if (t && (t.a > 0 || t.b > 0)) setTrophy({ war: pw, monthKey: pmk, winner: t.a >= t.b ? "a" : "b" });
+    netFactionTotals(weekKey, war.id).then((r) => { if (r) { setTotals(r); setRemote(true); } });
+    const { war: pw, weekKey: pwk } = previousFactionWar();
+    netFactionTotals(pwk, pw.id).then((r) => {
+      const t = r || (() => { try { return JSON.parse(localStorage.getItem("mogger_faction_local_" + pwk + "_" + pw.id) || "null"); } catch (e) { return null; } })();
+      if (t && (t.a > 0 || t.b > 0)) setTrophy({ war: pw, weekKey: pwk, winner: t.a >= t.b ? "a" : "b" });
     });
-  }, [monthKey, war.id]);
+    // Opportunistically settle last week's reward — any client visiting this screen can
+    // trigger it, the DB function itself guards against double-paying. No cron needed.
+    netApplyFactionWeekReward(pwk).then((res) => {
+      if (!res || !res.winner || !user) return;
+      netFetchUser(user.id).then((srv) => {
+        if (srv && srv.elo !== user.elo) { onUserUpdate({ id: srv.id, name: srv.name, elo: srv.elo, crank: srv.crank || null }); setRewardMsg("🏆 Last week's Faction War paid out — your elo just updated!"); }
+      });
+    });
+  }, [weekKey, war.id]);
   const choose = (faction) => {
     setPick(faction);
-    try { localStorage.setItem("mogger_faction_pick", JSON.stringify({ monthKey, warId: war.id, faction })); } catch (e) {}
+    try { localStorage.setItem("mogger_faction_pick", JSON.stringify({ weekKey, warId: war.id, faction })); } catch (e) {}
+    if (user) netSetFactionPick(user.id, weekKey, war.id, faction);
   };
   const sideCard = (side, key) => (
     <button key={key} className={"pm-faction-card" + (pick === key ? " on" : "")} onClick={() => choose(key)}>
@@ -2407,16 +2419,17 @@ function MoggerFactions({ onBack, user }) {
   return (
     <div className="pm-card rf-fade">
       <h2 className="pm-h2">⚔️ {war.label}</h2>
-      <p className="pm-p pm-dim">This month's faction event — pick a side. Every ranked win earns your faction points (+bonus if your build's hardware matches).{!remote && " Showing this device's local tally — global standings need the Supabase migration applied."}</p>
+      <p className="pm-p pm-dim">This week's faction event — pick a side. Every ranked win earns your faction points (+bonus if your build's hardware matches). When the week ends, each winning member's ELO bonus equals their personal contribution % (capped at 5% × contributors/10).{!remote && " Showing this device's local tally until the next sync."}</p>
+      {rewardMsg && <div className="pm-faction-trophy" style={{ borderColor: "var(--c-good)", color: "var(--c-good)" }}>{rewardMsg}</div>}
       <div className="pm-faction-grid">
         {sideCard(war.a, "a")}
         {sideCard(war.b, "b")}
       </div>
       <FactionDominanceBar totals={totals} />
-      {!user && <p className="pm-seg-note">Log in and play ranked duels for your picks to actually earn points.</p>}
+      {!user && <p className="pm-seg-note">Log in and play ranked duels — winning faction members earn an ELO bonus proportional to their personal contribution at week's end.</p>}
       {trophy && (
         <div className="pm-faction-trophy">
-          🏆 Last month's {trophy.war.label} went to <b>{trophy.winner === "a" ? trophy.war.a.label : trophy.war.b.label}</b>
+          🏆 Last week's {trophy.war.label} went to <b>{trophy.winner === "a" ? trophy.war.a.label : trophy.war.b.label}</b> — members earned ELO bonuses based on their contribution
         </div>
       )}
       <button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button>
@@ -3647,28 +3660,124 @@ function eloTierName(elo) { return (ELO_TIERS.find((t) => elo >= t.min && elo <=
 function eloTierRandom(tierName) { const t = ELO_TIERS.find((x) => x.name === tierName) || ELO_TIERS[0]; return t.min + Math.floor(Math.random() * (t.max - t.min + 1)); }
 
 /* ----------------------------- FACTION WARS ----------------------------- */
-// Monthly event — the war rotates by calendar month so there's always exactly one live.
+// Weekly event — the war rotates every week through an 80-theme cycle so it never repeats
+// for over a year and a half straight. ~20 of the 80 themes map to a real, detectable build
+// trait (so picking hardware that matches your faction earns a small points bonus); the rest
+// are pure flavor — still fully playable, just without the hardware-match bonus.
+const FACTION_AXES = {
+  "cpu-brand": (b) => { const v = b.cpu && b.cpu.brand; return v === "Intel" ? "a" : v === "AMD" ? "b" : null; },
+  "gpu-vendor": (b) => { const n = (b.gpu && (b.gpu.model || b.gpu.name)) || ""; if (/nvidia|rtx|gtx/i.test(n)) return "a"; if (/radeon|\brx\s?\d/i.test(n)) return "b"; return null; },
+  "cooling": (b) => { const t = b.cooler && b.cooler.type; return t === "air" ? "a" : t === "aio" ? "b" : null; },
+  "ram-gen": (b) => { const t = b.ram && b.ram.ramType; return t === "DDR4" ? "a" : t === "DDR5" ? "b" : null; },
+  "case-form": (b) => { const f = b.mobo && b.mobo.form; return f === "ITX" ? "a" : f === "ATX" ? "b" : null; },
+  "psu-eff": (b) => { const e = b.psu && b.psu.eff; if (!e) return null; return /bronze|silver/i.test(e) ? "a" : "b"; },
+  "budget-tier": (b, budget) => { if (!budget) return null; const spend = CATEGORY_ORDER.reduce((s, c) => s + (b[c] ? b[c].price : 0), 0); return spend < budget * 0.6 ? "a" : spend > budget * 0.9 ? "b" : null; },
+  "storage-iface": (b) => { const k = b.storage && (b.storage.iface || b.storage.kind); if (!k) return null; return /sata/i.test(k) ? "a" : "b"; },
+  "core-count": (b) => { const c = b.cpu && b.cpu.cores; if (!c) return null; return c <= 6 ? "a" : "b"; },
+  "vram": (b) => { const v = b.gpu && b.gpu.vram; if (!v) return null; return v <= 8 ? "a" : "b"; },
+};
+function mkWar(id, label, aLabel, aEmoji, bLabel, bEmoji, axis) {
+  return { id, label, a: { key: "a", label: aLabel, emoji: aEmoji }, b: { key: "b", label: bLabel, emoji: bEmoji }, axis: axis || null };
+}
 const FACTION_WARS = [
-  { id: "cpu-brand", label: "CPU Wars", a: { key: "intel", label: "Intel", emoji: "🔵" }, b: { key: "amd", label: "AMD", emoji: "🔴" } },
-  { id: "cooling", label: "Cooling Wars", a: { key: "air", label: "Air-Cooled", emoji: "💨" }, b: { key: "liquid", label: "Liquid", emoji: "💧" } },
+  mkWar("w01", "CPU Wars", "Intel", "🔵", "AMD", "🔴", "cpu-brand"),
+  mkWar("w02", "Silicon Showdown", "Team Blue", "🔷", "Team Red", "🟥", "cpu-brand"),
+  mkWar("w03", "GPU Wars", "Nvidia", "💚", "Radeon", "❤️", "gpu-vendor"),
+  mkWar("w04", "Frame Rate Faction", "GeForce Nation", "🟢", "Radeon Rebellion", "🔺", "gpu-vendor"),
+  mkWar("w05", "Cooling Wars", "Air-Cooled", "💨", "Liquid", "💧", "cooling"),
+  mkWar("w06", "Thermal Throwdown", "Fan Club", "🌬️", "Pump Squad", "🌊", "cooling"),
+  mkWar("w07", "Memory Wars", "DDR4", "🟦", "DDR5", "🟪", "ram-gen"),
+  mkWar("w08", "Old Guard vs New Wave", "DDR4 Veterans", "📼", "DDR5 Pioneers", "✨", "ram-gen"),
+  mkWar("w09", "Form Factor Wars", "Mini-ITX", "📦", "Full Tower", "🏰", "case-form"),
+  mkWar("w10", "Small Form Faction", "Pocket Rockets", "🚀", "Tower Titans", "🗼", "case-form"),
+  mkWar("w11", "Efficiency Wars", "Bronze Tier", "🥉", "Gold+ Tier", "🥇", "psu-eff"),
+  mkWar("w12", "Watt Wars", "Power Savers", "🔋", "Power Hungry", "⚡", "psu-eff"),
+  mkWar("w13", "Budget Wars", "Budget Builders", "💵", "Flagship Faithful", "💎", "budget-tier"),
+  mkWar("w14", "Value vs Halo", "Value Vanguard", "🛡️", "Halo Hunters", "👑", "budget-tier"),
+  mkWar("w15", "Storage Wars", "SATA Sentinels", "💾", "NVMe Nation", "⚡", "storage-iface"),
+  mkWar("w16", "Speed Lane", "Old Rails", "🐢", "Fast Lane", "🚄", "storage-iface"),
+  mkWar("w17", "Core Wars", "Lean Six", "6️⃣", "Core Overload", "🔢", "core-count"),
+  mkWar("w18", "Multitask Wars", "Efficiency Corps", "🎯", "Multitask Mob", "🧵", "core-count"),
+  mkWar("w19", "VRAM Wars", "VRAM Minimalists", "🪶", "VRAM Maximalists", "🐘", "vram"),
+  mkWar("w20", "Texture Wars", "Texture Tightwads", "📉", "Frame Buffer Fanatics", "📈", "vram"),
+  mkWar("w21", "PCIe Wars", "PCIe 4", "4️⃣", "PCIe 5", "5️⃣"),
+  mkWar("w22", "Storage Gen Wars", "Gen3 SSDs", "🐌", "Gen5 SSDs", "🚀"),
+  mkWar("w23", "Display Wars", "1080p Loyalists", "📺", "4K Believers", "🖥️"),
+  mkWar("w24", "Refresh Rate Wars", "60Hz Veterans", "🎞️", "High Refresh Junkies", "⚡"),
+  mkWar("w25", "Aspect Ratio Wars", "16:9 Classic", "📐", "Ultrawide Believers", "📏"),
+  mkWar("w26", "RGB Wars", "Stealth Black", "🖤", "RGB Everything", "🌈"),
+  mkWar("w27", "Overclocking Wars", "Stock Clocks", "📋", "Pushed to the Limit", "🔥"),
+  mkWar("w28", "Cable Wars", "Cable Managed", "✨", "Rat's Nest", "🕸️"),
+  mkWar("w29", "Window Wars", "Glass Panel", "🪟", "Solid Panel", "⬛"),
+  mkWar("w30", "Front Panel Wars", "Mesh Front", "🕳️", "Glass Front", "🔲"),
+  mkWar("w31", "Fan Count Wars", "Minimalist Airflow", "🌀", "Fan Wall", "💨"),
+  mkWar("w32", "Dust Wars", "Clean Freaks", "🧼", "Dust Collectors", "🌫️"),
+  mkWar("w33", "Monitor Count Wars", "Single Monitor", "🖥️", "Multi-Monitor", "🖥️🖥️"),
+  mkWar("w34", "Input Wars", "Keyboard & Mouse", "⌨️", "Controller", "🎮"),
+  mkWar("w35", "Genre Wars", "FPS Fanatics", "🔫", "RPG Loyalists", "🗡️"),
+  mkWar("w36", "Benchmark Wars", "Synthetic Scores", "📊", "Real-World Frames", "🎮"),
+  mkWar("w37", "Build Reveal Wars", "Time-Lapse Editors", "🎬", "Livestream Builders", "📡"),
+  mkWar("w38", "Sound Profile Wars", "Silent Running", "🤫", "Loud and Proud", "📢"),
+  mkWar("w39", "Case Material Wars", "Steel Builders", "🔩", "Aluminum Builders", "🛠️"),
+  mkWar("w40", "PSU Modularity Wars", "Fully Modular", "🔌", "Non-Modular Nostalgia", "🧷"),
+  mkWar("w41", "GPU Mount Wars", "Horizontal Mount", "➡️", "Vertical Mount", "⬆️"),
+  mkWar("w42", "M.2 Wars", "Heatsink Covered", "🛡️", "Bare Boards", "🔓"),
+  mkWar("w43", "Build Time Wars", "Speedrunners", "⏱️", "Perfectionists", "🔍"),
+  mkWar("w44", "Warranty Wars", "RMA Veterans", "📦", "Never Broke a Part", "🍀"),
+  mkWar("w45", "Upgrade Cycle Wars", "Yearly Upgraders", "🔄", "Long Haulers", "⏳"),
+  mkWar("w46", "Streaming Codec Wars", "NVENC Encoders", "🎥", "x264 Purists", "🖥️"),
+  mkWar("w47", "Sales Event Wars", "Black Friday Hunters", "🛒", "Full Price Payers", "💳"),
+  mkWar("w48", "Fan Bearing Wars", "Sleeve Bearing Loyalists", "🌀", "Maglev Believers", "🧲"),
+  mkWar("w49", "FPS Counter Wars", "Always-On Overlay", "📈", "Never Shown Purists", "🙈"),
+  mkWar("w50", "VRM Wars", "Bare Board Believers", "🔲", "Armored VRM Fans", "🛡️"),
+  mkWar("w51", "Case Feet Wars", "Rubber Feet", "🟫", "Metal Feet", "⚙️"),
+  mkWar("w52", "Build Platform Wars", "Reddit Posters", "👽", "YouTube Creators", "📹"),
+  mkWar("w53", "Multi-GPU Nostalgia", "SLI Believers", "🔗", "Single Card Purists", "🃏"),
+  mkWar("w54", "Legacy Hardware Wars", "Retro Rig Collectors", "📼", "Bleeding Edge Adopters", "⚡"),
+  mkWar("w55", "BIOS Tuning Wars", "Stock BIOS Defaults", "📄", "Custom Curve Tuners", "🎛️"),
+  mkWar("w56", "Fan Curve Wars", "Silent Profile", "🤐", "Max Cooling Profile", "🌬️"),
+  mkWar("w57", "Desk Setup Wars", "Standing Desk", "🧍", "Sitting Desk", "🪑"),
+  mkWar("w58", "Gaming Chair Wars", "Racing Style", "🏎️", "Ergonomic Office", "🪑"),
+  mkWar("w59", "Fuel Wars", "Energy Drinks", "🥤", "Coffee", "☕"),
+  mkWar("w60", "Schedule Wars", "Night Owls", "🦉", "Early Birds", "🐦"),
+  mkWar("w61", "Build Music Wars", "Lo-fi Beats", "🎧", "Metal Riffs", "🎸"),
+  mkWar("w62", "Sleeving Wars", "Custom Sleeved Cables", "🎨", "Stock Cable Loyalists", "📦"),
+  mkWar("w63", "Thermal Paste Wars", "Stock Paste Stans", "🧪", "Premium Paste Believers", "⚗️"),
+  mkWar("w64", "Capture Card Wars", "Hardware Encode", "📼", "Software Encode", "💻"),
+  mkWar("w65", "Build Log Wars", "Spreadsheet Planners", "📊", "Wing-It Builders", "🎲"),
+  mkWar("w66", "Part Source Wars", "Local Shop Loyalists", "🏪", "Online Order Diehards", "📦"),
+  mkWar("w67", "Extended Warranty Wars", "Always Buy It", "🛡️", "Never Bother", "🎲"),
+  mkWar("w68", "Case Fan Wars", "PWM Purists", "🔌", "DC Diehards", "🔋"),
+  mkWar("w69", "Cable Length Wars", "Custom Cut Cables", "✂️", "Stock Length Loyalists", "📏"),
+  mkWar("w70", "Aesthetic Wars", "Minimalist Builders", "⬜", "Maximalist Builders", "🌈"),
+  mkWar("w71", "Lighting Wars", "Static Color", "💡", "Rainbow Cycle", "🌈"),
+  mkWar("w72", "Battlestation Wars", "Bedroom Rig", "🛏️", "Office Battlestation", "🏢"),
+  mkWar("w73", "Software Tuning Wars", "Default Settings", "⚙️", "Tuned to the Teeth", "🔧"),
+  mkWar("w74", "Thermal Camera Wars", "Thermal Camera Users", "📷", "Guess-and-Check Builders", "🤷"),
+  mkWar("w75", "Driver Update Wars", "Day-One Updaters", "📥", "If It Ain't Broke Holdouts", "🗝️"),
+  mkWar("w76", "Backup Wars", "Cloud Backup Believers", "☁️", "Local Drive Loyalists", "💽"),
+  mkWar("w77", "Browser Wars", "Tab Hoarders", "🗂️", "Tab Minimalists", "🧹"),
+  mkWar("w78", "Peripheral Wars", "Wired Diehards", "🔌", "Wireless Believers", "📡"),
+  mkWar("w79", "Mousepad Wars", "Cloth Pad Loyalists", "🧶", "Hard Pad Believers", "🪵"),
+  mkWar("w80", "Headset Wars", "Headset Squad", "🎧", "Speaker Squad", "🔊"),
 ];
-function monthKeyOf(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
-function currentFactionWar() {
-  const now = new Date();
-  const idx = (now.getFullYear() * 12 + now.getMonth()) % FACTION_WARS.length;
-  return { war: FACTION_WARS[idx], monthKey: monthKeyOf(now) };
+// Fixed epoch so week numbers are stable and monotonically increasing — never resets, never repeats early.
+const FACTION_EPOCH = new Date(2026, 0, 1).getTime();
+function weekIndexOf(d) { return Math.floor((d.getTime() - FACTION_EPOCH) / (7 * 24 * 60 * 60 * 1000)); }
+function factionWarAt(weekIdx) {
+  const idx = ((weekIdx % FACTION_WARS.length) + FACTION_WARS.length) % FACTION_WARS.length;
+  return { war: FACTION_WARS[idx], weekKey: "W" + weekIdx };
 }
-function previousFactionWar() {
-  const now = new Date(); const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const idx = (prev.getFullYear() * 12 + prev.getMonth()) % FACTION_WARS.length;
-  return { war: FACTION_WARS[idx], monthKey: monthKeyOf(prev) };
-}
-// Which side of the current war this build's relevant part actually belongs to (or null).
-function buildFactionMatch(build, warId) {
+function currentFactionWar() { return factionWarAt(weekIndexOf(new Date())); }
+function previousFactionWar() { return factionWarAt(weekIndexOf(new Date()) - 1); }
+// Which side of the current war this build's relevant part actually belongs to (or null —
+// either no axis is defined for this theme, or the build doesn't lean either way).
+function buildFactionMatch(build, warId, budget) {
   if (!build) return null;
-  if (warId === "cpu-brand") { const b = (build.cpu && build.cpu.brand || "").toLowerCase(); if (b === "intel") return "a"; if (b === "amd") return "b"; return null; }
-  if (warId === "cooling") { const t = build.cooler && build.cooler.type; if (t === "air") return "a"; if (t === "aio") return "b"; return null; }
-  return null;
+  const war = FACTION_WARS.find((w) => w.id === warId);
+  if (!war || !war.axis) return null;
+  const fn = FACTION_AXES[war.axis];
+  return fn ? fn(build, budget) : null;
 }
 
 const ADMIN_PASS = "Admin2014"; // change this to your own secret
@@ -4290,19 +4399,19 @@ function MoggerGame({ onExit, onSaveBuild }) {
     persist({ ...user, elo: newElo });
     netSaveElo(user.id, newElo);
     setEloMsg({ delta, newElo, streak: newStreak, streakMult });
-    // Faction Wars: a ranked win earns points for your picked faction this month
+    // Faction Wars: a ranked win earns points for your picked faction this week
     // (+5 bonus if your build's relevant hardware actually matches your pick).
     try {
       if (sy > so) {
-        const { war, monthKey } = currentFactionWar();
+        const { war, weekKey } = currentFactionWar();
         const pick = JSON.parse(localStorage.getItem("mogger_faction_pick") || "null");
-        if (pick && pick.monthKey === monthKey && pick.warId === war.id) {
-          const pts = 10 + (buildFactionMatch(you, war.id) === pick.faction ? 5 : 0);
-          const localKey = "mogger_faction_local_" + monthKey + "_" + war.id;
+        if (pick && pick.weekKey === weekKey && pick.warId === war.id) {
+          const pts = 10 + (buildFactionMatch(you, war.id, round.budget) === pick.faction ? 5 : 0);
+          const localKey = "mogger_faction_local_" + weekKey + "_" + war.id;
           const local = JSON.parse(localStorage.getItem(localKey) || '{"a":0,"b":0}');
           local[pick.faction] = (local[pick.faction] || 0) + pts;
           localStorage.setItem(localKey, JSON.stringify(local));
-          netRecordFactionPoints(user.id, monthKey, war.id, pick.faction, pts);
+          netRecordFactionPoints(user.id, weekKey, war.id, pick.faction, pts);
         }
       }
     } catch (e) {}
@@ -4437,7 +4546,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
       {screen === "history" && <MoggerHistory onBack={menu} />}
       {screen === "achievements" && <MoggerAchievements onBack={menu} />}
       {screen === "ghosts" && <MoggerGhosts onBack={menu} onChallenge={challengeGhost} />}
-      {screen === "factions" && <MoggerFactions onBack={menu} user={user} />}
+      {screen === "factions" && <MoggerFactions onBack={menu} user={user} onUserUpdate={persist} />}
       {/* A7: Taunt picker */}
       {screen === "taunt-pick" && (
         <div className="pm-card pm-center rf-fade">
