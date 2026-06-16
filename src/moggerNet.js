@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
 // PC Mogger online multiplayer — realtime only (no database tables used).
-const SUPABASE_URL = "https://auqxtlnayxqwzsfpejme.supabase.co";
-const SUPABASE_KEY = "sb_publishable_7SFlI96BVnlaCchKg56tmA_L1gDvJC5";
+const SUPABASE_URL = "https://zcvwsmfakptdvjmogzat.supabase.co";
+const SUPABASE_KEY = "sb_publishable_4xWYAuXcLsl3xDruK3EjgQ_MBr4uOy9";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   realtime: { params: { eventsPerSecond: 20 } },
