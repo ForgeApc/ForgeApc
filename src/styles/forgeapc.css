@@ -3533,3 +3533,130 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .pm-mode, .pm-hero-4 .pm-mode-hero, .pm-card, .rf-scorecard {
   transition-duration: 0.35s !important;
 }
+
+/* ===== D1: Coaching tip after loss ===== */
+.pm-coaching-tip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(31,245,230,0.07) 0%, rgba(160,122,255,0.07) 100%);
+  border: 1px solid rgba(31,245,230,0.18);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 8px 0;
+}
+.pm-coaching-tip-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-accent);
+  opacity: 0.85;
+}
+.pm-coaching-tip-text {
+  font-size: 0.88rem;
+  color: var(--c-text);
+  line-height: 1.5;
+}
+
+/* ===== D2: Random Challenge button ===== */
+.pm-random-challenge-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(160,122,255,0.10) 0%, rgba(31,245,230,0.07) 100%);
+  border: 1px solid rgba(160,122,255,0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s;
+}
+.pm-random-challenge-card:hover {
+  border-color: rgba(160,122,255,0.5);
+  background: linear-gradient(135deg, rgba(160,122,255,0.16) 0%, rgba(31,245,230,0.10) 100%);
+}
+
+/* ===== D3: Speed run timer display ===== */
+.pm-speed-timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(255,92,114,0.08);
+  border: 1px solid rgba(255,92,114,0.20);
+  border-radius: 10px;
+  padding: 10px 20px;
+  margin-bottom: 10px;
+  transition: background 0.3s, border-color 0.3s;
+}
+.pm-speed-timer-bar.warn {
+  background: rgba(255,92,114,0.13);
+  border-color: rgba(255,92,114,0.40);
+}
+.pm-speed-timer-bar.danger {
+  background: rgba(255,92,114,0.20);
+  border-color: rgba(255,92,114,0.70);
+  animation: speedTimerPulse 0.7s ease-in-out infinite alternate;
+}
+@keyframes speedTimerPulse {
+  from { box-shadow: 0 0 0px rgba(255,92,114,0); }
+  to   { box-shadow: 0 0 18px rgba(255,92,114,0.55); }
+}
+.pm-speed-timer-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  color: #ff5c72;
+  text-transform: uppercase;
+}
+.pm-speed-timer-count {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -2px;
+  color: #ff5c72;
+  text-shadow: 0 0 12px rgba(255,92,114,0.50);
+  font-variant-numeric: tabular-nums;
+}
+.pm-speed-timer-bar.danger .pm-speed-timer-count {
+  text-shadow: 0 0 24px rgba(255,92,114,0.90);
+}
+
+/* ===== D4: Part rarity labels ===== */
+.rf-part {
+  position: relative;
+}
+.rf-part-rarity {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 2;
+}
+.rf-part-rarity.rarity-s {
+  background: rgba(255,215,0,0.15);
+  border: 1px solid rgba(255,215,0,0.45);
+  color: #ffd700;
+}
+.rf-part-rarity.rarity-a {
+  background: rgba(31,245,230,0.12);
+  border: 1px solid rgba(31,245,230,0.35);
+  color: var(--c-accent);
+}
+.rf-part-rarity.rarity-b {
+  background: rgba(150,160,180,0.12);
+  border: 1px solid rgba(150,160,180,0.30);
+  color: #9ca3af;
+}
+.rf-part-rarity.rarity-c {
+  background: rgba(100,110,130,0.10);
+  border: 1px solid rgba(100,110,130,0.22);
+  color: #6b7280;
+}

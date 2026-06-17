@@ -2642,6 +2642,70 @@ const DUEL_TIPS = [
   "For AI/ML, GPU VRAM matters more than clock speed",
 ];
 
+// D1: Coaching tips by category shown on a loss
+const COACHING_TIPS = {
+  cpu: [
+    "A faster CPU with more cores improves multi-threaded workloads like rendering and streaming.",
+    "Match your CPU tier to your GPU — a weak CPU bottlenecks even the best graphics card.",
+    "X3D cache CPUs offer a major gaming FPS boost over standard models at the same price tier.",
+    "For content creation, core count beats clock speed — go wider, not faster.",
+    "Check TDP: a high-TDP CPU needs a better cooler to sustain its boost clocks.",
+  ],
+  gpu: [
+    "GPU is the biggest score driver for gaming — aim for 30–34% of your budget here.",
+    "More VRAM future-proofs your build; 12GB+ handles 4K textures and AI workloads.",
+    "Nvidia GPUs get a streaming bonus due to NVENC — worth it if you broadcast.",
+    "A mid-range GPU with a strong CPU often beats a flagship GPU with a weak CPU.",
+    "Check perf-per-dollar: last-gen cards can offer better value than new mid-tier launches.",
+  ],
+  ram: [
+    "16GB is the minimum for gaming; 32GB prevents stutters in modern open-world titles.",
+    "DDR5 at 6000 MT/s is the sweet spot — faster speeds yield diminishing returns.",
+    "For content creation, 64GB RAM lets you work with large video and 3D assets without swapping.",
+    "Dual-channel RAM (2×8GB or 2×16GB) is significantly faster than a single stick.",
+    "ECC RAM matters for workstations — it catches and corrects memory errors silently.",
+  ],
+  storage: [
+    "NVMe SSDs are much faster than SATA — always prefer NVMe for your OS drive.",
+    "2TB+ storage prevents mid-project scrambles; games and video files fill drives fast.",
+    "A Gen4 NVMe drive offers ~7 GB/s reads — worth it for large file workflows.",
+    "Keep your OS and most-used apps on SSD; secondary HDDs are fine for cold storage.",
+    "For AI/ML, fast storage speeds up dataset loading and checkpoint saves significantly.",
+  ],
+  mobo: [
+    "Choose a motherboard that supports your CPU's full feature set — PCIe lanes and overclocking.",
+    "B-series boards are great value; Z-series unlocks full overclocking on unlocked Intel CPUs.",
+    "Ensure your board has enough M.2 slots for your NVMe drive count.",
+    "A good VRM is critical for high-TDP CPUs — cheap boards throttle under sustained load.",
+    "Check BIOS revision compatibility; some boards need an update to support newer CPUs.",
+  ],
+  psu: [
+    "Underspecced PSUs cause crashes under load — use at least 80% of rated wattage headroom.",
+    "An 80+ Gold or Platinum PSU runs cooler and saves electricity over years of use.",
+    "Modular PSUs reduce cable clutter and improve airflow in your case.",
+    "For high-end GPU builds, a 850W+ PSU future-proofs upgrades.",
+    "A quality PSU protects your components from voltage spikes — don't cheap out here.",
+  ],
+  cooler: [
+    "A 240mm AIO keeps high-TDP CPUs cool and quiet under sustained load.",
+    "Stock coolers are adequate for locked CPUs; an aftermarket cooler unlocks better boost.",
+    "Tower air coolers like the NH-D15 rival AIOs in performance with zero pump noise.",
+    "Check cooler height clearance against your case before buying.",
+    "Thermal paste application matters — a pea-sized dot in the center is optimal.",
+  ],
+  case: [
+    "Good airflow cases reduce temperatures and extend component lifespan.",
+    "Choose a case that fits your cooler height and GPU length before buying.",
+    "Mesh front panels provide significantly better intake airflow than solid panels.",
+    "Full-tower cases offer more room for cable management and future expansion.",
+    "Tempered glass panels look great but add weight — consider your desk setup.",
+  ],
+};
+const pickCoachingTip = (cat) => {
+  const tips = COACHING_TIPS[cat] || COACHING_TIPS.gpu;
+  return tips[Math.floor(Math.random() * tips.length)];
+};
+
 function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, ghostMode, liveOpp, oppLiveScore, oppLiveDone, onMyScore, myElo, oppElo, onDone, solo, constraint, bannedParts = null }) {
   const oppFinal = useMemo(() => (oppBuild ? moggerScore(oppBuild, round.useCase, round.budget).total : null), []);
   const [build, setBuild] = useState({});
@@ -2733,8 +2797,17 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, gh
   const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, "0");
   const low = left <= 15;
   const UC = USE_CASES[round.useCase];
+  // D3: Speed run timer display — large countdown when secs<=60
+  const isSpeedRun = round.secs <= 60;
   return (
     <div className="pm-game rf-fade">
+      {/* D3: Prominent speed run timer at top */}
+      {isSpeedRun && !solo && (
+        <div className={"pm-speed-timer-bar" + (low ? " danger" : left <= 30 ? " warn" : "")}>
+          <span className="pm-speed-timer-label">⚡ SPEED DUEL</span>
+          <span className="pm-speed-timer-count">{mm}:{ss}</span>
+        </div>
+      )}
       {solo ? (
         <div className="pm-solo-header">
           <div className="pm-solo-title">🎯 Constraint Gauntlet</div>
@@ -3015,6 +3088,8 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
     } catch (e) {}
     return null;
   }, [youWin, oppElo, onAvenge]);
+  // D1: Coaching tip — random tip for the weakest category
+  const coachingTip = useMemo(() => weakCat ? pickCoachingTip(weakCat) : null, [weakCat]);
   // Build Mentor AI: on a loss, find the single component swap that moves the score the most
   const mentorSwap = useMemo(() => {
     if (youWin) return null;
@@ -3138,6 +3213,13 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
       {phase === "reveal" && <div className="pm-budget-eff-row"><span>Budget used: <b style={{color: budgEff > 100 ? "var(--c-bad)" : budgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{budgEff}%</b> {youLabel} · <b style={{color: oppBudgEff > 100 ? "var(--c-bad)" : oppBudgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{oppBudgEff}%</b> {oppName}</span></div>}
       {mvpCat && <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? youLabel : oppName}</div>}
       {weakCat && <div className="pm-weak-banner">📉 Costliest category: <b>{CAT_META[weakCat].label}</b> — {oppName}'s pick scored higher here, worth {USE_CASES[round.useCase].alloc[weakCat]}% of your total score.</div>}
+      {/* D1: Coaching tip on loss */}
+      {coachingTip && (
+        <div className="pm-coaching-tip">
+          <span className="pm-coaching-tip-label">💡 Tip of the match</span>
+          <span className="pm-coaching-tip-text">{coachingTip}</span>
+        </div>
+      )}
       {rivalInfo && (
         <div className="pm-avenge-row">
           <span className="pm-avenge-label">⚔️ Rival alert — you're {rivalInfo.l}-{rivalInfo.w} down vs <b>{rivalInfo.tier}</b> tier opponents.</span>
@@ -5147,6 +5229,23 @@ function MoggerGame({ onExit, onSaveBuild }) {
               <button className="pm-back-inline" onClick={menu}><ChevronLeft size={15}/></button>
               <h2 className="pm-h2">🎮 Special Game Modes</h2>
             </div>
+            {/* D2: Random Challenge */}
+            <button className="pm-special-mode-card pm-random-challenge-card" onClick={() => {
+              const ucs = BASE_UC_KEYS;
+              const uc = ucs[Math.floor(Math.random() * ucs.length)];
+              const budget = 600 + Math.floor(Math.random() * 1401);
+              setMode("ai"); setPractice(true); start({ useCase: uc, budget, secs: 90 });
+            }}>
+              <span className="pm-special-mode-icon">🎲</span>
+              <div className="pm-special-mode-info">
+                <span className="pm-special-mode-name">Random Challenge</span>
+                <span className="pm-special-mode-desc">Random use case + $600–$2000 budget — unranked</span>
+              </div>
+              <div className="pm-special-mode-right">
+                <span className="pm-unranked-badge">Unranked</span>
+                <button className="rf-btn pm-special-play-btn" onClick={(e) => e.stopPropagation()}>🎲</button>
+              </div>
+            </button>
             <div className="pm-special-modes-list">
               {SPECIAL_MODES.map(m => {
                 const isRanked = specialRanked[m.id] ?? true;
@@ -7305,8 +7404,11 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           const compatible = part ? isPartCompatible(parts, cat) : true;
           const sc = part ? (compatible ? partScore({ ...part, cat }, band, useCase) : 0) : 0;
           const isOpen = expanded[cat];
+          // D4: Part rarity badge based on perf score
+          const partRarity = part ? (part.perf >= 90 ? { label: "S-tier", cls: "rarity-s" } : part.perf >= 75 ? { label: "A-tier", cls: "rarity-a" } : part.perf >= 55 ? { label: "B-tier", cls: "rarity-b" } : { label: "C-tier", cls: "rarity-c" }) : null;
           return (
             <div key={cat} className="rf-part rf-pop" style={{ animationDelay: i * 45 + "ms" }}>
+              {partRarity && <span className={"rf-part-rarity " + partRarity.cls}>{partRarity.label}</span>}
               <div className="rf-part-top">
                 <div className="rf-part-media">
                 {part && part.img ? (
