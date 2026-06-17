@@ -862,28 +862,33 @@ async function sGet(key) {
 }
 
 /* ----------------------------- HOOKS / SMALL UI ----------------------------- */
-function useCountUp(target, duration = 900) {
+function useCountUp(target, duration = 900, startDelay = 0) {
   const [v, setV] = useState(0);
   const raf = useRef();
+  const timer = useRef();
   useEffect(() => {
-    let start;
     cancelAnimationFrame(raf.current);
-    const step = (t) => {
-      if (!start) start = t;
-      const p = Math.min(1, (t - start) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setV(target * eased);
-      if (p < 1) raf.current = requestAnimationFrame(step);
-      else setV(target);
-    };
-    raf.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf.current);
-  }, [target, duration]);
+    clearTimeout(timer.current);
+    setV(0);
+    timer.current = setTimeout(() => {
+      let start;
+      const step = (t) => {
+        if (!start) start = t;
+        const p = Math.min(1, (t - start) / duration);
+        const eased = 1 - Math.pow(1 - p, 3);
+        setV(target * eased);
+        if (p < 1) raf.current = requestAnimationFrame(step);
+        else setV(target);
+      };
+      raf.current = requestAnimationFrame(step);
+    }, startDelay);
+    return () => { cancelAnimationFrame(raf.current); clearTimeout(timer.current); };
+  }, [target, duration, startDelay]);
   return v;
 }
 
 function Gauge({ value, max = 100, size = 132, label, accent = "var(--c-accent)", delay = 0 }) {
-  const v = useCountUp(value, 1100);
+  const v = useCountUp(value, 1100, 680 + delay);
   const r = (size - 16) / 2;
   const circ = 2 * Math.PI * r;
   const off = circ * (1 - clamp(v / max, 0, 1));
@@ -922,7 +927,7 @@ function Gauge({ value, max = 100, size = 132, label, accent = "var(--c-accent)"
           strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={off}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
           filter={`url(#gaugeLiquid-${label})`}
-          style={{ transition: "stroke-dashoffset 0.9s cubic-bezier(0.34,1.56,0.64,1), stroke-width 0.3s ease, filter 0.3s ease", filter: `drop-shadow(0 0 ${hovered ? 18 : 8}px ${accent})` }}
+          style={{ strokeWidth: hovered ? "12" : "10", transition: "stroke-width 0.3s ease", filter: `drop-shadow(0 0 ${hovered ? 18 : 8}px ${accent})` }}
         />
       </svg>
       <div className="rf-gauge-center">
