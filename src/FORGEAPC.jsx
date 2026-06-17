@@ -1891,6 +1891,114 @@ function moggerOptionsAll(cat) {
 }
 function mEstDraw(b) { let d = 90; if (b.cpu) d += b.cpu.tdp || 65; if (b.gpu) d += b.gpu.tdp || 0; return d; }
 
+// A1: Win confetti burst — pure canvas, no library
+function ConfettiBurst({ active }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    if (!active) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const COLORS = ["#1ff5e6","#a07aff","#ffd700","#ff6b6b","#7fff7f","#fff"];
+    const particles = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height * 0.4 - 50,
+      vx: (Math.random() - 0.5) * 5,
+      vy: Math.random() * 3 + 1,
+      rot: Math.random() * Math.PI * 2,
+      rsp: (Math.random() - 0.5) * 0.15,
+      w: Math.random() * 8 + 4,
+      h: Math.random() * 5 + 3,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      alpha: 1,
+    }));
+    const start = performance.now();
+    let raf;
+    const draw = (now) => {
+      const elapsed = now - start;
+      const fade = Math.max(0, 1 - (elapsed - 1800) / 700);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((p) => {
+        p.x += p.vx; p.y += p.vy; p.rot += p.rsp; p.vy += 0.05;
+        ctx.save();
+        ctx.globalAlpha = fade * Math.min(1, p.alpha);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+      if (elapsed < 2500) raf = requestAnimationFrame(draw);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => { if (raf) cancelAnimationFrame(raf); };
+  }, [active]);
+  if (!active) return null;
+  return <canvas ref={canvasRef} style={{ position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:9999 }} />;
+}
+
+// A2: ELO ticker — animates from old to new ELO over 1.2s
+function EloTicker({ oldElo, newElo, delta }) {
+  const [displayed, setDisplayed] = useState(oldElo);
+  useEffect(() => {
+    if (oldElo === newElo) return;
+    const dur = 1200, t0 = performance.now();
+    let raf;
+    const tick = (now) => {
+      const f = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - f, 3);
+      setDisplayed(Math.round(oldElo + (newElo - oldElo) * e));
+      if (f < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { if (raf) cancelAnimationFrame(raf); };
+  }, [oldElo, newElo]);
+  return <span className={"pm-elo-ticker" + (delta > 0 ? " up" : delta < 0 ? " down" : "")}>{displayed}</span>;
+}
+
+// A4: Score breakdown bar chart
+function ScoreBarChart({ you, opp, youLabel, oppName, useCase, budget }) {
+  const cats = CATEGORY_ORDER.filter((c) => (USE_CASES[useCase]?.alloc?.[c] || 0) > 0);
+  const sy = moggerScore(you, useCase, budget);
+  const so = moggerScore(opp, useCase, budget);
+  return (
+    <div className="pm-score-bars">
+      <div className="pm-score-bars-title">Score contribution by category</div>
+      {cats.map((c) => {
+        const alloc = USE_CASES[useCase].alloc[c] || 0;
+        const maxP = ucMaxPerf(c, useCase);
+        const yPct = you[c] && maxP ? Math.round(ucPerf(c, you[c], useCase) / maxP * 100) : 0;
+        const oPct = opp[c] && maxP ? Math.round(ucPerf(c, opp[c], useCase) / maxP * 100) : 0;
+        const yContrib = Math.round(yPct * alloc / 100);
+        const oContrib = Math.round(oPct * alloc / 100);
+        const maxContrib = alloc;
+        return (
+          <div key={c} className="pm-score-bar-row">
+            <span className="pm-score-bar-label">{CAT_META[c].label}<span className="pm-score-bar-alloc"> {alloc}%</span></span>
+            <div className="pm-score-bar-tracks">
+              <div className="pm-score-bar-track">
+                <div className="pm-score-bar-fill you" style={{ width: maxContrib > 0 ? (yContrib / maxContrib * 100) + "%" : "0%" }} />
+                <span className="pm-score-bar-val">{yContrib}</span>
+              </div>
+              <div className="pm-score-bar-track opp">
+                <div className="pm-score-bar-fill opp" style={{ width: maxContrib > 0 ? (oContrib / maxContrib * 100) + "%" : "0%" }} />
+                <span className="pm-score-bar-val">{oContrib}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      <div className="pm-score-bar-legend">
+        <span className="pm-score-bar-leg-you">{youLabel}</span>
+        <span className="pm-score-bar-leg-opp">{oppName}</span>
+      </div>
+    </div>
+  );
+}
+
 function moggerScore(build, ucKey, budget) {
   // Runs on the same engine FORGEAPC uses: checkCompat + use-case-normalized
   // performance (analyzeBuild). Mogger rule on top: any issue OR missing part = 0.
@@ -3096,6 +3204,8 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
   }
   return (
     <div className="pm-result rf-fade">
+      {/* A1: Win confetti burst */}
+      <ConfettiBurst active={youWin && phase === "reveal"} />
       <h2 className={"pm-verdict-title " + (youWin ? "win" : "lose")}>
         {youWin ? "🏆 YOU WIN" : "💀 YOU LOSE"}
         {/* A6: Close Call badge */}
@@ -3115,7 +3225,8 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
       {eloMsg && (
         <div className={"pm-elo-result " + (eloMsg.delta > 0 ? "up" : eloMsg.delta < 0 ? "down" : "")}>
           <span className="pm-elo-delta">{eloMsg.delta > 0 ? "+" : ""}{eloMsg.delta} ELO</span>
-          <span className="pm-elo-now">{eloMsg.newElo} total</span>
+          {/* A2: ELO ticker */}
+          <EloTicker oldElo={eloMsg.newElo - eloMsg.delta} newElo={eloMsg.newElo} delta={eloMsg.delta} /> <span className="pm-elo-now-label">total</span>
           {eloMsg.streakMult > 1 && <span className="pm-streak-mult">🔥 {eloMsg.streak}-win streak · +{Math.round((eloMsg.streakMult - 1) * 100)}% bonus</span>}
         </div>
       )}
@@ -3132,6 +3243,8 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
         <MoggerScoreCol title={oppName} build={opp} s={soSD} win={!youWin} shown={ao} rank={oppRank} useCase={round.useCase} budget={round.budget} />
       </div>
       <DuelRadarChart you={you} opp={opp} oppName={oppName} youLabel={youLabel} useCase={round.useCase} budget={round.budget} />
+      {/* A4: Score breakdown bar chart */}
+      {phase === "reveal" && <ScoreBarChart you={you} opp={opp} youLabel={youLabel} oppName={oppName} useCase={round.useCase} budget={round.budget} />}
       {/* B4: efficiency medal */}
       {effMedal && phase === "reveal" && <div className="pm-eff-medal">{effMedal} — Score {sy.total}/1000</div>}
       {/* A5: Budget efficiency row */}
