@@ -2101,3 +2101,316 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 /* 40. Banners */
 .pm-meta-banner { background: rgba(8,12,22,0.38) !important; }
 .pm-faction-winner-banner { background: rgba(10,24,14,0.32) !important; }
+
+/* ================================================================
+   REFERENCE UI OVERHAUL — dark atmospheric glass like the reference
+   ================================================================ */
+
+/* 1. Root: true near-black, stronger purple atmosphere */
+.rf-root {
+  --c-bg: #07080e !important;
+  --c-panel: rgba(16, 18, 30, 0.62) !important;
+  --c-panel-2: rgba(22, 25, 42, 0.72) !important;
+  --c-border: rgba(255,255,255,0.08) !important;
+  --c-muted: #6b7585 !important;
+  background: #07080e !important;
+}
+
+/* 2. Background: much stronger purple corner blobs, reference-accurate */
+.rf-bg {
+  background:
+    radial-gradient(900px 700px at 0% 0%, rgba(100,60,220,0.55), transparent 55%),
+    radial-gradient(700px 600px at 100% 0%, rgba(80,40,200,0.40), transparent 55%),
+    radial-gradient(800px 700px at 100% 100%, rgba(110,50,240,0.35), transparent 55%),
+    radial-gradient(600px 500px at 0% 100%, rgba(60,30,150,0.28), transparent 55%),
+    radial-gradient(500px 400px at 50% 50%, rgba(70,40,160,0.12), transparent 70%) !important;
+}
+
+/* 3. Cards: dark, opaque-ish glass — reference uses ~60-65% opaque dark */
+.pm-card,
+.rf-scorecard,
+.rf-part,
+.rf-saved-card,
+.rf-uc-card,
+.rf-cta-card,
+.rf-alloc,
+.rf-modal,
+.rf-drawer,
+.rf-asst-panel,
+.rf-pick,
+.pm-mode,
+.pm-diff,
+.pm-stats-bar,
+.pm-quick-btn,
+.pm-seg,
+.pm-taunt-btn,
+.pm-lb-row,
+.pm-hist-entry,
+.pm-achieve-card,
+.pm-rogue-stage,
+.pm-special-mode-card,
+.pm-rogue-reward-picker,
+.pm-rrp-btn,
+.pm-coin-converter,
+.pm-hero-4 .pm-mode-hero,
+.pm-menu-header,
+.pm-elo-result,
+.pm-opp-persona,
+.pm-meta-banner {
+  backdrop-filter: blur(32px) saturate(1.7) brightness(1.04) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(1.7) brightness(1.04) !important;
+}
+
+/* 4. Main card: the reference card look */
+.pm-card {
+  background: rgba(14,16,26,0.68) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  border-radius: 20px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    0 24px 64px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(100,60,220,0.06) !important;
+}
+
+/* 5. Part rows */
+.rf-part, .rf-pick {
+  background: rgba(13,15,25,0.65) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 16px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 8px 32px rgba(0,0,0,0.40) !important;
+}
+.rf-part:hover {
+  background: rgba(20,16,40,0.70) !important;
+  border-color: rgba(124,92,255,0.30) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 40px rgba(100,60,220,0.18) !important;
+}
+
+/* 6. Scorecard */
+.rf-scorecard {
+  background: rgba(13,15,25,0.68) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 20px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 20px 60px rgba(0,0,0,0.50) !important;
+}
+
+/* 7. Saved cards, UC cards, CTA cards */
+.rf-saved-card, .rf-uc-card, .rf-cta-card {
+  background: rgba(13,15,25,0.62) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 16px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 8px 28px rgba(0,0,0,0.38) !important;
+}
+.rf-saved-card:hover, .rf-uc-card:hover, .rf-cta-card:hover {
+  background: rgba(20,16,40,0.68) !important;
+  border-color: rgba(124,92,255,0.28) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 40px rgba(100,60,220,0.16) !important;
+}
+
+/* 8. Mode buttons (game menu) */
+.pm-mode, .pm-hero-4 .pm-mode-hero {
+  background: rgba(13,15,25,0.62) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 16px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 6px 24px rgba(0,0,0,0.38) !important;
+}
+.pm-mode:hover, .pm-hero-4 .pm-mode-hero:hover {
+  background: rgba(22,16,46,0.70) !important;
+  border-color: rgba(124,92,255,0.35) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 10px 36px rgba(100,60,220,0.20) !important;
+}
+
+/* 9. Diff buttons */
+.pm-diff {
+  background: rgba(13,15,25,0.60) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 14px !important;
+}
+.pm-diff:hover {
+  background: rgba(20,16,40,0.68) !important;
+  border-color: rgba(124,92,255,0.30) !important;
+}
+
+/* 10. Quick buttons */
+.pm-quick-btn {
+  background: rgba(13,15,25,0.60) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 10px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+.pm-quick-btn:hover {
+  background: rgba(20,16,40,0.68) !important;
+  border-color: rgba(124,92,255,0.28) !important;
+}
+
+/* 11. Stats bar, seg, elo result */
+.pm-stats-bar, .pm-seg, .pm-elo-result {
+  background: rgba(11,13,22,0.65) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+}
+
+/* 12. Taunt buttons */
+.pm-taunt-btn {
+  background: rgba(13,15,25,0.60) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 10px !important;
+}
+.pm-taunt-btn:hover { background: rgba(22,16,46,0.65) !important; border-color: rgba(124,92,255,0.32) !important; }
+.pm-taunt-btn.on { background: rgba(100,60,220,0.18) !important; border-color: rgba(124,92,255,0.50) !important; }
+
+/* 13. LB rows, history, achievements, rogue stages */
+.pm-lb-row, .pm-hist-entry, .pm-achieve-card, .pm-rogue-stage, .pm-special-mode-card {
+  background: rgba(13,15,25,0.60) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 12px !important;
+}
+.pm-lb-row.me-row { background: rgba(25,232,219,0.07) !important; border-color: rgba(25,232,219,0.22) !important; }
+
+/* 14. Rogue picker */
+.pm-rogue-reward-picker { background: rgba(30,14,66,0.55) !important; border-color: rgba(124,92,255,0.20) !important; }
+.pm-rrp-btn { background: rgba(13,15,25,0.60) !important; border: 1px solid rgba(255,255,255,0.08) !important; border-radius: 10px !important; }
+.pm-rrp-btn.on { background: rgba(100,60,220,0.18) !important; border-color: rgba(124,92,255,0.45) !important; }
+
+/* 15. Coin converter */
+.pm-coin-converter { background: rgba(26,14,4,0.55) !important; border-color: rgba(255,194,75,0.16) !important; }
+
+/* 16. Menu header */
+.pm-menu-header {
+  background: rgba(11,13,22,0.60) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 14px !important;
+}
+
+/* 17. Opp persona, meta banner */
+.pm-opp-persona { background: rgba(13,15,25,0.62) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+.pm-meta-banner { background: rgba(13,15,25,0.70) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+
+/* 18. Ghost/back buttons */
+.rf-ghost, .rf-ghost-btn {
+  background: rgba(13,15,25,0.60) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 11px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09) !important;
+}
+.rf-ghost:hover, .rf-ghost-btn:hover {
+  background: rgba(20,16,40,0.68) !important;
+  border-color: rgba(124,92,255,0.30) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 20px rgba(100,60,220,0.16) !important;
+}
+
+/* 19. Primary CTA button — vivid purple gradient like the reference */
+.rf-btn {
+  background: linear-gradient(135deg, #7c5cff 0%, #9d6fff 50%, #7c5cff 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 28px rgba(124,92,255,0.45), 0 0 0 1px rgba(124,92,255,0.30) !important;
+  border-radius: 12px !important;
+}
+.rf-btn:hover {
+  box-shadow: 0 10px 36px rgba(124,92,255,0.60), 0 0 0 1px rgba(124,92,255,0.45) !important;
+  filter: brightness(1.08) !important;
+}
+
+/* 20. Settings menu */
+.rf-settings-menu {
+  background: rgba(11,13,22,0.85) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.60) !important;
+  border-radius: 16px !important;
+}
+
+/* 21. Alloc panel */
+.rf-alloc {
+  background: rgba(13,15,25,0.62) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 16px !important;
+}
+
+/* 22. Preset buttons */
+.rf-preset {
+  background: rgba(13,15,25,0.62) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 10px !important;
+}
+.rf-preset:hover { background: rgba(20,16,40,0.68) !important; border-color: rgba(124,92,255,0.28) !important; }
+.rf-preset.active { background: rgba(100,60,220,0.18) !important; border-color: rgba(124,92,255,0.50) !important; color: #c4aaff !important; }
+
+/* 23. Chip buttons */
+.rf-chip-btn {
+  background: rgba(13,15,25,0.60) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 9px !important;
+}
+.rf-chip-btn:hover { background: rgba(20,16,40,0.68) !important; }
+
+/* 24. Header: sticky dark glass bar */
+.rf-header {
+  background: rgba(7,8,14,0.70) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), inset 0 -1px 0 rgba(255,255,255,0.05) !important;
+}
+
+/* 25. Account chip */
+.rf-acct-chip {
+  background: rgba(13,15,25,0.65) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  border-radius: 11px !important;
+}
+
+/* 26. Modal */
+.rf-modal {
+  background: rgba(11,13,22,0.82) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.65), 0 0 0 1px rgba(100,60,220,0.08) !important;
+}
+
+/* 27. Compat banners */
+.rf-compat { border-radius: 14px !important; }
+.rf-compat.ok { background: rgba(15,40,26,0.55) !important; }
+.rf-compat.bad { background: rgba(40,12,18,0.55) !important; }
+
+/* 28. Ask/chat inputs */
+.rf-ask-input {
+  background: rgba(11,13,22,0.60) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 10px !important;
+}
+.rf-ask-input:focus { border-color: rgba(124,92,255,0.55) !important; box-shadow: 0 0 0 3px rgba(124,92,255,0.12) !important; }
+
+/* 29. Chat messages */
+.rf-ask-msg.user { background: rgba(100,60,220,0.14) !important; border: 1px solid rgba(124,92,255,0.25) !important; }
+.rf-ask-msg.assistant { background: rgba(13,15,25,0.60) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+
+/* 30. Special mode ranked toggle */
+.pm-special-ranked-tog { background: rgba(11,13,22,0.65) !important; border: 1px solid rgba(255,255,255,0.07) !important; }
+.pm-srt-btn.on { background: rgba(100,60,220,0.30) !important; }
+
+/* 31. UC icon boxes */
+.rf-uc-icon {
+  background: rgba(100,60,220,0.12) !important;
+  border: 1px solid rgba(124,92,255,0.22) !important;
+}
+
+/* 32. Part icon */
+.rf-part-icon {
+  background: rgba(100,60,220,0.10) !important;
+  border: 1px solid rgba(124,92,255,0.18) !important;
+}
+
+/* 33. Faction winner banner */
+.pm-faction-winner-banner {
+  background: rgba(12,36,20,0.60) !important;
+  border-color: rgba(70,224,160,0.22) !important;
+}
+
+/* 34. Empty state */
+.rf-empty {
+  background: rgba(11,13,22,0.40) !important;
+  border: 1px dashed rgba(255,255,255,0.09) !important;
+  border-radius: 16px !important;
+}
+
+/* 35. Drawer */
+.rf-drawer {
+  background: rgba(9,11,20,0.85) !important;
+  border-left: 1px solid rgba(255,255,255,0.09) !important;
+}
