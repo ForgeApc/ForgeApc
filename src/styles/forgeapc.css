@@ -3376,3 +3376,29 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   animation: none !important;
   border-color: rgba(255,255,255,0.20) !important;
 }
+
+/* ================================================================
+   ANIMATION RESET FIX
+   Previous rules set animation:none on hover. When cursor leaves,
+   browser re-applies rfUp entrance animation → card fades out/in.
+   Fix: override hover animation to run rfUp at 0ms duration so
+   any "replay" on cursor-out is instant and invisible.
+   ================================================================ */
+
+.rf-pop {
+  animation-fill-mode: both !important;
+}
+
+.rf-pop:hover,
+.rf-uc-card:hover,
+.rf-saved-card:hover,
+.rf-part:hover,
+.rf-pick:hover,
+.rf-cta-card:hover {
+  animation-name: rfUp !important;
+  animation-duration: 0.001ms !important;
+  animation-delay: 0ms !important;
+  animation-fill-mode: both !important;
+  animation-iteration-count: 1 !important;
+  animation-timing-function: ease !important;
+}
