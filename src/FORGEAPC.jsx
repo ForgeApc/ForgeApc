@@ -887,19 +887,46 @@ function Gauge({ value, max = 100, size = 132, label, accent = "var(--c-accent)"
   const r = (size - 16) / 2;
   const circ = 2 * Math.PI * r;
   const off = circ * (1 - clamp(v / max, 0, 1));
+  const [hovered, setHovered] = useState(false);
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
+  const ref = useRef(null);
+  const handleMove = useCallback((e) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const dx = (e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+    const dy = (e.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
+    setMouse({ x: dx, y: dy });
+  }, []);
+  const tilt = hovered
+    ? `perspective(400px) rotateX(${-mouse.y * 10}deg) rotateY(${mouse.x * 10}deg) scale(1.10)`
+    : "perspective(400px) rotateX(0deg) rotateY(0deg) scale(1)";
   return (
-    <div className="rf-gauge" style={{ width: size, height: size, animationDelay: delay + "ms" }}>
-      <svg width={size} height={size}>
+    <div
+      ref={ref}
+      className={"rf-gauge" + (hovered ? " rf-gauge-active" : "")}
+      style={{ width: size, height: size, animationDelay: delay + "ms", transform: tilt, transition: hovered ? "transform 0.06s ease-out" : "transform 0.5s cubic-bezier(0.34,1.56,0.64,1)", cursor: "pointer" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setMouse({ x: 0, y: 0 }); }}
+      onMouseMove={handleMove}
+    >
+      <svg width={size} height={size} style={{ overflow: "visible" }}>
+        <defs>
+          <filter id={"gaugeLiquid-" + label} x="-30%" y="-30%" width="160%" height="160%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" seed="8" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale={hovered ? "5" : "0"} xChannelSelector="R" yChannelSelector="G" result="displaced" style={{ transition: "all 0.3s ease" }} />
+          </filter>
+        </defs>
         <circle cx={size / 2} cy={size / 2} r={r} stroke="var(--c-track)" strokeWidth="10" fill="none" />
         <circle
-          cx={size / 2} cy={size / 2} r={r} stroke={accent} strokeWidth="10" fill="none"
+          cx={size / 2} cy={size / 2} r={r} stroke={accent} strokeWidth={hovered ? "12" : "10"} fill="none"
           strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={off}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ transition: "stroke-dashoffset 0.2s linear", filter: `drop-shadow(0 0 8px ${accent})` }}
+          filter={`url(#gaugeLiquid-${label})`}
+          style={{ transition: "stroke-dashoffset 0.9s cubic-bezier(0.34,1.56,0.64,1), stroke-width 0.3s ease, filter 0.3s ease", filter: `drop-shadow(0 0 ${hovered ? 18 : 8}px ${accent})` }}
         />
       </svg>
       <div className="rf-gauge-center">
-        <div className="rf-gauge-num" style={{ color: accent, fontSize: String(Math.round(v)).length >= 4 ? "26px" : undefined }}>{Math.round(v)}</div>
+        <div className="rf-gauge-num" style={{ color: accent, fontSize: String(Math.round(v)).length >= 4 ? "26px" : undefined, textShadow: hovered ? `0 0 24px ${accent}, 0 0 8px ${accent}` : "none", transition: "text-shadow 0.3s ease" }}>{Math.round(v)}</div>
         <div className="rf-gauge-label">{label}</div>
       </div>
     </div>
@@ -2888,22 +2915,53 @@ function DuelRadarChart({ you, opp, youLabel = "You", oppName, useCase, budget }
   const labels = ["Gaming", "Productivity", "Value", "Efficiency", "Balance"];
   const yd = useMemo(() => radarDims(you, useCase, budget), [you, useCase, budget]);
   const od = useMemo(() => radarDims(opp, useCase, budget), [opp, useCase, budget]);
+  const [hovDim, setHovDim] = useState(null);
   const n = dims.length, size = 230, cx = size / 2, cy = size / 2, r = 80;
   const angle = (i) => (Math.PI * 2 * i) / n - Math.PI / 2;
-  const pt = (i, val) => { const a = angle(i); const rad = (clamp(val, 0, 100) / 100) * r; return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)]; };
+  const pt = (i, val, boost = 1) => { const a = angle(i); const rad = (clamp(val * boost, 0, 100) / 100) * r; return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)]; };
   const ring = (frac) => dims.map((_, i) => { const a = angle(i); return `${cx + r * frac * Math.cos(a)},${cy + r * frac * Math.sin(a)}`; }).join(" ");
-  const poly = (d) => dims.map((k, i) => pt(i, d[k]).join(",")).join(" ");
+  const poly = (d, key) => dims.map((k, i) => {
+    const boost = (hovDim === i) ? 1.18 : (hovDim !== null ? 0.94 : 1);
+    return pt(i, d[k], boost).join(",");
+  }).join(" ");
   return (
     <div className="pm-radar-wrap">
-      <svg className="pm-radar" width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {[0.25, 0.5, 0.75, 1].map((f, i) => <polygon key={i} points={ring(f)} fill="none" stroke="var(--c-border)" strokeWidth="1" />)}
-        {dims.map((_, i) => { const [x, y] = pt(i, 100); return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--c-border)" strokeWidth="1" />; })}
-        <polygon points={poly(od)} fill="var(--c-bad)" fillOpacity="0.16" stroke="var(--c-bad)" strokeWidth="1.5" />
-        <polygon points={poly(yd)} fill="var(--c-accent)" fillOpacity="0.22" stroke="var(--c-accent)" strokeWidth="1.5" />
+      <svg className="pm-radar" width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible" }}>
+        <defs>
+          <filter id="radarLiquid" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="5" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale={hovDim !== null ? "3" : "0"} xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+        {[0.25, 0.5, 0.75, 1].map((f, i) => <polygon key={i} points={ring(f)} fill="none" stroke="var(--c-border)" strokeWidth="1" opacity={hovDim !== null ? 0.5 : 1} />)}
+        {dims.map((_, i) => {
+          const [x, y] = pt(i, 100);
+          return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke={hovDim === i ? "var(--c-accent)" : "var(--c-border)"} strokeWidth={hovDim === i ? "2" : "1"} style={{ transition: "stroke 0.2s, stroke-width 0.2s" }} />;
+        })}
+        <polygon points={poly(od)} fill="var(--c-bad)" fillOpacity={hovDim !== null ? "0.10" : "0.16"} stroke="var(--c-bad)" strokeWidth="1.5" filter="url(#radarLiquid)" style={{ transition: "all 0.35s cubic-bezier(0.34,1.56,0.64,1)" }} />
+        <polygon points={poly(yd)} fill="var(--c-accent)" fillOpacity={hovDim !== null ? "0.30" : "0.22"} stroke="var(--c-accent)" strokeWidth={hovDim !== null ? "2" : "1.5"} filter="url(#radarLiquid)" style={{ transition: "all 0.35s cubic-bezier(0.34,1.56,0.64,1)" }} />
         {dims.map((_, i) => {
           const a = angle(i); const lx = cx + (r + 22) * Math.cos(a), ly = cy + (r + 22) * Math.sin(a);
-          return <text key={i} x={lx} y={ly} fontSize="9.5" fill="var(--c-muted)" textAnchor="middle" dominantBaseline="middle" fontFamily="'JetBrains Mono',monospace">{labels[i]}</text>;
+          const isHov = hovDim === i;
+          return (
+            <g key={i} style={{ cursor: "pointer" }} onMouseEnter={() => setHovDim(i)} onMouseLeave={() => setHovDim(null)}>
+              <circle cx={lx} cy={ly} r="18" fill="transparent" />
+              <text x={lx} y={ly} fontSize={isHov ? "10.5" : "9.5"} fill={isHov ? "var(--c-accent)" : "var(--c-muted)"} textAnchor="middle" dominantBaseline="middle" fontFamily="'JetBrains Mono',monospace" fontWeight={isHov ? "600" : "400"} style={{ transition: "all 0.2s ease" }}>{labels[i]}</text>
+              {isHov && <circle cx={lx} cy={ly} r="20" fill="none" stroke="var(--c-accent)" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />}
+            </g>
+          );
         })}
+        {hovDim !== null && (() => {
+          const k = dims[hovDim];
+          const [yx, yy] = pt(hovDim, yd[k]);
+          const [ox, oy] = pt(hovDim, od[k]);
+          return <>
+            <circle cx={yx} cy={yy} r="5" fill="var(--c-accent)" opacity="0.9" style={{ filter: "drop-shadow(0 0 6px var(--c-accent))" }} />
+            <circle cx={ox} cy={oy} r="5" fill="var(--c-bad)" opacity="0.9" style={{ filter: "drop-shadow(0 0 6px var(--c-bad))" }} />
+            <text x={cx} y={cy - 6} fontSize="11" fill="var(--c-accent)" textAnchor="middle" dominantBaseline="middle" fontFamily="'JetBrains Mono',monospace" fontWeight="700">{yd[k]}</text>
+            <text x={cx} y={cy + 9} fontSize="9" fill="var(--c-bad)" textAnchor="middle" dominantBaseline="middle" fontFamily="'JetBrains Mono',monospace">{od[k]}</text>
+          </>;
+        })()}
       </svg>
       <div className="pm-radar-legend">
         <span className="pm-radar-legend-item you"><i /> {youLabel}</span>

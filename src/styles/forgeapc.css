@@ -3402,3 +3402,120 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   animation-iteration-count: 1 !important;
   animation-timing-function: ease !important;
 }
+
+/* ================================================================
+   LIQUID GLASS — interactive scores + graphs
+   ================================================================ */
+
+/* Gauge container — spring tilt via inline transform, just handle base */
+.rf-gauge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+/* Glow ring that appears behind gauge on hover */
+.rf-gauge-active::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(25,232,219,0.18) 0%, transparent 70%);
+  animation: gaugePulse 1.2s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes gaugePulse {
+  from { opacity: 0.5; transform: scale(0.96); }
+  to   { opacity: 1.0; transform: scale(1.04); }
+}
+
+/* Score number spring-pop on load */
+.rf-gauge-num {
+  font-weight: 800;
+  letter-spacing: -1px;
+  transition: text-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* Scorecard — liquid glass glass container */
+.rf-scorecard {
+  backdrop-filter: blur(48px) saturate(2.0) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(2.0) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  transition: box-shadow 0.4s ease, border-color 0.4s ease !important;
+}
+.rf-scorecard:hover {
+  border-color: rgba(25,232,219,0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 0 0 1px rgba(25,232,219,0.10), 0 30px 80px rgba(0,0,0,0.50) !important;
+}
+
+/* Radar chart — liquid glass container */
+.pm-radar-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.pm-radar {
+  transition: filter 0.3s ease;
+  overflow: visible !important;
+}
+.pm-radar-wrap:hover .pm-radar {
+  filter: drop-shadow(0 0 20px rgba(25,232,219,0.20));
+}
+
+/* Alloc bars — liquid fill animation */
+.rf-alloc-fill {
+  position: relative;
+  overflow: hidden;
+  transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1) !important;
+}
+.rf-alloc-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; bottom: 0;
+  width: 60%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  animation: liquidShimmer 2.2s ease-in-out infinite;
+}
+@keyframes liquidShimmer {
+  0%   { left: -100%; }
+  60%  { left: 130%; }
+  100% { left: 130%; }
+}
+
+.rf-alloc-row {
+  transition: opacity 0.2s ease;
+}
+.rf-alloc:hover .rf-alloc-row {
+  opacity: 0.55;
+}
+.rf-alloc:hover .rf-alloc-row:hover {
+  opacity: 1;
+}
+.rf-alloc-row:hover .rf-alloc-track {
+  transform: scaleY(1.4);
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.rf-alloc-track {
+  transition: transform 0.25s ease;
+  transform-origin: center;
+}
+
+/* Budget bar — liquid */
+.rf-budget-fill {
+  transition: width 0.9s cubic-bezier(0.34,1.56,0.64,1) !important;
+  position: relative;
+  overflow: hidden;
+}
+.rf-budget-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; bottom: 0;
+  width: 50%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.30), transparent);
+  animation: liquidShimmer 2.8s ease-in-out infinite 0.5s;
+}
