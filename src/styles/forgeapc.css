@@ -3328,3 +3328,33 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   border-color: rgba(255,255,255,0.18) !important;
   background: inherit !important;
 }
+
+/* ================================================================
+   DEFINITIVE NO-FLASH — build/part/usecase/pick rows
+   Kill shimmer ::after, all transforms, all background changes.
+   Only border-color shifts. Nothing moves, nothing fades in/out.
+   ================================================================ */
+
+.rf-part::after, .rf-pick::after,
+.rf-saved-card::after, .rf-uc-card::after {
+  display: none !important;
+  content: none !important;
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+.rf-part, .rf-pick,
+.rf-saved-card, .rf-uc-card, .rf-cta-card {
+  transition: border-color 0.12s ease !important;
+}
+
+.rf-part:hover, .rf-pick:hover,
+.rf-saved-card:hover, .rf-uc-card:hover, .rf-cta-card:hover,
+.rf-part:focus, .rf-pick:focus,
+.rf-saved-card:focus, .rf-uc-card:focus {
+  transform: none !important;
+  background: inherit !important;
+  box-shadow: inherit !important;
+  animation: none !important;
+  border-color: rgba(255,255,255,0.20) !important;
+}
