@@ -1,4 +1,4 @@
-import{r as vt,g as kx,R as Vx,j as Qe}from"./index-cTvIl5-Z.js";/**
+import{r as vt,g as kx,R as Vx,j as Qe}from"./index-8xeba_lA.js";/**
  * @license
  * Copyright 2010-2026 Three.js Authors
  * SPDX-License-Identifier: MIT

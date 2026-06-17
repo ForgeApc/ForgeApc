@@ -1808,3 +1808,296 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   backdrop-filter: blur(24px) saturate(1.8);
   -webkit-backdrop-filter: blur(24px) saturate(1.8);
 }
+
+/* ================================================================
+   FULL-SITE GLASS OVERHAUL — everything translucent, bg shows through
+   ================================================================ */
+
+/* 1. Root: transparent bg so gradients/particles bleed through everywhere */
+.rf-root { background: transparent !important; }
+
+/* 2. Page-level containers: no solid fill */
+.rf-main, .rf-step, .pm-mogger, .pm-menu { background: transparent !important; }
+
+/* 3. CSS variable override: make panels much more see-through */
+.rf-root {
+  --c-panel: rgba(8, 12, 22, 0.28);
+  --c-panel-2: rgba(14, 20, 36, 0.38);
+  --c-border: rgba(255, 255, 255, 0.10);
+  --c-track: rgba(255, 255, 255, 0.07);
+}
+
+/* 4. Universal glass mixin — applied to every major surface */
+.rf-scorecard, .rf-part, .rf-pick, .rf-saved-card, .rf-compat,
+.rf-drawer, .rf-settings-menu, .rf-uc-card, .rf-asst-panel,
+.rf-modal, .rf-info, .rf-cta-card, .rf-alloc, .rf-preset,
+.rf-chip-btn, .rf-header, .rf-acct-chip, .rf-ask-input,
+.pm-card, .pm-mode, .pm-diff, .pm-stats-bar, .pm-elo-result,
+.pm-opp-persona, .pm-taunt-btn, .pm-seg, .pm-quick-btn,
+.pm-lb-row, .pm-hist-entry, .pm-achieve-card, .pm-rogue-stage,
+.pm-rogue-reward-picker, .pm-special-mode-card, .pm-arch-card,
+.pm-synd-card, .pm-bet-panel, .pm-draft-slot, .pm-ban-slot,
+.pm-meta-banner, .pm-faction-winner-banner, .pm-rrp-btn,
+.pm-coin-converter, .pm-hero-4 .pm-mode-hero,
+.pm-menu-header, .pm-diff-grid .pm-diff, .rf-uc-card.sel,
+.rf-empty, .rf-ask-msg, .rf-section-head {
+  backdrop-filter: blur(28px) saturate(2.0) brightness(1.06) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(2.0) brightness(1.06) !important;
+}
+
+/* 5. Scorecard */
+.rf-scorecard {
+  background: rgba(8,12,22,0.30) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    inset 0 -1px 0 rgba(0,0,0,0.22),
+    0 20px 60px rgba(0,0,0,0.45) !important;
+}
+
+/* 6. Parts */
+.rf-part {
+  background: rgba(8,12,22,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.11), 0 8px 28px rgba(0,0,0,0.32) !important;
+}
+.rf-part:hover {
+  background: rgba(25,232,219,0.04) !important;
+  border-color: rgba(25,232,219,0.3) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 12px 36px rgba(25,232,219,0.14) !important;
+}
+
+/* 7. Part picker / pick cards */
+.rf-pick {
+  background: rgba(8,12,22,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 6px 22px rgba(0,0,0,0.3) !important;
+}
+
+/* 8. Saved builds */
+.rf-saved-card {
+  background: rgba(8,12,22,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 28px rgba(0,0,0,0.32) !important;
+}
+.rf-saved-card:hover {
+  background: rgba(25,232,219,0.04) !important;
+}
+
+/* 9. Use-case cards */
+.rf-uc-card {
+  background: rgba(8,12,22,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 22px rgba(0,0,0,0.28) !important;
+}
+.rf-uc-card:hover {
+  background: rgba(25,232,219,0.05) !important;
+}
+.rf-uc-card.sel {
+  background: rgba(25,232,219,0.08) !important;
+}
+
+/* 10. Compat banners */
+.rf-compat {
+  backdrop-filter: blur(28px) saturate(1.9) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(1.9) !important;
+}
+.rf-compat.ok { background: rgba(20,50,34,0.28) !important; }
+.rf-compat.bad { background: rgba(50,15,20,0.28) !important; }
+
+/* 11. Alloc / budget panel */
+.rf-alloc {
+  background: rgba(8,12,22,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 22px rgba(0,0,0,0.28) !important;
+}
+
+/* 12. Presets */
+.rf-preset {
+  background: rgba(8,12,22,0.30) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+.rf-preset:hover { background: rgba(25,232,219,0.06) !important; }
+.rf-preset.active { background: rgba(25,232,219,0.12) !important; }
+
+/* 13. Chip buttons */
+.rf-chip-btn {
+  background: rgba(8,12,22,0.30) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09) !important;
+}
+.rf-chip-btn:hover { background: rgba(25,232,219,0.06) !important; }
+
+/* 14. Header bar */
+.rf-header {
+  background: rgba(7,10,18,0.30) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 40 !important;
+}
+
+/* 15. Account chip */
+.rf-acct-chip {
+  background: rgba(8,12,22,0.35) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09) !important;
+}
+
+/* 16. Settings menu */
+.rf-settings-menu {
+  background: rgba(8,12,22,0.55) !important;
+  border: 1px solid rgba(255,255,255,0.11) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 20px 50px rgba(0,0,0,0.55) !important;
+}
+
+/* 17. CTA cards on landing */
+.rf-cta-card {
+  background: rgba(8,12,22,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 28px rgba(0,0,0,0.30) !important;
+}
+.rf-cta-card:hover { background: rgba(25,232,219,0.05) !important; }
+
+/* 18. Ask / chat inputs */
+.rf-ask-input {
+  background: rgba(8,12,22,0.32) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+}
+.rf-ask-input:focus { border-color: var(--c-accent) !important; }
+.rf-ask-msg.user { background: rgba(25,232,219,0.08) !important; }
+.rf-ask-msg.assistant { background: rgba(124,92,255,0.07) !important; }
+
+/* 19. Info panel (part detail) */
+.rf-info {
+  background: rgba(8,12,22,0.24) !important;
+  border-top: 1px solid rgba(255,255,255,0.07) !important;
+}
+
+/* 20. Modal */
+.rf-modal {
+  background: rgba(8,12,22,0.55) !important;
+  border: 1px solid rgba(255,255,255,0.11) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 24px 70px rgba(0,0,0,0.6) !important;
+}
+
+/* 21. Drawer */
+.rf-drawer {
+  background: rgba(8,12,22,0.48) !important;
+  border-left: 1px solid rgba(255,255,255,0.10) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), -20px 0 60px rgba(0,0,0,0.5) !important;
+}
+
+/* 22. Assistant panel */
+.rf-asst-panel {
+  background: rgba(8,12,22,0.38) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+}
+
+/* 23. Empty state */
+.rf-empty {
+  background: rgba(8,12,22,0.22) !important;
+  border: 1px dashed rgba(255,255,255,0.10) !important;
+}
+
+/* 24. pm-card — max glass */
+.pm-card {
+  background: rgba(8,12,22,0.32) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    inset 0 -1px 0 rgba(0,0,0,0.22),
+    0 20px 60px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(124,92,255,0.04) !important;
+}
+
+/* 25. Mode buttons */
+.pm-mode, .pm-hero-4 .pm-mode-hero {
+  background: rgba(8,12,22,0.30) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+}
+.pm-mode:hover, .pm-hero-4 .pm-mode-hero:hover {
+  background: rgba(25,232,219,0.05) !important;
+}
+
+/* 26. Diff buttons */
+.pm-diff {
+  background: rgba(8,12,22,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+.pm-diff:hover { background: rgba(25,232,219,0.05) !important; }
+
+/* 27. Stats bar, quick buttons, seg */
+.pm-stats-bar, .pm-quick-btn, .pm-seg {
+  background: rgba(7,10,18,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+.pm-quick-btn:hover { background: rgba(25,232,219,0.06) !important; }
+
+/* 28. Taunt buttons */
+.pm-taunt-btn { background: rgba(8,12,22,0.30) !important; }
+.pm-taunt-btn.on { background: rgba(124,92,255,0.14) !important; }
+
+/* 29. Leaderboard rows */
+.pm-lb-row { background: rgba(8,12,22,0.28) !important; }
+.pm-lb-row.me-row { background: rgba(25,232,219,0.06) !important; }
+
+/* 30. History, achievements, rogue stages */
+.pm-hist-entry, .pm-achieve-card, .pm-rogue-stage {
+  background: rgba(8,12,22,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* 31. Special mode cards */
+.pm-special-mode-card { background: rgba(8,12,22,0.28) !important; }
+.pm-special-mode-card:hover { background: rgba(25,232,219,0.04) !important; }
+
+/* 32. Rogue reward picker */
+.pm-rogue-reward-picker { background: rgba(30,16,60,0.30) !important; }
+.pm-rrp-btn { background: rgba(8,12,22,0.30) !important; }
+.pm-rrp-btn.on { background: rgba(124,92,255,0.15) !important; }
+
+/* 33. Coin converter */
+.pm-coin-converter { background: rgba(24,14,4,0.32) !important; }
+
+/* 34. Menu header */
+.pm-menu-header {
+  background: rgba(7,10,18,0.28) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* 35. Ghost buttons */
+.rf-ghost, .rf-ghost-btn {
+  background: rgba(8,12,22,0.30) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+}
+.rf-ghost:hover, .rf-ghost-btn:hover {
+  background: rgba(25,232,219,0.05) !important;
+}
+
+/* 36. Section dividers */
+.rf-section-head {
+  background: transparent !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* 37. Part icon bg — slightly more see-through */
+.rf-part-icon {
+  background: rgba(25,232,219,0.06) !important;
+  border: 1px solid rgba(25,232,219,0.14) !important;
+}
+
+/* 38. Elo result chip */
+.pm-elo-result {
+  background: rgba(7,10,18,0.30) !important;
+}
+
+/* 39. Opp persona chip */
+.pm-opp-persona {
+  background: rgba(8,12,22,0.30) !important;
+}
+
+/* 40. Banners */
+.pm-meta-banner { background: rgba(8,12,22,0.38) !important; }
+.pm-faction-winner-banner { background: rgba(10,24,14,0.32) !important; }
