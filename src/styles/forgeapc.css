@@ -1498,3 +1498,34 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .pm-coin-convert-btn{padding:4px 12px;border-radius:7px;background:rgba(255,194,75,0.15);border:1px solid rgba(255,194,75,0.35);color:var(--c-warn);cursor:pointer;font-size:0.75rem;font-weight:700;}
 .pm-coin-convert-btn:disabled{opacity:0.4;cursor:default;}
 .pm-rogue-used{background:rgba(70,224,160,0.07);border:1px solid rgba(70,224,160,0.25);border-radius:8px;padding:8px 12px;font-size:0.8rem;color:var(--c-good);margin-bottom:10px;text-align:center;}
+
+/* ---- 4-hero menu layout ---- */
+.pm-hero-4{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px;}
+.pm-hero-4 .pm-mode-hero{padding:16px 12px;min-height:80px;}
+.pm-hero-4 .pm-mode-icon{font-size:1.4rem;}
+.pm-hero-4 .pm-mode-name{font-size:0.92rem;}
+.pm-coin-wallet-btn{color:var(--c-warn)!important;border-color:rgba(255,194,75,0.3)!important;}
+
+/* ---- Special Game Modes screen ---- */
+.pm-special-modes-screen{max-width:640px;padding:16px;}
+.pm-special-modes-head{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.pm-special-modes-head .pm-h2{margin:0;}
+.pm-back-inline{background:none;border:none;color:var(--c-muted);cursor:pointer;padding:0;display:flex;align-items:center;}
+.pm-back-inline:hover{color:var(--c-text);}
+.pm-special-modes-list{display:flex;flex-direction:column;gap:8px;}
+.pm-special-mode-card{display:flex;align-items:center;gap:12px;background:var(--c-panel);border:1px solid var(--c-border);border-radius:10px;padding:10px 14px;transition:border-color .15s;}
+.pm-special-mode-card:hover{border-color:var(--c-accent);}
+.pm-special-mode-icon{font-size:1.3rem;flex-shrink:0;width:28px;text-align:center;}
+.pm-special-mode-info{flex:1;display:flex;flex-direction:column;gap:2px;}
+.pm-special-mode-name{font-family:'Chakra Petch',sans-serif;font-size:0.85rem;font-weight:700;color:var(--c-text);}
+.pm-special-mode-desc{font-size:0.72rem;color:var(--c-muted);}
+.pm-special-mode-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.pm-special-ranked-tog{display:flex;border:1px solid var(--c-border);border-radius:7px;overflow:hidden;}
+.pm-srt-btn{background:none;border:none;color:var(--c-muted);font-size:0.68rem;font-weight:600;padding:3px 8px;cursor:pointer;transition:background .15s,color .15s;}
+.pm-srt-btn.on{background:var(--c-accent2);color:#fff;}
+.pm-ranked-badge{font-size:0.65rem;font-weight:700;color:var(--c-good);background:rgba(70,224,160,0.1);border:1px solid rgba(70,224,160,0.3);border-radius:5px;padding:2px 7px;}
+.pm-unranked-badge{font-size:0.65rem;font-weight:700;color:var(--c-muted);background:rgba(255,255,255,0.04);border:1px solid var(--c-border);border-radius:5px;padding:2px 7px;}
+.pm-special-play-btn{padding:5px 14px;font-size:0.78rem;}
+
+/* ---- Wallet screen ---- */
+.pm-coin-big{color:var(--c-warn);font-family:'JetBrains Mono',monospace;font-size:1.1rem;}

@@ -4579,6 +4579,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const [bestStreak, setBestStreak] = useState(() => { try { return +(localStorage.getItem("mogger_best_streak") || 0); } catch(e) { return 0; } });
   const historyAppliedRef = useRef(false);
   const [showMoreModes, setShowMoreModes] = useState(false);
+  const [specialRanked, setSpecialRanked] = useState({});
   // Batch 3 state
   const [coinBalance, setCoinBalance] = useState(null);
   const [activeBet, setActiveBet] = useState(null);
@@ -4964,36 +4965,38 @@ function MoggerGame({ onExit, onSaveBuild }) {
             </div>
           )}
 
-          {/* Primary modes */}
-          <div className="pm-mode-grid pm-mode-grid-primary">
-            <button className="pm-mode pm-mode-hero" onClick={() => { setMode("ai"); setScreen("diff"); }}><span className="pm-mode-icon"><Bot size={22}/></span><span className="pm-mode-name">vs AI</span><span className="pm-mode-sub">Ranked or practice</span></button>
-            <button className="pm-mode pm-mode-hero" onClick={() => setScreen("online")}><span className="pm-mode-icon">🌐</span><span className="pm-mode-name">Online</span><span className="pm-mode-sub">Real opponents</span></button>
-            <button className={"pm-mode pm-mode-hero"+(dailyStreakInfo.playedToday?" pm-done":"")} onClick={() => { setMode("ai"); setPractice(true); start(dailyChallenge); }}><span className="pm-mode-icon">📅</span><span className="pm-mode-name">Daily{dailyStreakInfo.playedToday?" ✓":""}</span><span className="pm-mode-sub">{dailyStreakInfo.streak>0?`🔥${dailyStreakInfo.streak} · `:""}Challenge</span></button>
+          {/* 4 hero buttons */}
+          <div className="pm-hero-4">
+            <button className="pm-mode pm-mode-hero" onClick={() => { setMode("ai"); setScreen("diff"); }}>
+              <span className="pm-mode-icon"><Bot size={24}/></span>
+              <span className="pm-mode-name">Play AI</span>
+              <span className="pm-mode-sub">Ranked or practice</span>
+            </button>
+            <button className="pm-mode pm-mode-hero" onClick={() => setScreen("online")}>
+              <span className="pm-mode-icon">🌐</span>
+              <span className="pm-mode-name">Online Multiplayer</span>
+              <span className="pm-mode-sub">Real opponents worldwide</span>
+            </button>
+            <button className="pm-mode pm-mode-hero" onClick={() => setScreen("special-modes")}>
+              <span className="pm-mode-icon">🎮</span>
+              <span className="pm-mode-name">Special Game Modes</span>
+              <span className="pm-mode-sub">Speed · Draft · Rogue · more</span>
+            </button>
+            <button className="pm-mode pm-mode-hero" onClick={() => setScreen("leaderboard")}>
+              <span className="pm-mode-icon">🏆</span>
+              <span className="pm-mode-name">Leaderboard</span>
+              <span className="pm-mode-sub">Top ranked players</span>
+            </button>
           </div>
-
-          {/* More modes toggle */}
-          <button className="pm-more-toggle" onClick={() => setShowMoreModes(m => !m)}>
-            {showMoreModes ? "▲ Less" : "▼ More modes"} — Speed · P&amp;P · Gauntlet · Draft · Rogue · Syndicate
-          </button>
-          {showMoreModes && (
-            <div className="pm-quick-row pm-more-row">
-              <button className="pm-quick-btn" onClick={() => { setMode("ai"); setPractice(true); start({ useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 60 }); }}>⚡ Speed</button>
-              <button className="pm-quick-btn" onClick={() => { setMode("local"); setScreen("lobby"); }}>🎮 P&amp;P</button>
-              <button className="pm-quick-btn" onClick={() => { setMode("gauntlet"); start(dailyGauntletInfo); }}>🎯 Gauntlet</button>
-              <button className="pm-quick-btn" onClick={() => setScreen("draft")}>🃏 Draft</button>
-              <button className="pm-quick-btn" onClick={() => setScreen("rogue")}>⚔️ Rogue</button>
-              <button className="pm-quick-btn" onClick={() => setScreen("syndicate")}>🤝 Syndicate</button>
-            </div>
-          )}
 
           {/* Browse */}
           <div className="pm-quick-row pm-browse-row">
             <button className="pm-quick-btn" onClick={() => setScreen("history")}>📜 History</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("leaderboard")}>🏆 Ranks</button>
             <button className="pm-quick-btn" onClick={() => setScreen("factions")}>⚔️ Factions</button>
             <button className="pm-quick-btn" onClick={() => setScreen("ghosts")}>👻 Ghosts</button>
             <button className="pm-quick-btn" onClick={() => setScreen("archaeology")}>🏛️ Arch</button>
             <button className="pm-quick-btn" onClick={() => setScreen("achievements")}>🏅 Badges</button>
+            {user && coinBalance != null && <button className="pm-quick-btn pm-coin-wallet-btn" onClick={() => setScreen("wallet")}>🪙 Wallet</button>}
             <button className="pm-quick-btn" onClick={() => setFeedbackOpen(true)}>📩</button>
           </div>
 
@@ -5038,8 +5041,94 @@ function MoggerGame({ onExit, onSaveBuild }) {
           <div className="pm-field"><span className="pm-field-l">Custom elo: {custom}{user && <span className="pm-diff-winpct-inline"> · {Math.round(100 / (1 + Math.pow(10, (custom - user.elo) / 400)))}% win chance</span>}</span><input type="range" min="100" max="3000" step="50" value={custom} onChange={(e) => setCustom(+e.target.value)} className="pm-range" /></div>
           <label className="pm-toggle pm-ban-toggle"><input type="checkbox" checked={bannedMode} onChange={(e) => setBannedMode(e.target.checked)} /><span>🚫 Adversarial Bans — ban 2 AI components before the duel</span></label>
           {user && coinBalance != null && <BettingPanel myElo={user.elo} oppElo={aiElo} balance={coinBalance} activeBet={activeBet} onBet={async(bet) => { if (!user?.id) return; const row = await netPlaceBet(user.id, bet.side, bet.stake, bet.odds); if (row) { setActiveBet({...bet, id: row.id}); setCoinBalance(prev => (prev||0) - bet.stake); } }} />}
-          {user && coinBalance != null && coinBalance >= 5 && <CoinEloConverter balance={coinBalance} userElo={user.elo} onConvert={async(coins) => { const gain = Math.floor(coins/5); const newElo = user.elo + gain; const newBal = coinBalance - coins; persist({...user, elo: newElo}); setCoinBalance(newBal); await netSaveElo(user.id, newElo); await netSupabase.from("mogger_currency").update({balance: newBal}).eq("user_id", user.id); }} />}
           <button className="rf-btn rf-ghost-btn" onClick={menu}><ChevronLeft size={16} /> Back</button>
+        </div>
+      )}
+      {screen === "special-modes" && (() => {
+        const SPECIAL_MODES = [
+          { id: "speed",     icon: "⚡", name: "Speed Duel",          desc: "60 seconds to build — fastest fingers win",            ranked: "both"     },
+          { id: "daily",     icon: "📅", name: "Daily Challenge",      desc: "Same puzzle for every player today",                   ranked: "ranked"   },
+          { id: "bo3",       icon: "🏆", name: "Best-of-3 Series",    desc: "Same AI, same budget — first to 2 wins",               ranked: "both"     },
+          { id: "gauntlet",  icon: "🎯", name: "Constraint Gauntlet", desc: "Build under random restrictions per category",         ranked: "both"     },
+          { id: "draft",     icon: "🃏", name: "Draft Mode",           desc: "Alternate picks with the AI — block their best parts", ranked: "both"     },
+          { id: "banphase",  icon: "🚫", name: "Ban Phase Duel",       desc: "Ban 2 opponent parts before the build starts",         ranked: "both"     },
+          { id: "rogue",     icon: "⚔️", name: "Rogue Run",            desc: "Monthly gauntlet — earn temporary ranked boosts",      ranked: "unranked" },
+          { id: "ghost",     icon: "👻", name: "Ghost Duel",           desc: "Challenge a recorded build from your history",         ranked: "unranked" },
+          { id: "pp",        icon: "🎮", name: "Pass & Play",          desc: "Two players, one screen — local showdown",             ranked: "unranked" },
+          { id: "syndicate", icon: "🤝", name: "Syndicate",            desc: "Collaborative community build challenge",              ranked: "unranked" },
+        ];
+        const launch = (id) => {
+          const isPrac = !(specialRanked[id] ?? true);
+          setPractice(isPrac);
+          if (id === "speed")     { setMode("ai"); start({ useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 60 }); }
+          else if (id === "daily"){ setMode("ai"); setPractice(false); start(dailyChallenge); }
+          else if (id === "bo3")  { setMode("ai"); setSeriesPick(true); setScreen("diff"); }
+          else if (id === "gauntlet") { setMode("gauntlet"); start(dailyGauntletInfo); }
+          else if (id === "draft")    { setScreen("draft"); }
+          else if (id === "banphase") { setMode("ai"); setBannedMode(true); setScreen("diff"); }
+          else if (id === "rogue")    { setScreen("rogue"); }
+          else if (id === "ghost")    { setScreen("ghosts"); }
+          else if (id === "pp")       { setMode("local"); setScreen("lobby"); }
+          else if (id === "syndicate"){ setScreen("syndicate"); }
+        };
+        return (
+          <div className="pm-card rf-fade pm-special-modes-screen">
+            <div className="pm-special-modes-head">
+              <button className="pm-back-inline" onClick={menu}><ChevronLeft size={15}/></button>
+              <h2 className="pm-h2">🎮 Special Game Modes</h2>
+            </div>
+            <div className="pm-special-modes-list">
+              {SPECIAL_MODES.map(m => {
+                const isRanked = specialRanked[m.id] ?? true;
+                return (
+                  <div key={m.id} className="pm-special-mode-card">
+                    <span className="pm-special-mode-icon">{m.icon}</span>
+                    <div className="pm-special-mode-info">
+                      <span className="pm-special-mode-name">{m.name}</span>
+                      <span className="pm-special-mode-desc">{m.desc}</span>
+                    </div>
+                    <div className="pm-special-mode-right">
+                      {m.ranked === "both" && user && (
+                        <div className="pm-special-ranked-tog">
+                          <button className={"pm-srt-btn"+(isRanked?" on":"")} onClick={() => setSpecialRanked(p=>({...p,[m.id]:true}))}>Ranked</button>
+                          <button className={"pm-srt-btn"+(!isRanked?" on":"")} onClick={() => setSpecialRanked(p=>({...p,[m.id]:false}))}>Unranked</button>
+                        </div>
+                      )}
+                      {m.ranked === "ranked" && <span className="pm-ranked-badge">Ranked</span>}
+                      {m.ranked === "unranked" && <span className="pm-unranked-badge">Unranked</span>}
+                      <button className="rf-btn pm-special-play-btn" onClick={() => launch(m.id)}>Play</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+      {screen === "wallet" && (
+        <div className="pm-card pm-center rf-fade">
+          <h2 className="pm-h2">🪙 Wallet</h2>
+          {user && coinBalance != null ? (
+            <>
+              <p className="pm-p">Balance: <b className="pm-coin-big">{coinBalance} coins</b></p>
+              {coinBalance >= 5 ? (
+                <CoinEloConverter balance={coinBalance} userElo={user.elo} onConvert={async(coins) => {
+                  const gain = Math.floor(coins/5);
+                  const newElo = user.elo + gain;
+                  const newBal = coinBalance - coins;
+                  persist({...user, elo: newElo});
+                  setCoinBalance(newBal);
+                  await netSaveElo(user.id, newElo);
+                  await netSupabase.from("mogger_currency").update({balance: newBal}).eq("user_id", user.id);
+                }} />
+              ) : (
+                <p className="pm-dim pm-p">Need at least 5 coins to convert. Win ranked AI matches to earn coins.</p>
+              )}
+            </>
+          ) : (
+            <p className="pm-dim pm-p">{user ? "Loading wallet…" : "Log in to access your wallet."}</p>
+          )}
+          <button className="rf-btn rf-ghost-btn" onClick={menu}><ChevronLeft size={16}/> Back</button>
         </div>
       )}
       {screen === "admin" && <MoggerAdmin onBack={exitToRoot} user={user} />}
