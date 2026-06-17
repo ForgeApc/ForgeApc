@@ -888,7 +888,8 @@ function useCountUp(target, duration = 900, startDelay = 0) {
 }
 
 function Gauge({ value, max = 100, size = 132, label, accent = "var(--c-accent)", delay = 0 }) {
-  const v = useCountUp(value, 1100, 680 + delay);
+  const [tick, setTick] = useState(0);
+  const v = useCountUp(tick > 0 ? value : 0, 1100, 0);
   const r = (size - 16) / 2;
   const circ = 2 * Math.PI * r;
   const off = circ * (1 - clamp(v / max, 0, 1));
@@ -913,6 +914,7 @@ function Gauge({ value, max = 100, size = 132, label, accent = "var(--c-accent)"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setMouse({ x: 0, y: 0 }); }}
       onMouseMove={handleMove}
+      onClick={() => setTick(t => t + 1)}
     >
       <svg width={size} height={size} style={{ overflow: "visible" }}>
         <defs>
