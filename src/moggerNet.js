@@ -274,9 +274,9 @@ export async function fetchBalance(userId) {
   try {
     const { data } = await supabase.from("mogger_currency").select("balance").eq("user_id", userId).single();
     if (data) return data.balance;
-    await supabase.from("mogger_currency").insert({ user_id: userId, balance: 1000 });
-    return 1000;
-  } catch (e) { return 1000; }
+    await supabase.from("mogger_currency").insert({ user_id: userId, balance: 100 });
+    return 100;
+  } catch (e) { return null; }
 }
 export async function placeBet(userId, side, stake, odds) {
   try {
@@ -284,8 +284,8 @@ export async function placeBet(userId, side, stake, odds) {
     if (bal < stake) return { ok: false, error: "Not enough coins." };
     await supabase.from("mogger_currency").update({ balance: bal - stake }).eq("user_id", userId);
     const { data, error } = await supabase.from("mogger_bets").insert({ user_id: userId, side, stake, odds }).select().single();
-    if (error) return { ok: false, error: error.message };
-    return { ok: true, betId: data.id, newBalance: bal - stake };
+    if (error) return null;
+    return { id: data.id, stake, odds, side, newBalance: bal - stake };
   } catch (e) { return { ok: false, error: "Could not place bet." }; }
 }
 export async function settleBet(betId, won) {

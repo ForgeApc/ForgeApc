@@ -173,11 +173,13 @@ function ucPerf(cat, part, uc) {
         const x3dBonus = /X3D/i.test(part.name || part.model || "") ? 5 : 0;
         return part.perf * 0.65 + (Math.min(part.cores || 8, 16) / 16) * 100 * 0.35 + x3dBonus;
       }
-      // office: responsiveness matters, not raw throughput — cap the benefit of overkill chips
+      // office: strong multi-core for multitasking/compilation; no artificial perf cap
       if (uc === "office")
-        return Math.min(part.perf, 80) * 0.85 + (Math.min(part.cores || 4, 8) / 8) * 100 * 0.15;
+        return part.perf * 0.6 + (Math.min(part.cores || 4, 16) / 16) * 100 * 0.4;
       return part.perf;
     case "gpu":
+      // office: 16GB VRAM minimum recommended for productivity/AI workloads
+      if (uc === "office") return part.perf * 0.4 + (Math.min(part.vram, 24) / 24) * 100 * 0.6;
       if (uc === "ai") return part.perf * 0.5 + (Math.min(part.vram, 32) / 32) * 100 * 0.5;
       // workstation (Blender/CAD/Maya): VRAM is critical for large scenes
       if (uc === "workstation") return part.perf * 0.6 + (Math.min(part.vram, 32) / 32) * 100 * 0.4;
@@ -210,7 +212,9 @@ function ucPerf(cat, part, uc) {
       // streaming: fast NVMe matters for recording high-bitrate footage — weight speed higher
       if (uc === "streaming")
         return part.perf * 0.65 + (Math.min(part.cap, 2000) / 2000) * 100 * 0.35;
-      // gaming / office: reward capacity up to 2TB (so roomy budgets pick 2TB)
+      // office: NVMe speed + large capacity (archives, files)
+      if (uc === "office") return part.perf * 0.5 + (Math.min(part.cap, 4000) / 4000) * 100 * 0.5;
+      // gaming: reward capacity up to 2TB
       return part.perf * 0.6 + (Math.min(part.cap, 2000) / 2000) * 100 * 0.4;
     default:
       return part.perf; // mobo, psu, case, cooler: use-case agnostic
@@ -4153,6 +4157,21 @@ function MoggerAchievements({ onBack }) {
   );
 }
 
+function CoinEloConverter({ balance, userElo, onConvert }) {
+  const [coins, setCoins] = useState(5);
+  const gain = Math.floor(coins / 5);
+  return (
+    <div className="pm-coin-converter">
+      <div className="pm-coin-converter-head">🪙 Convert coins → ELO <span className="pm-dim">(5:1)</span></div>
+      <div className="pm-coin-converter-row">
+        <input type="range" min={5} max={Math.min(balance, 500)} step={5} value={coins} onChange={e => setCoins(+e.target.value)} className="pm-range" />
+        <span>{coins} coins → <b>+{gain} elo</b></span>
+        <button className="pm-coin-convert-btn" onClick={() => onConvert(coins)} disabled={gain < 1}>Convert</button>
+      </div>
+    </div>
+  );
+}
+
 /* ======================================================================
    BATCH 3 — Draft Mode, Betting, Rogue Run, Archaeology, Syndicate, Bans
    ====================================================================== */
@@ -4299,21 +4318,24 @@ function rogueModifiers(perks) {
   return { budgetMult:perks.includes("budget_boost")?1.2:1, scoreMult:perks.includes("score_mult")?1.1:1, bonusSecs:perks.includes("fast_pick")?30:0 };
 }
 function MoggerRogueRun({ onMenu, user }) {
+  const currentMonth = new Date().toISOString().slice(0,7);
   const [phase, setPhase] = useState("intro");
   const [stageIdx, setStageIdx] = useState(0);
-  const [perks, setPerks] = useState(()=>{try{return JSON.parse(localStorage.getItem("mogger_rogue_perks")||"[]");}catch(e){return[];}});
+  // Rewards are temporary: {id, label, matchesLeft} — reset each month
+  const [rewards, setRewards] = useState(()=>{
+    try {
+      const stored = JSON.parse(localStorage.getItem("mogger_rogue_rewards")||"null");
+      if(!stored || stored.month !== currentMonth) return {month:currentMonth,list:[],ran:false};
+      return stored;
+    } catch(e){return {month:currentMonth,list:[],ran:false};}
+  });
   const [bestStage, setBestStage] = useState(()=>{try{return+(localStorage.getItem("mogger_rogue_best")||"0");}catch(e){return 0;}});
   const [results, setResults] = useState([]);
   const [aiOpponent, setAiOpponent] = useState(null);
   const [unlocked, setUnlocked] = useState(null);
-  useEffect(()=>{
-    if(!user?.id)return;
-    netFetchRoguePerks(user.id).then(data=>{
-      if(!data)return;
-      setPerks(data.perks||[]);setBestStage(data.best_stage||0);
-      try{localStorage.setItem("mogger_rogue_perks",JSON.stringify(data.perks||[]));}catch(e){}
-    });
-  },[]);
+  const saveRewards = (r) => { setRewards(r); try{localStorage.setItem("mogger_rogue_rewards",JSON.stringify(r));}catch(e){} };
+  const canRun = !rewards.ran;
+  const perks = rewards.list.map(r=>r.id);
   const mods = rogueModifiers(perks);
   const ucKey = MOGGER_UCS[stageIdx%MOGGER_UCS.length];
   const budget = Math.round(MOGGER_BUDGETS[stageIdx%MOGGER_BUDGETS.length]*mods.budgetMult);
@@ -4329,23 +4351,33 @@ function MoggerRogueRun({ onMenu, user }) {
     setResults(newR);
     if(won){
       const perk=ROGUE_PERKS.find(p=>p.stage===stageIdx&&!perks.includes(p.id));
-      let np=perks;
-      if(perk){np=[...perks,perk.id];setPerks(np);setUnlocked(perk);try{localStorage.setItem("mogger_rogue_perks",JSON.stringify(np));}catch(e){}}
+      let newList=rewards.list;
+      if(perk){
+        const newReward={id:perk.id,label:perk.label,desc:perk.desc,matchesLeft:3};
+        newList=[...rewards.list,newReward];
+        setUnlocked(perk);
+      }
       const next=stageIdx+1;
-      if(next>=ROGUE_STAGE_ELOS.length){const nb=Math.max(bestStage,next);setBestStage(nb);try{localStorage.setItem("mogger_rogue_best",String(nb));}catch(e){}if(user?.id)netSaveRogueRun(user.id,next,true,np);setPhase("done");}
-      else{setStageIdx(next);setPhase("stage-win");}
+      if(next>=ROGUE_STAGE_ELOS.length){
+        const nb=Math.max(bestStage,next);setBestStage(nb);try{localStorage.setItem("mogger_rogue_best",String(nb));}catch(e){}
+        const nr={...rewards,list:newList,ran:true};saveRewards(nr);
+        if(user?.id)netSaveRogueRun(user.id,next,true,newList.map(r=>r.id));setPhase("done");
+      } else {saveRewards({...rewards,list:newList});setStageIdx(next);setPhase("stage-win");}
     } else {
-      const nb=Math.max(bestStage,stageIdx);setBestStage(nb);try{localStorage.setItem("mogger_rogue_best",String(nb));}catch(e){}if(user?.id)netSaveRogueRun(user.id,stageIdx,false,perks);setPhase("done");
+      const nb=Math.max(bestStage,stageIdx);setBestStage(nb);try{localStorage.setItem("mogger_rogue_best",String(nb));}catch(e){}
+      saveRewards({...rewards,ran:true});
+      if(user?.id)netSaveRogueRun(user.id,stageIdx,false,perks);setPhase("done");
     }
   };
   if(phase==="intro")return(
     <div className="pm-card pm-center rf-fade">
       <h2 className="pm-h2">⚔️ Rogue Run</h2>
-      <p className="pm-p">Beat 5 escalating AI opponents. Each win unlocks a permanent passive perk. Lose once and the run ends.</p>
-      <div className="pm-rogue-stages">{ROGUE_STAGE_ELOS.map((elo,i)=>{const perk=ROGUE_PERKS[i];const hasPerk=perks.includes(perk?.id);return(<div key={i} className={"pm-rogue-stage"+(i<bestStage?" cleared":"")}><span className="pm-rogue-stage-num">Stage {i+1}</span><span className="pm-rogue-elo">{elo} ELO</span>{perk&&<span className={"pm-rogue-perk-badge"+(hasPerk?" owned":"")}>{perk.label}</span>}</div>);})}</div>
-      {perks.length>0&&<div className="pm-rogue-active-perks"><div className="pm-rogue-perks-label">Active Perks:</div>{perks.map(pid=>{const p=ROGUE_PERKS.find(x=>x.id===pid);return p?<div key={pid} className="pm-rogue-perk-row">{p.label} — {p.desc}</div>:null;})}</div>}
+      <p className="pm-p">Beat 5 escalating AI opponents. Each win grants a temporary reward active for <b>3 ranked matches</b>. One run per month.</p>
+      {!canRun&&<div className="pm-rogue-used">✅ Run complete for {currentMonth}. Resets next month.</div>}
+      <div className="pm-rogue-stages">{ROGUE_STAGE_ELOS.map((elo,i)=>{const perk=ROGUE_PERKS[i];const hasReward=rewards.list.find(r=>r.id===perk?.id);return(<div key={i} className={"pm-rogue-stage"+(i<bestStage?" cleared":"")}><span className="pm-rogue-stage-num">Stage {i+1}</span><span className="pm-rogue-elo">{elo} ELO</span>{perk&&<span className={"pm-rogue-perk-badge"+(hasReward?" owned":"")}>{perk.label}{hasReward?` (${hasReward.matchesLeft} left)`:""}</span>}</div>);})}</div>
+      {rewards.list.length>0&&<div className="pm-rogue-active-perks"><div className="pm-rogue-perks-label">This month's rewards:</div>{rewards.list.map(r=><div key={r.id} className="pm-rogue-perk-row">{r.label} — {r.matchesLeft} ranked matches left</div>)}</div>}
       {bestStage>0&&<div className="pm-rogue-best">🏆 Best: Stage {bestStage}</div>}
-      <div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={onMenu}><ChevronLeft size={16}/> Back</button><button className="rf-btn" onClick={()=>{setStageIdx(0);setResults([]);setUnlocked(null);startStage();}}>Start Run <ChevronRight size={16}/></button></div>
+      <div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={onMenu}><ChevronLeft size={16}/> Back</button><button className="rf-btn" onClick={()=>{setStageIdx(0);setResults([]);setUnlocked(null);startStage();}} disabled={!canRun}>{canRun?"Start Run":"Done for this month"} <ChevronRight size={16}/></button></div>
     </div>
   );
   if(phase==="stage"&&aiOpponent)return(
@@ -4836,12 +4868,21 @@ function MoggerGame({ onExit, onSaveBuild }) {
       if (log.length > 200) log.splice(0, log.length - 200);
       localStorage.setItem("mogger_elo_log", JSON.stringify(log));
     } catch(e) {}
+    // Decrement active rogue reward match counter
+    try {
+      const storedR = JSON.parse(localStorage.getItem("mogger_rogue_rewards")||"null");
+      if (storedR && storedR.list?.length > 0) {
+        const updated = storedR.list.map(r => ({...r, matchesLeft: r.matchesLeft - 1})).filter(r => r.matchesLeft > 0);
+        const next = {...storedR, list: updated};
+        localStorage.setItem("mogger_rogue_rewards", JSON.stringify(next));
+      }
+    } catch(e) {}
     // Settle bet if one is active
     if (activeBet && user?.id) {
       const won = sy >= so ? activeBet.side === "you" : activeBet.side === "ai";
       netSettleBet(activeBet.id, won).then(payout => {
         if (payout != null) {
-          setCoinBalance(prev => (prev||1000) + (won ? Math.round(activeBet.stake * activeBet.odds) : 0) - activeBet.stake);
+          setCoinBalance(prev => (prev||0) + (won ? Math.round(activeBet.stake * activeBet.odds) : 0));
           netFetchBalance(user.id).then(b => { if (b != null) setCoinBalance(b); });
         }
       });
@@ -4858,7 +4899,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
           {/* Header */}
           <div className="pm-menu-header">
             <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
-            <div className="pm-account">{user ? <><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo}</span>{user && todayEloChange !== 0 && <span className={"pm-daily-elo-inline " + (todayEloChange > 0 ? "up" : "down")}>{todayEloChange > 0 ? "+" : ""}{todayEloChange}</span>}<button className="pm-acct-btn" onClick={() => persist(null)}>{user.name} ✕</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in</button>}</div>
+            <div className="pm-account">{user ? <><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo} elo</span>{todayEloChange !== 0 && <span className={"pm-daily-elo-inline " + (todayEloChange > 0 ? "up" : "down")}>{todayEloChange > 0 ? "+" : ""}{todayEloChange} this session</span>}{coinBalance != null && <span className="pm-coin-balance">🪙 {coinBalance}</span>}<button className="pm-acct-btn" onClick={() => persist(null)}>{user.name} ✕</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in</button>}</div>
           </div>
 
           {/* Alerts */}
@@ -4881,7 +4922,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
           <div className="pm-mode-grid pm-mode-grid-primary">
             <button className="pm-mode pm-mode-hero" onClick={() => { setMode("ai"); setScreen("diff"); }}><span className="pm-mode-icon"><Bot size={22}/></span><span className="pm-mode-name">vs AI</span><span className="pm-mode-sub">Ranked or practice</span></button>
             <button className="pm-mode pm-mode-hero" onClick={() => setScreen("online")}><span className="pm-mode-icon">🌐</span><span className="pm-mode-name">Online</span><span className="pm-mode-sub">Real opponents</span></button>
-            <button className={"pm-mode pm-mode-hero"+(dailyStreakInfo.playedToday?" pm-done":"")} onClick={() => { setMode("ai"); setPractice(true); start(dailyChallenge); }}><span className="pm-mode-icon">📅</span><span className="pm-mode-name">Daily{dailyStreakInfo.playedToday?" ✓":""}</span><span className="pm-mode-sub">{dailyStreakInfo.streak>0?`🔥${dailyStreakInfo.streak} · `:""}Today</span></button>
+            <button className={"pm-mode pm-mode-hero"+(dailyStreakInfo.playedToday?" pm-done":"")} onClick={() => { setMode("ai"); setPractice(true); start(dailyChallenge); }}><span className="pm-mode-icon">📅</span><span className="pm-mode-name">Daily{dailyStreakInfo.playedToday?" ✓":""}</span><span className="pm-mode-sub">{dailyStreakInfo.streak>0?`🔥${dailyStreakInfo.streak} · `:""}Challenge</span></button>
           </div>
 
           {/* More modes toggle */}
@@ -4951,6 +4992,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
           <div className="pm-field"><span className="pm-field-l">Custom elo: {custom}{user && <span className="pm-diff-winpct-inline"> · {Math.round(100 / (1 + Math.pow(10, (custom - user.elo) / 400)))}% win chance</span>}</span><input type="range" min="100" max="3000" step="50" value={custom} onChange={(e) => setCustom(+e.target.value)} className="pm-range" /></div>
           <label className="pm-toggle pm-ban-toggle"><input type="checkbox" checked={bannedMode} onChange={(e) => setBannedMode(e.target.checked)} /><span>🚫 Adversarial Bans — ban 2 AI components before the duel</span></label>
           {user && coinBalance != null && <BettingPanel myElo={user.elo} oppElo={aiElo} balance={coinBalance} activeBet={activeBet} onBet={async(bet) => { if (!user?.id) return; const row = await netPlaceBet(user.id, bet.side, bet.stake, bet.odds); if (row) { setActiveBet({...bet, id: row.id}); setCoinBalance(prev => (prev||0) - bet.stake); } }} />}
+          {user && coinBalance != null && coinBalance >= 5 && <CoinEloConverter balance={coinBalance} userElo={user.elo} onConvert={async(coins) => { const gain = Math.floor(coins/5); const newElo = user.elo + gain; const newBal = coinBalance - coins; persist({...user, elo: newElo}); setCoinBalance(newBal); await netSaveElo(user.id, newElo); await netSupabase.from("mogger_currency").update({balance: newBal}).eq("user_id", user.id); }} />}
           <button className="rf-btn rf-ghost-btn" onClick={menu}><ChevronLeft size={16} /> Back</button>
         </div>
       )}

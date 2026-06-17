@@ -1490,3 +1490,11 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .pm-more-toggle{width:100%;text-align:left;background:none;border:1px dashed var(--c-border);border-radius:8px;color:var(--c-muted);font-size:0.74rem;padding:6px 12px;cursor:pointer;margin:8px 0 4px;transition:color .15s,border-color .15s;}
 .pm-more-toggle:hover{color:var(--c-text);border-color:var(--c-accent);}
 .pm-more-row,.pm-browse-row{margin-top:4px;}
+
+.pm-coin-balance{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--c-warn);background:rgba(255,194,75,0.1);border:1px solid rgba(255,194,75,0.25);border-radius:6px;padding:2px 7px;}
+.pm-coin-converter{background:rgba(255,194,75,0.05);border:1px solid rgba(255,194,75,0.2);border-radius:10px;padding:10px 14px;margin:8px 0;}
+.pm-coin-converter-head{font-size:0.78rem;font-weight:600;color:var(--c-warn);margin-bottom:6px;}
+.pm-coin-converter-row{display:flex;align-items:center;gap:10px;font-size:0.8rem;flex-wrap:wrap;}
+.pm-coin-convert-btn{padding:4px 12px;border-radius:7px;background:rgba(255,194,75,0.15);border:1px solid rgba(255,194,75,0.35);color:var(--c-warn);cursor:pointer;font-size:0.75rem;font-weight:700;}
+.pm-coin-convert-btn:disabled{opacity:0.4;cursor:default;}
+.pm-rogue-used{background:rgba(70,224,160,0.07);border:1px solid rgba(70,224,160,0.25);border-radius:8px;padding:8px 12px;font-size:0.8rem;color:var(--c-good);margin-bottom:10px;text-align:center;}
