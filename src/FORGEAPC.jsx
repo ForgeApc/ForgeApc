@@ -1385,7 +1385,10 @@ export default function RigForge() {
       if (e.key === "d") setView("mogger");
       if (e.key === "s" && view === "results") setSavingOpen(true);
       if (e.key === "a" && view === "results") generateAuto();
-      if (e.key === "Escape") { setSavingOpen(false); setPowerOpen(false); setView3D(false); }
+      if (e.key === "r" && view === "results") generateAuto();
+      if (e.key === "Enter" && view === "budget") generateAuto();
+      if (e.key === "Enter" && view === "survey") { /* handled by survey component */ }
+      if (e.key === "Escape") { setSavingOpen(false); setPowerOpen(false); setView3D(false); setPicker(null); if (view === "survey" || view === "budget") setView("home"); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -1520,6 +1523,18 @@ export default function RigForge() {
         <div className="rf-brand" onClick={() => setView("home")}>
           <div className="rf-logo"><Zap size={18} /></div>
           <span>FORGE<span className="rf-accent">APC</span></span>
+        </div>
+        <div className="rf-shortcuts-pill">
+          ⌨ shortcuts
+          <div className="rf-shortcuts-tip">
+            <div><kbd>H</kbd> Home</div>
+            <div><kbd>N</kbd> New build</div>
+            <div><kbd>M</kbd> / <kbd>D</kbd> PC Duels</div>
+            <div><kbd>Enter</kbd> Auto-forge (budget screen)</div>
+            <div><kbd>R</kbd> Rematch / Regen (results)</div>
+            <div><kbd>S</kbd> Save (results)</div>
+            <div><kbd>Esc</kbd> Back / Close</div>
+          </div>
         </div>
         <div className="rf-header-right">
           {view !== "home" && (
@@ -1714,7 +1729,7 @@ export default function RigForge() {
             onPower={() => setPowerOpen(true)}
             onShareLink={() => {
               const enc = encodeBuild(useCase, budget, parts);
-              if (enc) { navigator.clipboard.writeText(window.location.origin + window.location.pathname + "#share=" + enc); setShareCopied(true); setTimeout(() => setShareCopied(false), 2500); }
+              if (enc) { navigator.clipboard.writeText(window.location.origin + window.location.pathname + "#share=" + enc); setShareCopied(true); setTimeout(() => setShareCopied(false), 2500); flash("Build link copied!"); }
             }}
             shareCopied={shareCopied}
           />
@@ -7085,7 +7100,7 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
   const UC = USE_CASES[useCase];
   const MIN = 500, MAX = 4000;
   const pct = ((budget - MIN) / (MAX - MIN)) * 100;
-  const presets = [700, 1200, 2000, 3000];
+  const presets = [500, 800, 1200, 2000];
   return (
     <div className="rf-fade rf-step">
       <div className="rf-step-head">
@@ -7108,7 +7123,7 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
 
       <div className="rf-presets">
         {presets.map((p) => (
-          <button key={p} className={"rf-preset" + (budget === p ? " active" : "")} onClick={() => setBudget(p)}>{fmt(p)}</button>
+          <button key={p} className={"rf-preset" + (budget === p ? " active" : "")} onClick={() => { setBudget(p); setTimeout(onAuto, 80); }}>{fmt(p)}</button>
         ))}
       </div>
 
@@ -7148,6 +7163,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
   const a = analysis;
   const [shareOpen, setShareOpen] = useState(false);
   const [shareTitle, setShareTitle] = useState("");
+  const [partTip, setPartTip] = useState(null);
   const [shareStatus, setShareStatus] = useState(null); // null | "posting" | "done" | "error"
   const [textCopied, setTextCopied] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
@@ -7306,7 +7322,10 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           const sc = part ? (compatible ? partScore({ ...part, cat }, band, useCase) : 0) : 0;
           const isOpen = expanded[cat];
           return (
-            <div key={cat} className="rf-part rf-pop" style={{ animationDelay: i * 45 + "ms" }}>
+            <div key={cat} className="rf-part rf-pop" style={{ animationDelay: i * 45 + "ms", position: "relative" }}
+              onMouseEnter={() => part && setPartTip(cat)}
+              onMouseLeave={() => setPartTip(null)}>
+              {partTip === cat && part && (() => { const facts = partFacts(cat, part).slice(0,3); return facts.length > 0 ? <div className="rf-part-tip">{facts.map((f,i) => <span key={i}>{f}</span>)}</div> : null; })()}
               <div className="rf-part-top">
                 <div className="rf-part-media">
                 {part && part.img ? (
