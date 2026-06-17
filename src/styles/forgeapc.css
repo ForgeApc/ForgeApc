@@ -3282,3 +3282,32 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
     0 0 0 1px rgba(25,232,219,0.14),
     0 24px 60px rgba(0,0,0,0.50) !important;
 }
+
+/* ================================================================
+   FAST-CURSOR FLASH FIX — builds + usecase cards
+   box-shadow transitions repaint and pop when cursor moves fast.
+   Strip them; keep only transform. Shadow stays static.
+   ================================================================ */
+
+.rf-part, .rf-pick {
+  transition: transform 0.18s cubic-bezier(.16,1,.3,1) !important;
+}
+.rf-part:hover, .rf-pick:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 8px 28px rgba(0,0,0,0.38) !important;
+}
+.rf-part:not(:hover), .rf-pick:not(:hover) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 4px 14px rgba(0,0,0,0.28) !important;
+}
+
+.rf-saved-card, .rf-uc-card, .rf-cta-card {
+  transition: transform 0.18s cubic-bezier(.16,1,.3,1) !important;
+}
+.rf-saved-card:hover, .rf-uc-card:hover, .rf-cta-card:hover {
+  transform: translateY(-3px) !important;
+  background: inherit !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 10px 30px rgba(0,0,0,0.38) !important;
+}
+.rf-saved-card:not(:hover), .rf-uc-card:not(:hover) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 4px 14px rgba(0,0,0,0.28) !important;
+}
