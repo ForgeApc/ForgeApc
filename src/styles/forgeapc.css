@@ -1544,3 +1544,267 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .pm-rrp-desc{font-size:0.7rem;color:var(--c-muted);flex:2;}
 .pm-rrp-left{font-size:0.68rem;color:var(--c-accent2);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
 .pm-rrp-active-note{margin-top:8px;font-size:0.74rem;color:var(--c-good);}
+
+/* ================================================================
+   GLASS OVERHAUL
+   ================================================================ */
+
+/* Global backdrop on all glass surfaces */
+.pm-card,
+.pm-mode,
+.pm-diff,
+.pm-stats-bar,
+.pm-elo-result,
+.pm-opp-persona,
+.pm-taunt-btn,
+.pm-seg,
+.pm-quick-btn,
+.pm-lb-row,
+.pm-hist-entry,
+.pm-achieve-card,
+.pm-rogue-stage,
+.pm-rogue-reward-picker,
+.pm-special-mode-card,
+.pm-arch-card,
+.pm-synd-card,
+.pm-bet-panel,
+.pm-draft-slot,
+.pm-ban-slot,
+.pm-meta-banner,
+.pm-faction-winner-banner,
+.pm-rrp-btn,
+.pm-coin-converter,
+.pm-hero-4 .pm-mode-hero {
+  backdrop-filter: blur(24px) saturate(1.9) brightness(1.07);
+  -webkit-backdrop-filter: blur(24px) saturate(1.9) brightness(1.07);
+}
+
+.pm-card {
+  background: rgba(10,14,22,0.52);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.13),
+    inset 0 0 0 1px rgba(255,255,255,0.03),
+    inset 0 -1px 0 rgba(0,0,0,0.25),
+    0 16px 48px rgba(0,0,0,0.52),
+    0 0 0 1px rgba(124,92,255,0.04);
+  position: relative;
+}
+
+.pm-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 12%; right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pm-card::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  box-shadow: 0 0 50px -10px rgba(124,92,255,0.14), 0 0 70px -24px rgba(25,232,219,0.1);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.pm-mode, .pm-hero-4 .pm-mode-hero {
+  background: rgba(11,15,24,0.50);
+  border: 1px solid rgba(255,255,255,0.09);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -1px 0 rgba(0,0,0,0.28),
+    0 8px 28px rgba(0,0,0,0.38);
+}
+.pm-mode:hover, .pm-hero-4 .pm-mode-hero:hover {
+  background: rgba(25,232,219,0.06);
+  border-color: rgba(25,232,219,0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    inset 0 0 22px rgba(25,232,219,0.06),
+    0 14px 42px rgba(25,232,219,0.18),
+    0 0 0 1px rgba(25,232,219,0.12);
+}
+
+.pm-diff {
+  background: rgba(11,15,24,0.50);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 20px rgba(0,0,0,0.32);
+}
+.pm-diff:hover {
+  background: rgba(25,232,219,0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 28px rgba(25,232,219,0.18);
+}
+
+.pm-stats-bar {
+  background: rgba(7,11,18,0.50);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 14px rgba(0,0,0,0.28);
+}
+
+.pm-quick-btn {
+  background: rgba(11,15,24,0.52);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 4px 14px rgba(0,0,0,0.30);
+  transition: background .15s, border-color .15s, box-shadow .15s, transform .15s;
+}
+.pm-quick-btn:hover {
+  background: rgba(25,232,219,0.07);
+  border-color: rgba(25,232,219,0.35);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 6px 20px rgba(25,232,219,0.16);
+  transform: translateY(-1px);
+}
+
+.pm-seg {
+  background: rgba(7,11,18,0.58);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 4px 14px rgba(0,0,0,0.32);
+  border-radius: 12px;
+}
+
+.pm-taunt-btn {
+  background: rgba(11,15,24,0.52);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 4px 12px rgba(0,0,0,0.28);
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.pm-taunt-btn:hover {
+  background: rgba(124,92,255,0.10);
+  border-color: rgba(124,92,255,0.38);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 6px 18px rgba(124,92,255,0.2);
+}
+.pm-taunt-btn.on {
+  background: rgba(124,92,255,0.16);
+  border-color: rgba(124,92,255,0.55);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 0 22px rgba(124,92,255,0.26);
+}
+
+.pm-lb-row {
+  background: rgba(10,14,22,0.50);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 3px 10px rgba(0,0,0,0.24);
+}
+.pm-lb-row.me-row {
+  background: rgba(25,232,219,0.07);
+  border-color: rgba(25,232,219,0.28);
+  box-shadow: inset 0 1px 0 rgba(25,232,219,0.16), 0 0 26px rgba(25,232,219,0.12);
+}
+
+.pm-hist-entry {
+  background: rgba(10,14,22,0.52);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 14px rgba(0,0,0,0.28);
+}
+
+.pm-achieve-card {
+  background: rgba(10,14,22,0.52);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 6px 20px rgba(0,0,0,0.30);
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.pm-achieve-card:hover {
+  border-color: rgba(124,92,255,0.38);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 8px 28px rgba(124,92,255,0.2);
+  transform: translateY(-2px);
+}
+
+.pm-rogue-stage {
+  background: rgba(10,14,22,0.52);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 4px 14px rgba(0,0,0,0.28);
+}
+
+.pm-rogue-reward-picker {
+  background: rgba(38,22,75,0.38);
+  border: 1px solid rgba(124,92,255,0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(124,92,255,0.18),
+    inset 0 0 30px rgba(124,92,255,0.05),
+    0 8px 28px rgba(0,0,0,0.38);
+}
+
+.pm-rrp-btn {
+  background: rgba(11,15,24,0.55);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 4px 12px rgba(0,0,0,0.28);
+}
+.pm-rrp-btn:hover {
+  background: rgba(124,92,255,0.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 6px 18px rgba(124,92,255,0.22);
+}
+.pm-rrp-btn.on {
+  background: rgba(124,92,255,0.17);
+  border-color: rgba(124,92,255,0.52);
+  box-shadow: inset 0 1px 0 rgba(124,92,255,0.22), 0 0 26px rgba(124,92,255,0.24);
+}
+
+.pm-special-mode-card {
+  background: rgba(10,14,22,0.52);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 6px 20px rgba(0,0,0,0.30);
+}
+.pm-special-mode-card:hover {
+  background: rgba(25,232,219,0.05);
+  border-color: rgba(25,232,219,0.30);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 8px 28px rgba(25,232,219,0.14);
+}
+
+.pm-elo-result {
+  background: rgba(7,11,18,0.55);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 6px 20px rgba(0,0,0,0.32);
+}
+
+.pm-coin-converter {
+  background: rgba(28,18,6,0.46);
+  border: 1px solid rgba(255,194,75,0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255,194,75,0.14),
+    inset 0 0 22px rgba(255,194,75,0.04),
+    0 6px 22px rgba(0,0,0,0.32);
+}
+
+.pm-meta-banner {
+  background: rgba(10,14,22,0.58);
+  border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 22px rgba(0,0,0,0.35);
+}
+
+.pm-faction-winner-banner {
+  background: rgba(12,28,18,0.50);
+  border: 1px solid rgba(70,224,160,0.22);
+  box-shadow: inset 0 1px 0 rgba(70,224,160,0.16), 0 0 30px rgba(70,224,160,0.10);
+}
+
+.pm-opp-persona {
+  background: rgba(10,14,22,0.55);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px rgba(0,0,0,0.30);
+}
+
+.rf-ghost-btn, .rf-ghost {
+  background: rgba(11,15,24,0.52);
+  border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 4px 14px rgba(0,0,0,0.30);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+}
+.rf-ghost-btn:hover, .rf-ghost:hover {
+  background: rgba(25,232,219,0.06);
+  border-color: rgba(25,232,219,0.38);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 6px 22px rgba(25,232,219,0.16);
+}
+
+.pm-menu-header {
+  background: rgba(7,11,18,0.45);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 10px 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 4px 18px rgba(0,0,0,0.32);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+}
