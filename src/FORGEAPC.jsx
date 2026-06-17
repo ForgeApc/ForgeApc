@@ -6,7 +6,7 @@ import {
   ChevronLeft, Zap, DollarSign, RotateCcw, ShieldCheck, ShieldAlert, Repeat2, Wrench, Send, Bot, MessageCircle, Maximize, Minimize, Settings, Sun, Moon, Search, Users, Upload, Globe, Columns2, PackageSearch, LayoutGrid
 } from "lucide-react";
 import { MEDIA, MEDIA_NE } from "../data/part-media.js";
-import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity, submitFeedback as netSubmitFeedback, listFeedback as netListFeedback, deleteFeedback as netDeleteFeedback, recordFactionPoints as netRecordFactionPoints, fetchFactionTotals as netFactionTotals, setFactionPick as netSetFactionPick, applyFactionWeekReward as netApplyFactionWeekReward, recordGauntletScore as netRecordGauntletScore, gauntletLeaderboard as netGauntletLeaderboard, fetchBalance as netFetchBalance, placeBet as netPlaceBet, settleBet as netSettleBet, fetchRoguePerks as netFetchRoguePerks, saveRogueRun as netSaveRogueRun, supabase as netSupabase } from "./moggerNet.js";
+import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity, submitFeedback as netSubmitFeedback, listFeedback as netListFeedback, deleteFeedback as netDeleteFeedback, recordFactionPoints as netRecordFactionPoints, fetchFactionTotals as netFactionTotals, setFactionPick as netSetFactionPick, applyFactionWeekReward as netApplyFactionWeekReward, recordGauntletScore as netRecordGauntletScore, gauntletLeaderboard as netGauntletLeaderboard, fetchBalance as netFetchBalance, placeBet as netPlaceBet, settleBet as netSettleBet, fetchRoguePerks as netFetchRoguePerks, saveRogueRun as netSaveRogueRun, supabase as netSupabase, fetchProfile as netFetchProfile, saveProfile as netSaveProfile } from "./moggerNet.js";
 /* ----------------------------- i18n ----------------------------- */
 const LANGS = [{"code": "en", "name": "English"}, {"code": "es", "name": "Español"}, {"code": "zh", "name": "中文"}, {"code": "hi", "name": "हिन्दी"}, {"code": "ar", "name": "العربية"}, {"code": "pt", "name": "Português"}, {"code": "fr", "name": "Français"}, {"code": "ru", "name": "Русский"}, {"code": "ja", "name": "日本語"}, {"code": "de", "name": "Deutsch"}];
 const I18N = {"en": {"myRigs": "My Rigs", "settings": "Settings", "appearance": "Appearance", "language": "Language", "theme": "Theme", "dark": "Dark", "light": "Light", "back": "Back", "saveRig": "Save rig", "select": "Select", "selected": "Selected", "moreInfo": "More info", "hideInfo": "Hide info", "autoForge": "Auto-Forge", "buildYourself": "Build It Yourself", "yourBuild": "Your build", "budgetQ": "What's your budget?", "useCaseQ": "What will this PC be for?", "livePrices": "Live prices", "samplePrices": "sample prices", "updated": "updated", "componentsDb": "components in the database", "overBudgetCat": "Over your {x} budget", "performance": "PERFORMANCE", "pricePerf": "PRICE / PERF", "pros": "PROS", "cons": "CONS"}, "es": {"myRigs": "Mis Equipos", "settings": "Ajustes", "appearance": "Apariencia", "language": "Idioma", "theme": "Tema", "dark": "Oscuro", "light": "Claro", "back": "Atrás", "saveRig": "Guardar", "select": "Elegir", "selected": "Elegido", "moreInfo": "Más info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Hazlo tú mismo", "yourBuild": "Tu equipo", "budgetQ": "¿Cuál es tu presupuesto?", "useCaseQ": "¿Para qué será este PC?", "livePrices": "Precios en vivo", "samplePrices": "precios de muestra", "updated": "actualizado", "componentsDb": "componentes en la base de datos", "overBudgetCat": "Supera tu presupuesto de {x}", "performance": "RENDIMIENTO", "pricePerf": "PRECIO / REND", "pros": "PROS", "cons": "CONTRAS"}, "zh": {"myRigs": "我的配置", "settings": "设置", "appearance": "外观", "language": "语言", "theme": "主题", "dark": "深色", "light": "浅色", "back": "返回", "saveRig": "保存配置", "select": "选择", "selected": "已选", "moreInfo": "更多信息", "hideInfo": "隐藏", "autoForge": "自动配置", "buildYourself": "自己组装", "yourBuild": "你的配置", "budgetQ": "你的预算是多少？", "useCaseQ": "这台电脑用来做什么？", "livePrices": "实时价格", "samplePrices": "示例价格", "updated": "更新于", "componentsDb": "个组件已入库", "overBudgetCat": "超出{x}预算", "performance": "性能", "pricePerf": "性价比", "pros": "优点", "cons": "缺点"}, "hi": {"myRigs": "मेरे रिग", "settings": "सेटिंग्स", "appearance": "रूप", "language": "भाषा", "theme": "थीम", "dark": "गहरा", "light": "हल्का", "back": "वापस", "saveRig": "सहेजें", "select": "चुनें", "selected": "चयनित", "moreInfo": "और जानकारी", "hideInfo": "छिपाएं", "autoForge": "ऑटो-फोर्ज", "buildYourself": "खुद बनाएं", "yourBuild": "आपका बिल्ड", "budgetQ": "आपका बजट क्या है?", "useCaseQ": "यह पीसी किसलिए होगा?", "livePrices": "लाइव कीमतें", "samplePrices": "नमूना कीमतें", "updated": "अपडेट", "componentsDb": "घटक डेटाबेस में", "overBudgetCat": "{x} बजट से अधिक", "performance": "प्रदर्शन", "pricePerf": "मूल्य/प्रदर्शन", "pros": "फायदे", "cons": "नुकसान"}, "ar": {"myRigs": "أجهزتي", "settings": "الإعدادات", "appearance": "المظهر", "language": "اللغة", "theme": "السمة", "dark": "داكن", "light": "فاتح", "back": "رجوع", "saveRig": "حفظ", "select": "اختيار", "selected": "محدد", "moreInfo": "المزيد", "hideInfo": "إخفاء", "autoForge": "تجميع تلقائي", "buildYourself": "اصنعه بنفسك", "yourBuild": "تجميعتك", "budgetQ": "ما هي ميزانيتك؟", "useCaseQ": "لأي غرض هذا الحاسوب؟", "livePrices": "أسعار حية", "samplePrices": "أسعار تجريبية", "updated": "محدّث", "componentsDb": "مكوّن في قاعدة البيانات", "overBudgetCat": "يتجاوز ميزانية {x}", "performance": "الأداء", "pricePerf": "السعر/الأداء", "pros": "الإيجابيات", "cons": "السلبيات"}, "pt": {"myRigs": "Meus PCs", "settings": "Configurações", "appearance": "Aparência", "language": "Idioma", "theme": "Tema", "dark": "Escuro", "light": "Claro", "back": "Voltar", "saveRig": "Salvar", "select": "Selecionar", "selected": "Selecionado", "moreInfo": "Mais info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Faça você mesmo", "yourBuild": "Sua build", "budgetQ": "Qual é o seu orçamento?", "useCaseQ": "Para que será este PC?", "livePrices": "Preços ao vivo", "samplePrices": "preços de exemplo", "updated": "atualizado", "componentsDb": "componentes no banco de dados", "overBudgetCat": "Acima do orçamento de {x}", "performance": "DESEMPENHO", "pricePerf": "PREÇO / DESEMP", "pros": "PRÓS", "cons": "CONTRAS"}, "fr": {"myRigs": "Mes Configs", "settings": "Réglages", "appearance": "Apparence", "language": "Langue", "theme": "Thème", "dark": "Sombre", "light": "Clair", "back": "Retour", "saveRig": "Enregistrer", "select": "Choisir", "selected": "Choisi", "moreInfo": "Plus d'infos", "hideInfo": "Masquer", "autoForge": "Auto-Forge", "buildYourself": "Faites-le vous-même", "yourBuild": "Votre config", "budgetQ": "Quel est votre budget ?", "useCaseQ": "À quoi servira ce PC ?", "livePrices": "Prix en direct", "samplePrices": "prix indicatifs", "updated": "mis à jour", "componentsDb": "composants dans la base", "overBudgetCat": "Au-dessus du budget {x}", "performance": "PERFORMANCE", "pricePerf": "PRIX / PERF", "pros": "ATOUTS", "cons": "INCONVÉNIENTS"}, "ru": {"myRigs": "Мои сборки", "settings": "Настройки", "appearance": "Вид", "language": "Язык", "theme": "Тема", "dark": "Тёмная", "light": "Светлая", "back": "Назад", "saveRig": "Сохранить", "select": "Выбрать", "selected": "Выбрано", "moreInfo": "Подробнее", "hideInfo": "Скрыть", "autoForge": "Авто-сборка", "buildYourself": "Собрать самому", "yourBuild": "Ваша сборка", "budgetQ": "Каков ваш бюджет?", "useCaseQ": "Для чего этот ПК?", "livePrices": "Цены в реальном времени", "samplePrices": "примерные цены", "updated": "обновлено", "componentsDb": "компонентов в базе", "overBudgetCat": "Сверх бюджета на {x}", "performance": "ПРОИЗВОДИТ.", "pricePerf": "ЦЕНА/КАЧ.", "pros": "ПЛЮСЫ", "cons": "МИНУСЫ"}, "ja": {"myRigs": "マイ構成", "settings": "設定", "appearance": "外観", "language": "言語", "theme": "テーマ", "dark": "ダーク", "light": "ライト", "back": "戻る", "saveRig": "保存", "select": "選択", "selected": "選択済", "moreInfo": "詳細", "hideInfo": "隠す", "autoForge": "自動構成", "buildYourself": "自分で組む", "yourBuild": "あなたの構成", "budgetQ": "予算はいくらですか？", "useCaseQ": "このPCの用途は？", "livePrices": "ライブ価格", "samplePrices": "サンプル価格", "updated": "更新", "componentsDb": "個のパーツを収録", "overBudgetCat": "{x}予算オーバー", "performance": "性能", "pricePerf": "価格性能", "pros": "長所", "cons": "短所"}, "de": {"myRigs": "Meine Builds", "settings": "Einstellungen", "appearance": "Darstellung", "language": "Sprache", "theme": "Thema", "dark": "Dunkel", "light": "Hell", "back": "Zurück", "saveRig": "Speichern", "select": "Wählen", "selected": "Gewählt", "moreInfo": "Mehr Info", "hideInfo": "Verbergen", "autoForge": "Auto-Forge", "buildYourself": "Selbst bauen", "yourBuild": "Dein Build", "budgetQ": "Wie hoch ist dein Budget?", "useCaseQ": "Wofür ist dieser PC?", "livePrices": "Live-Preise", "samplePrices": "Beispielpreise", "updated": "aktualisiert", "componentsDb": "Komponenten in der Datenbank", "overBudgetCat": "Über dem {x}-Budget", "performance": "LEISTUNG", "pricePerf": "PREIS / LEIST", "pros": "VORTEILE", "cons": "NACHTEILE"}};
@@ -4652,6 +4652,50 @@ function MoggerGame({ onExit, onSaveBuild }) {
   }, []);
   useEffect(() => { refreshMe(); }, [refreshMe]);
   useEffect(() => { if (screen === "menu") refreshMe(); }, [screen, refreshMe]);
+
+  // Sync all profile data to/from Supabase account
+  const syncProfile = useCallback((uid) => {
+    if (!uid) return;
+    try {
+      const profile = {
+        history:     JSON.parse(localStorage.getItem("mogger_history") || "[]"),
+        streak:      +(localStorage.getItem("mogger_streak") || 0),
+        bestStreak:  +(localStorage.getItem("mogger_best_streak") || 0),
+        bestScore:   +(localStorage.getItem("mogger_best_score") || 0),
+        hardestAI:   +(localStorage.getItem("mogger_hardest_ai") || 0),
+        rivals:      JSON.parse(localStorage.getItem("mogger_rivals") || "{}"),
+        dailyLog:    JSON.parse(localStorage.getItem("mogger_daily_log") || "[]"),
+        ghosts:      JSON.parse(localStorage.getItem("mogger_ghosts") || "[]"),
+        rogueRewards:JSON.parse(localStorage.getItem("mogger_rogue_rewards") || "null"),
+      };
+      netSaveProfile(uid, profile);
+    } catch(e) {}
+  }, []);
+
+  // On login: pull profile from server and hydrate localStorage + state
+  useEffect(() => {
+    if (!user?.id) return;
+    netFetchProfile(user.id).then(profile => {
+      if (!profile || !Object.keys(profile).length) return;
+      try {
+        if (profile.history?.length) {
+          const local = JSON.parse(localStorage.getItem("mogger_history") || "[]");
+          if (profile.history.length >= local.length) localStorage.setItem("mogger_history", JSON.stringify(profile.history));
+        }
+        if (profile.streak != null) { localStorage.setItem("mogger_streak", profile.streak); setStreak(profile.streak); }
+        if (profile.bestStreak != null) { localStorage.setItem("mogger_best_streak", profile.bestStreak); setBestStreak(profile.bestStreak); }
+        if (profile.bestScore) localStorage.setItem("mogger_best_score", profile.bestScore);
+        if (profile.hardestAI) localStorage.setItem("mogger_hardest_ai", profile.hardestAI);
+        if (profile.rivals) localStorage.setItem("mogger_rivals", JSON.stringify(profile.rivals));
+        if (profile.dailyLog?.length) localStorage.setItem("mogger_daily_log", JSON.stringify(profile.dailyLog));
+        if (profile.ghosts?.length) {
+          const local = JSON.parse(localStorage.getItem("mogger_ghosts") || "[]");
+          if (profile.ghosts.length >= local.length) localStorage.setItem("mogger_ghosts", JSON.stringify(profile.ghosts));
+        }
+        if (profile.rogueRewards) localStorage.setItem("mogger_rogue_rewards", JSON.stringify(profile.rogueRewards));
+      } catch(e) {}
+    });
+  }, [user?.id]);
   useEffect(() => {
     if (!user?.id) return;
     netFetchBalance(user.id).then(b => { if (b != null) setCoinBalance(b); });
@@ -4825,6 +4869,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
         if (!log.includes(todayKey)) { log.push(todayKey); if (log.length > 365) log.splice(0, log.length - 365); localStorage.setItem("mogger_daily_log", JSON.stringify(log)); }
       } catch (e) {}
     }
+    syncProfile(user?.id);
   }, [screen]);
 
   // apply elo after a vs-AI result
@@ -4888,6 +4933,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
       });
       setActiveBet(null);
     }
+    syncProfile(user?.id);
   }, [screen]);
 
   return (

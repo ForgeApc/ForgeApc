@@ -293,6 +293,17 @@ export async function settleBet(betId, won) {
   catch (e) { return null; }
 }
 
+// ---- User profile blob (column: mogger_users.profile) ----
+export async function fetchProfile(userId) {
+  try {
+    const { data } = await supabase.from("mogger_users").select("profile").eq("id", userId).single();
+    return data?.profile || {};
+  } catch(e) { return {}; }
+}
+export async function saveProfile(userId, profile) {
+  try { await supabase.from("mogger_users").update({ profile }).eq("id", userId); } catch(e) {}
+}
+
 // ---- Rogue Run (tables: mogger_rogue_runs, mogger_rogue_perks) ----
 export async function fetchRoguePerks(userId) {
   try {
