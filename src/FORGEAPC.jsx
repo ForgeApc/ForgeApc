@@ -4379,7 +4379,7 @@ function MoggerArchaeology({ onMenu, onReplay }) {
   const [builds, setBuilds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
-  useEffect(()=>{ netListCommunity(100).then(res=>{ setLoading(false); if(res?.rows)setBuilds(res.rows); else setErr("Could not load community builds."); }); },[]);
+  useEffect(()=>{ netListCommunity(100).then(res=>{ setLoading(false); if(Array.isArray(res))setBuilds(res); else setErr("Could not load community builds."); }); },[]);
   const byMonth = useMemo(()=>{
     const g={};
     for(const b of builds){
@@ -4402,8 +4402,8 @@ function MoggerArchaeology({ onMenu, onReplay }) {
           <div className="pm-arch-month-head">{group.label}</div>
           {group.builds.map((b,i)=>(
             <div key={i} className="pm-arch-build">
-              <div className="pm-arch-build-info"><span className="pm-arch-build-name">{b.name||"Unnamed Build"}</span><span className="pm-arch-build-uc">{USE_CASES[b.use_case]?.label||b.use_case}</span><span className="pm-arch-build-budget">${b.budget}</span>{b.score!=null&&<span className="pm-arch-build-score">{b.score}</span>}</div>
-              {b.build&&<button className="pm-arch-replay" onClick={()=>onReplay({id:"arch-"+Date.now()+i,label:(b.name||"Community Build")+" — "+(new Date(b.created_at||Date.now()).toLocaleDateString()),useCase:b.use_case,budget:b.budget,secs:90,build:b.build,score:b.score,date:b.created_at?new Date(b.created_at).toLocaleDateString():"",})}>👻 Replay</button>}
+              <div className="pm-arch-build-info"><span className="pm-arch-build-name">{b.title||b.name||"Unnamed Build"}</span><span className="pm-arch-build-uc">{USE_CASES[b.use_case]?.label||b.use_case}</span><span className="pm-arch-build-budget">${b.budget}</span>{(b.total||b.score)!=null&&<span className="pm-arch-build-score">{b.total||b.score}</span>}</div>
+              {(b.parts||b.build)&&<button className="pm-arch-replay" onClick={()=>onReplay({id:"arch-"+Date.now()+i,label:(b.title||b.name||"Community Build")+" — "+(new Date(b.created_at||Date.now()).toLocaleDateString()),useCase:b.use_case,budget:b.budget,secs:90,build:b.parts||b.build,score:b.total||b.score,date:b.created_at?new Date(b.created_at).toLocaleDateString():"",})}>👻 Replay</button>}
             </div>
           ))}
         </div>
