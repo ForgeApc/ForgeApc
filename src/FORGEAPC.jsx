@@ -2341,9 +2341,25 @@ function MoggerHistory({ onBack }) {
       </div>
     );
   }
+  const histStats = useMemo(() => {
+    if (!hist.length) return null;
+    const wins = hist.filter(x => x.won).length;
+    const avg = Math.round(hist.reduce((s, x) => s + (x.myScore || 0), 0) / hist.length);
+    const best = hist.reduce((m, x) => Math.max(m, x.myScore || 0), 0);
+    const wr = Math.round(wins / hist.length * 100);
+    return { total: hist.length, wins, wr, avg, best };
+  }, [hist]);
   return (
     <div className="pm-card rf-fade">
       <h2 className="pm-h2">📜 Duel History</h2>
+      {histStats && (
+        <div className="pm-hist-stats-bar">
+          <div className="pm-hist-stat"><span className="pm-hist-stat-val">{histStats.total}</span><span className="pm-hist-stat-lbl">Matches</span></div>
+          <div className="pm-hist-stat"><span className="pm-hist-stat-val">{histStats.wr}%</span><span className="pm-hist-stat-lbl">Win Rate</span></div>
+          <div className="pm-hist-stat"><span className="pm-hist-stat-val">{histStats.avg}</span><span className="pm-hist-stat-lbl">Avg Score</span></div>
+          <div className="pm-hist-stat"><span className="pm-hist-stat-val">{histStats.best}</span><span className="pm-hist-stat-lbl">Best Score</span></div>
+        </div>
+      )}
       {hist.length === 0 ? <p className="pm-p pm-dim">No matches yet — play a duel first!</p> : (
         <div className="pm-hist-list">
           {[...hist].reverse().map((h, i) => (
@@ -4190,6 +4206,87 @@ function getAchievements(hist) {
   return achs;
 }
 
+/* C2: Achievement toast — shows for 3s after newly-unlocked achievements */
+function AchievementToast({ achievement, onDone }) {
+  const [hiding, setHiding] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => { setHiding(true); setTimeout(onDone, 380); }, 3000);
+    return () => clearTimeout(t);
+  }, [onDone]);
+  return (
+    <div className={"pm-ach-toast" + (hiding ? " hiding" : "")}>
+      <span className="pm-ach-toast-icon">🏆</span>
+      <div className="pm-ach-toast-body">
+        <span className="pm-ach-toast-head">Achievement Unlocked</span>
+        <span className="pm-ach-toast-name">{achievement.icon} {achievement.name}</span>
+        <span className="pm-ach-toast-desc">{achievement.desc}</span>
+      </div>
+    </div>
+  );
+}
+
+/* C3: Rival summary card */
+function RivalSummaryCard() {
+  const rivals = useMemo(() => { try { return JSON.parse(localStorage.getItem("mogger_rivals") || "{}"); } catch(e) { return {}; } }, []);
+  const entries = useMemo(() => Object.entries(rivals).filter(([,v]) => (v.w + v.l) > 0).sort((a,b) => (b[1].w+b[1].l)-(a[1].w+a[1].l)).slice(0,3), [rivals]);
+  if (!entries.length) return null;
+  return (
+    <div className="pm-rivals-card">
+      <div className="pm-rivals-card-head">⚔️ Rivals</div>
+      <div className="pm-rivals-list">
+        {entries.map(([tier, v]) => {
+          const total = v.w + v.l;
+          const wr = total > 0 ? Math.round(v.w / total * 100) : 0;
+          const cls = wr >= 60 ? "good" : wr >= 40 ? "mid" : "bad";
+          return (
+            <div key={tier} className="pm-rival-row">
+              <span className="pm-rival-tier">{tier}</span>
+              <span className="pm-rival-record">{v.w}W – {v.l}L</span>
+              <span className={"pm-rival-wr " + cls}>{wr}%</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* C1: 7-day win calendar */
+function DailyWinCalendar() {
+  const days = useMemo(() => {
+    try {
+      const hist = JSON.parse(localStorage.getItem("mogger_history") || "[]");
+      const dailyLog = JSON.parse(localStorage.getItem("mogger_daily_log") || "[]");
+      const playedSet = new Set(dailyLog);
+      // Build a per-date win/loss map from history (using ISO date from entry.date)
+      const dateMap = {};
+      for (const h of hist) {
+        // entries store h.date as locale string; also check mogger_daily_log for ISO keys
+        const iso = h.isoDate || null;
+        if (iso) { if (!dateMap[iso]) dateMap[iso] = { won: false, played: true }; if (h.won) dateMap[iso].won = true; }
+      }
+      const result = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        const label = d.toLocaleDateString(undefined, { weekday: "short" });
+        const played = playedSet.has(key);
+        const won = played && dateMap[key]?.won;
+        const status = !played ? "none" : won ? "win" : "loss";
+        result.push({ key, label, status });
+      }
+      return result;
+    } catch(e) { return []; }
+  }, []);
+  if (!days.length) return null;
+  return (
+    <div className="pm-streak-calendar">
+      {days.map(d => <span key={d.key} className={"pm-cal-dot " + d.status} title={d.label + " — " + d.status} />)}
+      <span className="pm-cal-label">7-day</span>
+    </div>
+  );
+}
+
 function MoggerAchievements({ onBack }) {
   const hist = useMemo(() => { try { return JSON.parse(localStorage.getItem("mogger_history") || "[]"); } catch(e) { return []; } }, []);
   const achs = useMemo(() => getAchievements(hist), [hist]);
@@ -4660,6 +4757,9 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const [activeRogueReward, setActiveRogueReward] = useState(null); // reward chosen for this match, or null
   // B2: confetti on win
   const [showConfetti, setShowConfetti] = useState(false);
+  // C2: achievement toast
+  const [achToast, setAchToast] = useState(null);
+  const prevAchIdsRef = useRef(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   // Rivals data
   const rivalsData = useMemo(() => {
@@ -4719,6 +4819,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
   }, []);
   useEffect(() => { refreshMe(); }, [refreshMe]);
   useEffect(() => { if (screen === "menu") refreshMe(); }, [screen, refreshMe]);
+  // C2: init achievement tracking ref on first mount
+  useEffect(() => { try { const h=JSON.parse(localStorage.getItem("mogger_history")||"[]"); prevAchIdsRef.current=new Set(getAchievements(h).map(a=>a.id)); } catch(e) { prevAchIdsRef.current=new Set(); } }, []);
 
   // Sync all profile data to/from Supabase account
   const syncProfile = useCallback((uid) => {
@@ -4928,6 +5030,18 @@ function MoggerGame({ onExit, onSaveBuild }) {
     setBestStreak(newBest);
     if (won) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 4500); }
     try { localStorage.setItem("mogger_streak", newStreak); localStorage.setItem("mogger_best_streak", newBest); } catch(e) {}
+    // C2: check for newly unlocked achievements and show toast
+    try {
+      const allHist = JSON.parse(localStorage.getItem("mogger_history") || "[]");
+      const newAchs = getAchievements(allHist);
+      const newIds = new Set(newAchs.map(a => a.id));
+      if (prevAchIdsRef.current !== null) {
+        const prev = prevAchIdsRef.current;
+        const unlocked = newAchs.find(a => !prev.has(a.id));
+        if (unlocked) setAchToast(unlocked);
+      }
+      prevAchIdsRef.current = newIds;
+    } catch(e) {}
     // Daily Challenge streak — log today's date once
     if (round.isDaily) {
       try {
@@ -5010,6 +5124,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
   return (
     <div className="pm-mogger rf-fade">
       {showConfetti && <Confetti />}
+      {achToast && <AchievementToast achievement={achToast} onDone={() => setAchToast(null)} />}
       {feedbackOpen && <FeedbackModal user={user} onClose={() => setFeedbackOpen(false)} />}
       {screen === "menu" && (
         <div className="pm-menu">
@@ -5034,6 +5149,10 @@ function MoggerGame({ onExit, onSaveBuild }) {
               {(() => { try { const h=JSON.parse(localStorage.getItem("mogger_history")||"[]").slice(-8); if(h.length<3)return null; return <span className="pm-spark-inline">{h.map((e,i)=><span key={i} className={"pm-spark-dot "+(e.won?"win":"lose")}/>)}</span>; } catch(e){return null;} })()}
             </div>
           )}
+          {/* C1: Daily win calendar */}
+          <DailyWinCalendar />
+          {/* C3: Rivals summary card */}
+          <RivalSummaryCard />
 
           {/* 4 hero buttons */}
           <div className="pm-hero-4">

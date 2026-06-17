@@ -3533,3 +3533,55 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .pm-mode, .pm-hero-4 .pm-mode-hero, .pm-card, .rf-scorecard {
   transition-duration: 0.35s !important;
 }
+
+/* =====================================================================
+   BATCH C — C1 Daily Win Calendar, C2 Achievement Toast,
+             C3 Rival Summary Card, C4 Match History Stats Bar
+   ===================================================================== */
+
+/* C1: Daily win streak calendar */
+.pm-streak-calendar{display:flex;gap:6px;align-items:center;margin:8px 0 4px;}
+.pm-cal-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;transition:.2s;}
+.pm-cal-dot.win{background:var(--c-good);box-shadow:0 0 6px var(--c-good);}
+.pm-cal-dot.loss{background:var(--c-warn);box-shadow:0 0 4px var(--c-warn);}
+.pm-cal-dot.none{background:var(--c-track);}
+.pm-cal-label{font-size:0.7rem;color:var(--c-muted);font-family:'JetBrains Mono';margin-left:2px;}
+
+/* C2: Achievement toast */
+.pm-ach-toast{position:fixed;bottom:28px;right:28px;z-index:9999;
+  background:linear-gradient(135deg,var(--c-panel-2),rgba(28,24,52,0.98));
+  border:1px solid var(--c-accent2);border-radius:14px;
+  padding:14px 18px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5),0 0 0 1px rgba(160,122,255,0.2);
+  animation:toastSlideIn 0.4s var(--ease-spring) both;}
+.pm-ach-toast.hiding{animation:toastSlideOut 0.35s var(--ease-soft) both;}
+@keyframes toastSlideIn{from{transform:translateX(120%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+@keyframes toastSlideOut{from{transform:translateX(0);opacity:1;}to{transform:translateX(120%);opacity:0;}}
+.pm-ach-toast-icon{font-size:1.6rem;line-height:1;}
+.pm-ach-toast-body{display:flex;flex-direction:column;gap:2px;}
+.pm-ach-toast-head{font-size:0.65rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--c-accent2);font-family:'JetBrains Mono';}
+.pm-ach-toast-name{font-weight:700;font-size:0.95rem;color:var(--c-text);}
+.pm-ach-toast-desc{font-size:0.78rem;color:var(--c-muted);}
+
+/* C3: Rivals summary card */
+.pm-rivals-card{background:var(--c-panel);border:1px solid var(--c-border);border-radius:14px;
+  padding:14px 16px;margin-bottom:12px;}
+.pm-rivals-card-head{font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--c-muted);
+  font-family:'JetBrains Mono';margin-bottom:10px;}
+.pm-rivals-list{display:flex;flex-direction:column;gap:7px;}
+.pm-rival-row{display:flex;align-items:center;gap:10px;font-size:0.85rem;}
+.pm-rival-tier{font-weight:700;color:var(--c-accent);min-width:90px;}
+.pm-rival-record{color:var(--c-muted);flex:1;}
+.pm-rival-wr{display:inline-block;padding:2px 8px;border-radius:20px;font-size:0.72rem;font-weight:700;
+  font-family:'JetBrains Mono';}
+.pm-rival-wr.good{background:rgba(82,237,172,0.18);color:var(--c-good);border:1px solid rgba(82,237,172,0.3);}
+.pm-rival-wr.mid{background:rgba(255,208,106,0.15);color:var(--c-warn);border:1px solid rgba(255,208,106,0.25);}
+.pm-rival-wr.bad{background:rgba(255,106,122,0.15);color:var(--c-bad);border:1px solid rgba(255,106,122,0.25);}
+
+/* C4: Match history stats bar (in history screen) */
+.pm-hist-stats-bar{display:flex;gap:18px;flex-wrap:wrap;align-items:center;
+  padding:10px 14px;background:var(--c-panel);border:1px solid var(--c-border);
+  border-radius:12px;margin-bottom:12px;font-size:0.82rem;}
+.pm-hist-stat{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.pm-hist-stat-val{font-weight:700;font-size:1rem;color:var(--c-accent);font-family:'JetBrains Mono';}
+.pm-hist-stat-lbl{font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;color:var(--c-muted);}
