@@ -1473,3 +1473,14 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .pm-radar-svg{animation:pm-radar-draw .5s ease both;}
 
 @keyframes pm-pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+
+/* ---- Clean menu layout ---- */
+.pm-menu-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.pm-menu-header .pm-mtitle{margin:0;}
+.pm-section-label{font-family:'Chakra Petch',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:.1em;color:var(--c-muted);text-transform:uppercase;margin:14px 0 6px;}
+.pm-stats-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--c-panel);border:1px solid var(--c-border);border-radius:8px;padding:6px 12px;font-size:0.74rem;margin-bottom:4px;}
+.pm-spark-inline{display:flex;gap:2px;align-items:center;margin-left:2px;}
+.pm-daily-elo-inline{font-family:'JetBrains Mono',monospace;font-size:0.7rem;padding:1px 5px;border-radius:5px;}
+.pm-daily-elo-inline.up{color:var(--c-good);}
+.pm-daily-elo-inline.down{color:var(--c-bad);}
+.pm-mode.pm-done{opacity:0.6;}

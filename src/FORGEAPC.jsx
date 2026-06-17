@@ -4854,83 +4854,60 @@ function MoggerGame({ onExit, onSaveBuild }) {
       {feedbackOpen && <FeedbackModal user={user} onClose={() => setFeedbackOpen(false)} />}
       {screen === "menu" && (
         <div className="pm-menu">
-          <div className="pm-account">{user ? <><span className="pm-acct-name">{user.name}</span><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo} elo</span><button className="pm-acct-btn" onClick={() => persist(null)}>Log out</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in / Sign up</button>}</div>
-          {metaShifts.length > 0 && (
-            <div className="pm-meta-banner">
-              <div className="pm-meta-banner-head"><span>📊 Meta Shift detected</span><button className="pm-meta-dismiss" onClick={() => setMetaShifts([])}><X size={13} /></button></div>
-              {metaShifts.slice(0, 3).map((s, i) => (
-                <div key={i} className="pm-meta-shift-row">
-                  <b>{CAT_META[s.cat].label}</b> {s.type === "value" ? "best value" : "top pick"} is now <b className="pm-meta-new">{s.to}</b>{s.from ? <> (was {s.from})</> : null}
-                </div>
-              ))}
-            </div>
-          )}
-          {factionWinner && <div className="pm-faction-winner-banner">🏆 This week's Faction Wars winner: <b>{factionWinner.label || factionWinner.faction}</b> — join next week's battle in ⚔️ Factions!</div>}
-          <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
-          <p className="pm-tag">Build the best PC for the challenge. AI judges. One winner.</p>
-          {streak > 0 && <div className="pm-streak-banner">🔥 Win streak: <b>{streak}</b>{streak >= 3 && <span className="pm-streak-mult-badge"> · {Math.round((Math.min(1 + Math.floor(streak / 3) * 0.10, 1.5) - 1) * 100)}% ELO bonus</span>}{bestStreak > 1 && <span className="pm-streak-best"> · Best: {bestStreak}</span>}</div>}
-          {dailyStreakInfo.streak > 0 && <div className="pm-daily-streak-banner">📅 Daily streak: <b>{dailyStreakInfo.streak}</b> day{dailyStreakInfo.streak === 1 ? "" : "s"}{dailyStreakInfo.playedToday && <span className="pm-daily-done"> · ✓ done today</span>}</div>}
-          {user && todayEloChange !== 0 && (
-            <div className={"pm-daily-elo " + (todayEloChange > 0 ? "up" : "down")}>
-              {todayEloChange > 0 ? "+" : ""}{todayEloChange} elo today
-            </div>
-          )}
-          {/* A3: Stats row */}
+          {/* Header */}
+          <div className="pm-menu-header">
+            <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
+            <div className="pm-account">{user ? <><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo}</span>{user && todayEloChange !== 0 && <span className={"pm-daily-elo-inline " + (todayEloChange > 0 ? "up" : "down")}>{todayEloChange > 0 ? "+" : ""}{todayEloChange}</span>}<button className="pm-acct-btn" onClick={() => persist(null)}>{user.name} ✕</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in</button>}</div>
+          </div>
+
+          {/* Alerts */}
+          {metaShifts.length > 0 && <div className="pm-meta-banner"><div className="pm-meta-banner-head"><span>📊 Meta Shift</span><button className="pm-meta-dismiss" onClick={() => setMetaShifts([])}><X size={13} /></button></div>{metaShifts.slice(0,2).map((s,i) => <div key={i} className="pm-meta-shift-row"><b>{CAT_META[s.cat].label}</b> {s.type==="value"?"best value":"top pick"} → <b className="pm-meta-new">{s.to}</b></div>)}</div>}
+          {factionWinner && <div className="pm-faction-winner-banner">🏆 Faction winner: <b>{factionWinner.label||factionWinner.faction}</b></div>}
+
+          {/* Stats bar */}
           {histStats.total > 0 && (
-            <div className="pm-stats-row">
+            <div className="pm-stats-bar">
               <span className="pm-stat-w">W <b>{histStats.wins}</b></span>
               <span className="pm-stat-l">L <b>{histStats.losses}</b></span>
               <span>Avg <b>{histStats.avg}</b></span>
               <span>Best <b>{histStats.best}</b></span>
-              {histStats.hardestAI > 0 && <span>Hardest AI <b>{histStats.hardestAI} elo</b></span>}
+              {streak > 0 && <span>🔥 <b>{streak}</b>{streak >= 3 && <span className="pm-streak-mult-badge"> +{Math.round((Math.min(1+Math.floor(streak/3)*0.10,1.5)-1)*100)}%</span>}</span>}
+              {(() => { try { const h=JSON.parse(localStorage.getItem("mogger_history")||"[]").slice(-8); if(h.length<3)return null; return <span className="pm-spark-inline">{h.map((e,i)=><span key={i} className={"pm-spark-dot "+(e.won?"win":"lose")}/>)}</span>; } catch(e){return null;} })()}
             </div>
           )}
-          {topRival && (
-            <div className="pm-rivals-row" style={{fontSize:"0.72rem",color:"var(--c-muted)",textAlign:"center",marginBottom:"4px"}}>
-              🎯 Rivals — vs <b style={{color:"var(--c-text)"}}>{topRival[0]}</b>: <span style={{color:"var(--c-good)"}}>{topRival[1].w}W</span> <span style={{color:"var(--c-bad)"}}>{topRival[1].l}L</span>
-            </div>
-          )}
-          {/* Sparkline: last 10 results */}
-          {(() => {
-            try {
-              const h = JSON.parse(localStorage.getItem("mogger_history") || "[]");
-              const last10 = h.slice(-10);
-              if (last10.length < 3) return null;
-              return (
-                <div className="pm-spark-row">
-                  <span style={{fontSize:"0.7rem",color:"var(--c-muted)",marginRight:"6px"}}>Last 10:</span>
-                  {last10.map((e, i) => <span key={i} className={"pm-spark-dot " + (e.won ? "win" : "lose")} />)}
-                </div>
-              );
-            } catch(e) { return null; }
-          })()}
-          {/* Quick-access row — always visible at the top of the grid */}
+
+          {/* PLAY section */}
+          <div className="pm-section-label">PLAY</div>
+          <div className="pm-mode-grid">
+            <button className="pm-mode" onClick={() => { setMode("ai"); setScreen("diff"); }}><span className="pm-mode-icon"><Bot size={20}/></span><span className="pm-mode-name">vs AI</span><span className="pm-mode-sub">Ranked or practice</span></button>
+            <button className="pm-mode" onClick={() => setScreen("online")}><span className="pm-mode-icon">🌐</span><span className="pm-mode-name">Online</span><span className="pm-mode-sub">Real opponents</span></button>
+            <button className="pm-mode" onClick={() => { setMode("local"); setScreen("lobby"); }}><span className="pm-mode-icon"><Gamepad2 size={20}/></span><span className="pm-mode-name">Pass &amp; Play</span><span className="pm-mode-sub">2p, one device</span></button>
+            <button className="pm-mode" onClick={() => { setMode("ai"); setPractice(true); start({ useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 60 }); }}><span className="pm-mode-icon">⚡</span><span className="pm-mode-name">Speed Duel</span><span className="pm-mode-sub">60s random</span></button>
+            <button className={"pm-mode"+(dailyStreakInfo.playedToday?" pm-done":"")} onClick={() => { setMode("ai"); setPractice(true); start(dailyChallenge); }}><span className="pm-mode-icon">📅</span><span className="pm-mode-name">Daily{dailyStreakInfo.playedToday?" ✓":""}</span><span className="pm-mode-sub">{USE_CASES[dailyChallenge.useCase]?.label}{dailyStreakInfo.streak>0?` · 🔥${dailyStreakInfo.streak}`:""}</span></button>
+            <button className="pm-mode" onClick={() => { setMode("gauntlet"); start(dailyGauntletInfo); }}><span className="pm-mode-icon">🎯</span><span className="pm-mode-name">Gauntlet</span><span className="pm-mode-sub">{dailyGauntletInfo.constraint.label}</span></button>
+          </div>
+
+          {/* SPECIAL MODES section */}
+          <div className="pm-section-label">SPECIAL MODES</div>
+          <div className="pm-mode-grid">
+            <button className="pm-mode" onClick={() => setScreen("draft")}><span className="pm-mode-icon">🃏</span><span className="pm-mode-name">Draft Duel</span><span className="pm-mode-sub">Snake-draft pool</span></button>
+            <button className="pm-mode" onClick={() => setScreen("rogue")}><span className="pm-mode-icon">⚔️</span><span className="pm-mode-name">Rogue Run</span><span className="pm-mode-sub">5 stages, perks</span></button>
+            <button className="pm-mode" onClick={() => setScreen("syndicate")}><span className="pm-mode-icon">🤝</span><span className="pm-mode-name">Syndicate</span><span className="pm-mode-sub">Co-op vs AI</span></button>
+          </div>
+
+          {/* EXPLORE section */}
+          <div className="pm-section-label">EXPLORE</div>
           <div className="pm-quick-row">
-            <button className="pm-quick-btn" onClick={() => setScreen("history")}>📜 History</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("achievements")}>🏅 Achievements</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("leaderboard")}>🏆 Leaderboard</button>
             <button className="pm-quick-btn" onClick={() => setScreen("ghosts")}>👻 Ghosts</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("factions")}>⚔️ Factions</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("draft")}>🃏 Draft</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("rogue")}>⚔️ Rogue</button>
             <button className="pm-quick-btn" onClick={() => setScreen("archaeology")}>🏛️ Archaeology</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("syndicate")}>🤝 Syndicate</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("factions")}>⚔️ Factions</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("leaderboard")}>🏆 Leaderboard</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("history")}>📜 History</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("achievements")}>🏅 Badges</button>
             <button className="pm-quick-btn" onClick={() => setFeedbackOpen(true)}>📩 Feedback</button>
           </div>
-          <div className="pm-mode-grid">
-            <button className="pm-mode" onClick={() => { setMode("ai"); setScreen("diff"); }}><span className="pm-mode-icon"><Bot size={24} /></span><span className="pm-mode-name">Play vs AI</span><span className="pm-mode-sub">Ranked or practice</span></button>
-            <button className="pm-mode" onClick={() => { setMode("local"); setScreen("lobby"); }}><span className="pm-mode-icon"><Gamepad2 size={24} /></span><span className="pm-mode-name">Pass &amp; Play</span><span className="pm-mode-sub">2 players, one device</span></button>
-            <button className="pm-mode" onClick={() => setScreen("online")}><span className="pm-mode-icon">🌐</span><span className="pm-mode-name">Online Multiplayer</span><span className="pm-mode-sub">Play friends or random people</span></button>
-            <button className="pm-mode" onClick={() => { setMode("ai"); setPractice(true); start({ useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 60 }); }}><span className="pm-mode-icon">⚡</span><span className="pm-mode-name">Speed Duel</span><span className="pm-mode-sub">60 seconds, random challenge</span></button>
-            {/* B3: Daily Challenge */}
-            <button className={"pm-mode pm-daily" + (dailyStreakInfo.playedToday ? " done" : "")} onClick={() => { setMode("ai"); setPractice(true); start(dailyChallenge); }}><span className="pm-mode-icon">📅</span><span className="pm-mode-name">Daily Challenge{dailyStreakInfo.playedToday ? " ✓" : ""}</span><span className="pm-mode-sub">{USE_CASES[dailyChallenge.useCase]?.label} · {fmt(dailyChallenge.budget)}{dailyStreakInfo.streak > 0 ? ` · 🔥${dailyStreakInfo.streak}` : ""}</span></button>
-            <button className="pm-mode" onClick={() => { setMode("gauntlet"); start(dailyGauntletInfo); }}><span className="pm-mode-icon">🎯</span><span className="pm-mode-name">Constraint Gauntlet</span><span className="pm-mode-sub">{dailyGauntletInfo.constraint.label}</span></button>
-            <button className="pm-mode" onClick={() => setScreen("draft")}><span className="pm-mode-icon">🃏</span><span className="pm-mode-name">Draft Mode Duel</span><span className="pm-mode-sub">Snake-draft from shared pool</span></button>
-            <button className="pm-mode" onClick={() => setScreen("rogue")}><span className="pm-mode-icon">⚔️</span><span className="pm-mode-name">Rogue Run</span><span className="pm-mode-sub">5 stages, permanent perks</span></button>
-            <button className="pm-mode" onClick={() => setScreen("archaeology")}><span className="pm-mode-icon">🏛️</span><span className="pm-mode-name">Build Archaeology</span><span className="pm-mode-sub">Community builds by month</span></button>
-            <button className="pm-mode" onClick={() => setScreen("syndicate")}><span className="pm-mode-icon">🤝</span><span className="pm-mode-name">Syndicate Build</span><span className="pm-mode-sub">Co-op vs AI with friends</span></button>
-          </div>
-          <button className="rf-ghost pm-exit" onClick={onExit}><ChevronLeft size={15} /> Back to builder</button>
+
+          <button className="rf-ghost pm-exit" onClick={onExit}><ChevronLeft size={15}/> Back to builder</button>
         </div>
       )}
       {showAuth && <MoggerAuth onClose={() => setShowAuth(false)} onAuth={(u) => { persist(u); setShowAuth(false); }} />}
