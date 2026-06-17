@@ -3311,3 +3311,20 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .rf-saved-card:not(:hover), .rf-uc-card:not(:hover) {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 4px 14px rgba(0,0,0,0.28) !important;
 }
+
+/* ================================================================
+   REMOVE TRANSLATE LIFT from build/usecase rows — the up-down
+   movement on fast cursor sweeps is what looks like a flash.
+   Only border-color changes now; nothing moves.
+   ================================================================ */
+
+.rf-part, .rf-pick,
+.rf-saved-card, .rf-uc-card, .rf-cta-card {
+  transition: border-color 0.15s ease !important;
+}
+.rf-part:hover, .rf-pick:hover,
+.rf-saved-card:hover, .rf-uc-card:hover, .rf-cta-card:hover {
+  transform: none !important;
+  border-color: rgba(255,255,255,0.18) !important;
+  background: inherit !important;
+}
