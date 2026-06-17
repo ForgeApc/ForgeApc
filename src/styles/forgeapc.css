@@ -3358,3 +3358,21 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   animation: none !important;
   border-color: rgba(255,255,255,0.20) !important;
 }
+
+/* ================================================================
+   USECASE CARD FLASH — rf-uc-card + rf-pop
+   will-change:transform,opacity causes compositing layer repromote
+   on hover-in/out which flashes. Strip it. Also lock opacity+bg.
+   ================================================================ */
+
+.rf-uc-card {
+  will-change: auto !important;
+}
+.rf-uc-card:hover {
+  opacity: 1 !important;
+  transform: none !important;
+  background: var(--c-panel) !important;
+  box-shadow: inherit !important;
+  animation: none !important;
+  border-color: rgba(255,255,255,0.20) !important;
+}
