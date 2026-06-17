@@ -2256,7 +2256,7 @@ const AI_PERSONAS = [
   { minElo: 1400, name: "CraftedRigs",   tag: "Builds PCs for friends", taunts: ["I've built 20 of these", "locked in under a minute"], wins: ["experience shows", "clean build wins clean"], losses: ["okay that use-case tripped me", "solid play"] },
   { minElo: 1900, name: "BenchWarrior",  tag: "OC'ing since 2015",      taunts: ["Optimized every slot", "I don't leave budget on the table"], wins: ["margin of excellence", "the numbers don't lie"], losses: ["one category off — I'll remember that", "rare L"] },
   { minElo: 2400, name: "Apex",          tag: "Pro system integrator",  taunts: ["Read the spec sheet", "I know where your budget leaks"], wins: ["efficient. balanced. dominant.", "as expected"], losses: ["exceptional build. noted.", "you forced a better outcome"] },
-  { minElo: 2800, name: "GOD_MODE",      tag: "Peak human optimization", taunts: ["MAXIMUM PERFORMANCE INCOMING", "every dollar is accounted for"], wins: ["PERFECTION ACHIEVED", "resistance is futile"], losses: ["...that's a first", "consider yourself elite"] },
+  { minElo: 2800, name: "GOD_MODE",      tag: "~3% win chance — but legends have done it", taunts: ["MAXIMUM PERFORMANCE INCOMING", "every dollar is accounted for"], wins: ["PERFECTION ACHIEVED", "resistance is futile"], losses: ["...that's a first", "consider yourself elite"] },
 ];
 
 function aiPersona(elo) {
