@@ -4546,6 +4546,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const [streak, setStreak] = useState(() => { try { return +(localStorage.getItem("mogger_streak") || 0); } catch(e) { return 0; } });
   const [bestStreak, setBestStreak] = useState(() => { try { return +(localStorage.getItem("mogger_best_streak") || 0); } catch(e) { return 0; } });
   const historyAppliedRef = useRef(false);
+  const [showMoreModes, setShowMoreModes] = useState(false);
   // Batch 3 state
   const [coinBalance, setCoinBalance] = useState(null);
   const [activeBet, setActiveBet] = useState(null);
@@ -4876,35 +4877,37 @@ function MoggerGame({ onExit, onSaveBuild }) {
             </div>
           )}
 
-          {/* PLAY section */}
-          <div className="pm-section-label">PLAY</div>
-          <div className="pm-mode-grid">
-            <button className="pm-mode" onClick={() => { setMode("ai"); setScreen("diff"); }}><span className="pm-mode-icon"><Bot size={20}/></span><span className="pm-mode-name">vs AI</span><span className="pm-mode-sub">Ranked or practice</span></button>
-            <button className="pm-mode" onClick={() => setScreen("online")}><span className="pm-mode-icon">🌐</span><span className="pm-mode-name">Online</span><span className="pm-mode-sub">Real opponents</span></button>
-            <button className="pm-mode" onClick={() => { setMode("local"); setScreen("lobby"); }}><span className="pm-mode-icon"><Gamepad2 size={20}/></span><span className="pm-mode-name">Pass &amp; Play</span><span className="pm-mode-sub">2p, one device</span></button>
-            <button className="pm-mode" onClick={() => { setMode("ai"); setPractice(true); start({ useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 60 }); }}><span className="pm-mode-icon">⚡</span><span className="pm-mode-name">Speed Duel</span><span className="pm-mode-sub">60s random</span></button>
-            <button className={"pm-mode"+(dailyStreakInfo.playedToday?" pm-done":"")} onClick={() => { setMode("ai"); setPractice(true); start(dailyChallenge); }}><span className="pm-mode-icon">📅</span><span className="pm-mode-name">Daily{dailyStreakInfo.playedToday?" ✓":""}</span><span className="pm-mode-sub">{USE_CASES[dailyChallenge.useCase]?.label}{dailyStreakInfo.streak>0?` · 🔥${dailyStreakInfo.streak}`:""}</span></button>
-            <button className="pm-mode" onClick={() => { setMode("gauntlet"); start(dailyGauntletInfo); }}><span className="pm-mode-icon">🎯</span><span className="pm-mode-name">Gauntlet</span><span className="pm-mode-sub">{dailyGauntletInfo.constraint.label}</span></button>
+          {/* Primary modes */}
+          <div className="pm-mode-grid pm-mode-grid-primary">
+            <button className="pm-mode pm-mode-hero" onClick={() => { setMode("ai"); setScreen("diff"); }}><span className="pm-mode-icon"><Bot size={22}/></span><span className="pm-mode-name">vs AI</span><span className="pm-mode-sub">Ranked or practice</span></button>
+            <button className="pm-mode pm-mode-hero" onClick={() => setScreen("online")}><span className="pm-mode-icon">🌐</span><span className="pm-mode-name">Online</span><span className="pm-mode-sub">Real opponents</span></button>
+            <button className={"pm-mode pm-mode-hero"+(dailyStreakInfo.playedToday?" pm-done":"")} onClick={() => { setMode("ai"); setPractice(true); start(dailyChallenge); }}><span className="pm-mode-icon">📅</span><span className="pm-mode-name">Daily{dailyStreakInfo.playedToday?" ✓":""}</span><span className="pm-mode-sub">{dailyStreakInfo.streak>0?`🔥${dailyStreakInfo.streak} · `:""}Today</span></button>
           </div>
 
-          {/* SPECIAL MODES section */}
-          <div className="pm-section-label">SPECIAL MODES</div>
-          <div className="pm-mode-grid">
-            <button className="pm-mode" onClick={() => setScreen("draft")}><span className="pm-mode-icon">🃏</span><span className="pm-mode-name">Draft Duel</span><span className="pm-mode-sub">Snake-draft pool</span></button>
-            <button className="pm-mode" onClick={() => setScreen("rogue")}><span className="pm-mode-icon">⚔️</span><span className="pm-mode-name">Rogue Run</span><span className="pm-mode-sub">5 stages, perks</span></button>
-            <button className="pm-mode" onClick={() => setScreen("syndicate")}><span className="pm-mode-icon">🤝</span><span className="pm-mode-name">Syndicate</span><span className="pm-mode-sub">Co-op vs AI</span></button>
-          </div>
+          {/* More modes toggle */}
+          <button className="pm-more-toggle" onClick={() => setShowMoreModes(m => !m)}>
+            {showMoreModes ? "▲ Less" : "▼ More modes"} — Speed · P&amp;P · Gauntlet · Draft · Rogue · Syndicate
+          </button>
+          {showMoreModes && (
+            <div className="pm-quick-row pm-more-row">
+              <button className="pm-quick-btn" onClick={() => { setMode("ai"); setPractice(true); start({ useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 60 }); }}>⚡ Speed</button>
+              <button className="pm-quick-btn" onClick={() => { setMode("local"); setScreen("lobby"); }}>🎮 P&amp;P</button>
+              <button className="pm-quick-btn" onClick={() => { setMode("gauntlet"); start(dailyGauntletInfo); }}>🎯 Gauntlet</button>
+              <button className="pm-quick-btn" onClick={() => setScreen("draft")}>🃏 Draft</button>
+              <button className="pm-quick-btn" onClick={() => setScreen("rogue")}>⚔️ Rogue</button>
+              <button className="pm-quick-btn" onClick={() => setScreen("syndicate")}>🤝 Syndicate</button>
+            </div>
+          )}
 
-          {/* EXPLORE section */}
-          <div className="pm-section-label">EXPLORE</div>
-          <div className="pm-quick-row">
-            <button className="pm-quick-btn" onClick={() => setScreen("ghosts")}>👻 Ghosts</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("archaeology")}>🏛️ Archaeology</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("factions")}>⚔️ Factions</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("leaderboard")}>🏆 Leaderboard</button>
+          {/* Browse */}
+          <div className="pm-quick-row pm-browse-row">
             <button className="pm-quick-btn" onClick={() => setScreen("history")}>📜 History</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("leaderboard")}>🏆 Ranks</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("factions")}>⚔️ Factions</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("ghosts")}>👻 Ghosts</button>
+            <button className="pm-quick-btn" onClick={() => setScreen("archaeology")}>🏛️ Arch</button>
             <button className="pm-quick-btn" onClick={() => setScreen("achievements")}>🏅 Badges</button>
-            <button className="pm-quick-btn" onClick={() => setFeedbackOpen(true)}>📩 Feedback</button>
+            <button className="pm-quick-btn" onClick={() => setFeedbackOpen(true)}>📩</button>
           </div>
 
           <button className="rf-ghost pm-exit" onClick={onExit}><ChevronLeft size={15}/> Back to builder</button>

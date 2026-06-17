@@ -1484,3 +1484,9 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .pm-daily-elo-inline.up{color:var(--c-good);}
 .pm-daily-elo-inline.down{color:var(--c-bad);}
 .pm-mode.pm-done{opacity:0.6;}
+
+.pm-mode-grid-primary{grid-template-columns:repeat(3,1fr);}
+.pm-mode-hero{padding:14px 8px;}
+.pm-more-toggle{width:100%;text-align:left;background:none;border:1px dashed var(--c-border);border-radius:8px;color:var(--c-muted);font-size:0.74rem;padding:6px 12px;cursor:pointer;margin:8px 0 4px;transition:color .15s,border-color .15s;}
+.pm-more-toggle:hover{color:var(--c-text);border-color:var(--c-accent);}
+.pm-more-row,.pm-browse-row{margin-top:4px;}
