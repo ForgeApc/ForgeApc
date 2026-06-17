@@ -1500,10 +1500,11 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .pm-rogue-used{background:rgba(70,224,160,0.07);border:1px solid rgba(70,224,160,0.25);border-radius:8px;padding:8px 12px;font-size:0.8rem;color:var(--c-good);margin-bottom:10px;text-align:center;}
 
 /* ---- 4-hero menu layout ---- */
-.pm-hero-4{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px;}
-.pm-hero-4 .pm-mode-hero{padding:16px 12px;min-height:80px;}
-.pm-hero-4 .pm-mode-icon{font-size:1.4rem;}
-.pm-hero-4 .pm-mode-name{font-size:0.92rem;}
+.pm-hero-4{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+.pm-hero-4 .pm-mode-hero{padding:13px 16px;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;min-height:unset;}
+.pm-hero-4 .pm-mode-icon{font-size:1.3rem;min-width:28px;text-align:center;}
+.pm-hero-4 .pm-mode-name{font-size:0.9rem;text-align:left;}
+.pm-hero-4 .pm-mode-sub{text-align:left;}
 .pm-coin-wallet-btn{color:var(--c-warn)!important;border-color:rgba(255,194,75,0.3)!important;}
 
 /* ---- Special Game Modes screen ---- */
