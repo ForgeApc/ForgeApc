@@ -1530,3 +1530,17 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 
 /* ---- Wallet screen ---- */
 .pm-coin-big{color:var(--c-warn);font-family:'JetBrains Mono',monospace;font-size:1.1rem;}
+
+/* ---- Rogue reward picker (taunt screen) ---- */
+.pm-rogue-reward-picker{background:rgba(124,92,255,0.07);border:1px solid rgba(124,92,255,0.25);border-radius:10px;padding:12px 14px;margin-bottom:16px;width:100%;}
+.pm-rrp-head{font-family:'Chakra Petch',sans-serif;font-size:0.75rem;font-weight:700;color:var(--c-accent2);margin-bottom:10px;}
+.pm-rrp-list{display:flex;flex-direction:column;gap:6px;}
+.pm-rrp-btn{background:var(--c-panel);border:1px solid var(--c-border);border-radius:8px;padding:8px 12px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;transition:border-color .15s,background .15s;}
+.pm-rrp-btn:hover{border-color:var(--c-accent2);}
+.pm-rrp-btn.on{border-color:var(--c-accent2);background:rgba(124,92,255,0.12);}
+.pm-rrp-none{color:var(--c-muted);font-size:0.8rem;font-style:italic;}
+.pm-rrp-none.on{color:var(--c-text);}
+.pm-rrp-label{font-weight:700;font-size:0.82rem;color:var(--c-text);flex:1;}
+.pm-rrp-desc{font-size:0.7rem;color:var(--c-muted);flex:2;}
+.pm-rrp-left{font-size:0.68rem;color:var(--c-accent2);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.pm-rrp-active-note{margin-top:8px;font-size:0.74rem;color:var(--c-good);}

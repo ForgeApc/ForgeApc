@@ -4592,6 +4592,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const [series, setSeries] = useState(null); // { wins:{you,opp}, game, done, winner }
   // A7: Pre-match taunt
   const [selectedTaunt, setSelectedTaunt] = useState(null);
+  const [activeRogueReward, setActiveRogueReward] = useState(null); // reward chosen for this match, or null
   // B2: confetti on win
   const [showConfetti, setShowConfetti] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -4914,15 +4915,19 @@ function MoggerGame({ onExit, onSaveBuild }) {
       if (log.length > 200) log.splice(0, log.length - 200);
       localStorage.setItem("mogger_elo_log", JSON.stringify(log));
     } catch(e) {}
-    // Decrement active rogue reward match counter
-    try {
-      const storedR = JSON.parse(localStorage.getItem("mogger_rogue_rewards")||"null");
-      if (storedR && storedR.list?.length > 0) {
-        const updated = storedR.list.map(r => ({...r, matchesLeft: r.matchesLeft - 1})).filter(r => r.matchesLeft > 0);
-        const next = {...storedR, list: updated};
-        localStorage.setItem("mogger_rogue_rewards", JSON.stringify(next));
-      }
-    } catch(e) {}
+    // Decrement only the reward the player chose to use this match
+    if (activeRogueReward) {
+      try {
+        const storedR = JSON.parse(localStorage.getItem("mogger_rogue_rewards")||"null");
+        if (storedR?.list?.length > 0) {
+          const updated = storedR.list.map(r =>
+            r.id === activeRogueReward.id ? {...r, matchesLeft: r.matchesLeft - 1} : r
+          ).filter(r => r.matchesLeft > 0);
+          localStorage.setItem("mogger_rogue_rewards", JSON.stringify({...storedR, list: updated}));
+        }
+      } catch(e) {}
+      setActiveRogueReward(null);
+    }
     // Settle bet if one is active
     if (activeBet && user?.id) {
       const won = sy >= so ? activeBet.side === "you" : activeBet.side === "ai";
@@ -5138,22 +5143,51 @@ function MoggerGame({ onExit, onSaveBuild }) {
       {screen === "achievements" && <MoggerAchievements onBack={menu} />}
       {screen === "ghosts" && <MoggerGhosts onBack={menu} onChallenge={challengeGhost} />}
       {screen === "factions" && <MoggerFactions onBack={menu} user={user} onUserUpdate={persist} />}
-      {/* A7: Taunt picker */}
-      {screen === "taunt-pick" && (
-        <div className="pm-card pm-center rf-fade">
-          <h2 className="pm-h2">🗣️ Pick your pre-match taunt</h2>
-          <p className="pm-p pm-dim">Choose a line to send to your opponent (or skip)</p>
-          <div className="pm-taunt-grid">
-            {PRETAUNTS.map((t, i) => (
-              <button key={i} className={"pm-taunt-btn" + (selectedTaunt === t ? " on" : "")} onClick={() => setSelectedTaunt(t === selectedTaunt ? null : t)}>{t}</button>
-            ))}
+      {/* A7: Taunt picker + rogue reward selector */}
+      {screen === "taunt-pick" && (() => {
+        const storedR = (() => { try { return JSON.parse(localStorage.getItem("mogger_rogue_rewards")||"null"); } catch(e){return null;} })();
+        const availableRewards = storedR?.list?.filter(r => r.matchesLeft > 0) || [];
+        return (
+          <div className="pm-card pm-center rf-fade">
+            {availableRewards.length > 0 && (
+              <div className="pm-rogue-reward-picker">
+                <div className="pm-rrp-head">⚔️ Rogue Reward — activate for this match?</div>
+                <div className="pm-rrp-list">
+                  <button
+                    className={"pm-rrp-btn pm-rrp-none" + (activeRogueReward === null ? " on" : "")}
+                    onClick={() => setActiveRogueReward(null)}
+                  >
+                    None
+                  </button>
+                  {availableRewards.map(r => (
+                    <button
+                      key={r.id}
+                      className={"pm-rrp-btn" + (activeRogueReward?.id === r.id ? " on" : "")}
+                      onClick={() => setActiveRogueReward(activeRogueReward?.id === r.id ? null : r)}
+                    >
+                      <span className="pm-rrp-label">{r.label}</span>
+                      <span className="pm-rrp-desc">{r.desc}</span>
+                      <span className="pm-rrp-left">{r.matchesLeft} match{r.matchesLeft !== 1 ? "es" : ""} left</span>
+                    </button>
+                  ))}
+                </div>
+                {activeRogueReward && <div className="pm-rrp-active-note">✅ <b>{activeRogueReward.label}</b> will be used this match</div>}
+              </div>
+            )}
+            <h2 className="pm-h2">🗣️ Pick your pre-match taunt</h2>
+            <p className="pm-p pm-dim">Choose a line to send to your opponent (or skip)</p>
+            <div className="pm-taunt-grid">
+              {PRETAUNTS.map((t, i) => (
+                <button key={i} className={"pm-taunt-btn" + (selectedTaunt === t ? " on" : "")} onClick={() => setSelectedTaunt(t === selectedTaunt ? null : t)}>{t}</button>
+              ))}
+            </div>
+            <div className="pm-row pm-center-row">
+              <button className="rf-btn rf-ghost-btn" onClick={() => setScreen("diff")}><ChevronLeft size={16} /> Back</button>
+              <button className="rf-btn" onClick={() => setScreen("lobby")}>{selectedTaunt ? "Taunt sent! → Lobby" : "Skip → Lobby"} <ChevronRight size={16} /></button>
+            </div>
           </div>
-          <div className="pm-row pm-center-row">
-            <button className="rf-btn rf-ghost-btn" onClick={() => setScreen("diff")}><ChevronLeft size={16} /> Back</button>
-            <button className="rf-btn" onClick={() => setScreen("lobby")}>{selectedTaunt ? "Taunt sent! → Lobby" : "Skip → Lobby"} <ChevronRight size={16} /></button>
-          </div>
-        </div>
-      )}
+        );
+      })()}
       {screen === "online" && (user ? <MoggerOnline onExit={menu} user={user} setUser={persist} onNeedAuth={() => setShowAuth(true)} onSaveBuild={onSaveBuild} /> : (
         <div className="pm-card pm-center rf-fade">
           <h2 className="pm-h2">🌐 Online Multiplayer</h2>
