@@ -3106,7 +3106,7 @@ function DuelRadarChart({ you, opp, youLabel = "You", oppName, useCase, budget }
   );
 }
 
-function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, practice, series, onAgain, onMenu, onHistory, onSaveBuild, onMirror, onRematch, onNextGame, onAvenge }) {
+function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, practice, series, matchElapsed, onAgain, onMenu, onHistory, onSaveBuild, onMirror, onRematch, onNextGame, onAvenge }) {
   const sy = useMemo(() => moggerScore(you, round.useCase, round.budget), [you, opp]);
   const so = useMemo(() => moggerScore(opp, round.useCase, round.budget), [you, opp]);
   // B7: Sudden Death — zero score if over budget
@@ -3157,6 +3157,8 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
   const [phase, setPhase] = useState("loading"); // loading -> reveal
   const [ay, setAy] = useState(0);
   const [ao, setAo] = useState(0);
+  // P15: Score delta animation
+  const [scoreDelta, setScoreDelta] = useState(0);
   const [verdict, setVerdict] = useState("");
   const [busy, setBusy] = useState(true);
   const [savedYou, setSavedYou] = useState(false);
@@ -3187,11 +3189,13 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
       setPhase("reveal");
       // smooth count-up over 0.8s (easeOutCubic)
       const dur = 800, t0 = performance.now();
+      const realDelta = sySD.total - soSD.total;
       const tick = (now) => {
         const f = Math.min(1, (now - t0) / dur);
         const e = 1 - Math.pow(1 - f, 3);
         setAy(Math.round(sySD.total * e));
         setAo(Math.round(soSD.total * e));
+        setScoreDelta(Math.round(realDelta * e)); // P15
         if (f < 1 && !dead) raf = requestAnimationFrame(tick);
       };
       raf = requestAnimationFrame(tick);
@@ -3234,6 +3238,8 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
         {youWin && Math.abs(sySD.total - soSD.total) > 30 && Math.abs(sySD.total - soSD.total) < 80 && <span className="pm-comeback">🔄 Comeback Win!</span>}
         {round.suddenDeath && <span className="pm-sd-badge">☠️ Sudden Death</span>}
       </h2>
+      {/* P13: Match timer badge */}
+      {matchElapsed != null && <div className="pm-match-timer-badge">⚡ {matchElapsed >= 60 ? `${Math.floor(matchElapsed/60)}m ${matchElapsed%60}s` : `${matchElapsed}s`}</div>}
       {oppPersona && (
         <div className="pm-opp-persona">
           <span className="pm-opp-persona-name">{oppName}</span>
@@ -3262,6 +3268,8 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
         <MoggerScoreCol title={youLabel} build={you} s={sySD} win={youWin} shown={ay} rank={myRank} useCase={round.useCase} budget={round.budget} />
         <MoggerScoreCol title={oppName} build={opp} s={soSD} win={!youWin} shown={ao} rank={oppRank} useCase={round.useCase} budget={round.budget} />
       </div>
+      {/* P15: Score delta animation */}
+      {phase === "reveal" && <div className={"pm-score-delta-anim " + (scoreDelta >= 0 ? "win" : "lose")}>{scoreDelta > 0 ? "+" : ""}{scoreDelta}</div>}
       <DuelRadarChart you={you} opp={opp} oppName={oppName} youLabel={youLabel} useCase={round.useCase} budget={round.budget} />
       {/* A4: Score breakdown bar chart */}
       {phase === "reveal" && <ScoreBarChart you={you} opp={opp} youLabel={youLabel} oppName={oppName} useCase={round.useCase} budget={round.budget} />}
@@ -4776,6 +4784,9 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const [streak, setStreak] = useState(() => { try { return +(localStorage.getItem("mogger_streak") || 0); } catch(e) { return 0; } });
   const [bestStreak, setBestStreak] = useState(() => { try { return +(localStorage.getItem("mogger_best_streak") || 0); } catch(e) { return 0; } });
   const historyAppliedRef = useRef(false);
+  // P13: Match timer
+  const matchStartRef = useRef(null);
+  const [matchElapsed, setMatchElapsed] = useState(null);
   const [showMoreModes, setShowMoreModes] = useState(false);
   const [specialRanked, setSpecialRanked] = useState({});
   // Batch 3 state
@@ -4957,7 +4968,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
     else setSeries(null);
     setScreen("intro");
   };
-  const finishP1 = (b) => { setYou(b); if (mode === "ai" || mode === "ghost") setScreen("result"); else if (mode === "gauntlet") setScreen("gauntlet-result"); else setScreen("handoff"); };
+  const finishP1 = (b) => { if (matchStartRef.current) { setMatchElapsed(Math.round((Date.now() - matchStartRef.current) / 1000)); matchStartRef.current = null; } setYou(b); if (mode === "ai" || mode === "ghost") setScreen("result"); else if (mode === "gauntlet") setScreen("gauntlet-result"); else setScreen("handoff"); };
   const finishP2 = (b) => { setOpp(b); setScreen("result"); };
   const again = () => { setYou(null); setOpp(null); setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; setSeries(null); setScreen(mode === "ai" ? "diff" : mode === "ghost" ? "ghosts" : "lobby"); };
   // Ghost Duel Replay — challenge a recorded build; the opponent column replays its real
@@ -5149,7 +5160,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
           {/* Header */}
           <div className="pm-menu-header">
             <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
-            <div className="pm-account">{user ? <><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo} elo</span>{todayEloChange !== 0 && <span className={"pm-daily-elo-inline " + (todayEloChange > 0 ? "up" : "down")}>{todayEloChange > 0 ? "+" : ""}{todayEloChange} this session</span>}{coinBalance != null && <span className="pm-coin-balance">🪙 {coinBalance}</span>}<button className="pm-acct-btn" onClick={() => persist(null)}>{user.name} ✕</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in</button>}</div>
+            <div className="pm-account">{user ? <><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo} elo</span>{/* P12: Streak fire indicator */}{streak >= 3 && <span className="pm-streak-fire">🔥 {streak}</span>}{todayEloChange !== 0 && <span className={"pm-daily-elo-inline " + (todayEloChange > 0 ? "up" : "down")}>{todayEloChange > 0 ? "+" : ""}{todayEloChange} this session</span>}{coinBalance != null && <span className="pm-coin-balance">🪙 {coinBalance}</span>}<button className="pm-acct-btn" onClick={() => persist(null)}>{user.name} ✕</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in</button>}</div>
           </div>
 
           {/* Alerts */}
@@ -5372,6 +5383,35 @@ function MoggerGame({ onExit, onSaveBuild }) {
                 {activeRogueReward && <div className="pm-rrp-active-note">✅ <b>{activeRogueReward.label}</b> will be used this match</div>}
               </div>
             )}
+            {/* P14: Difficulty rating display */}
+            {mode === "ai" && (() => {
+              const diffVal = aiElo <= 450 ? Math.round(1 + (aiElo/450)*2) : aiElo <= 1200 ? Math.round(3 + ((aiElo-450)/750)*3) : aiElo <= 2000 ? Math.round(6 + ((aiElo-1200)/800)*2) : Math.round(8 + ((aiElo-2000)/1000)*2);
+              const clampedDiff = Math.max(1, Math.min(10, diffVal));
+              const diffLabel = clampedDiff <= 3 ? "Easy" : clampedDiff <= 6 ? "Medium" : clampedDiff <= 8 ? "Hard" : "Godmode";
+              const diffColor = clampedDiff <= 3 ? "var(--c-good)" : clampedDiff <= 6 ? "var(--c-warn)" : clampedDiff <= 8 ? "#ff7043" : "var(--c-accent2)";
+              return (
+                <div className="pm-diff-bar-row">
+                  <span className="pm-diff-bar-label">Difficulty: <b style={{color: diffColor}}>{diffLabel}</b></span>
+                  <div className="pm-diff-bar-track">
+                    {Array.from({length: 10}, (_, i) => (
+                      <div key={i} className={"pm-diff-bar-seg" + (i < clampedDiff ? " on" : "")} style={i < clampedDiff ? {background: diffColor} : {}} />
+                    ))}
+                  </div>
+                  <span className="pm-diff-bar-val">{clampedDiff}/10</span>
+                </div>
+              );
+            })()}
+            {/* P11: Draft ban preview */}
+            {bannedMode && youBannedParts.length > 0 && (
+              <div className="pm-ban-preview-row">
+                <span className="pm-ban-preview-label">🚫 Bans active</span>
+                <div className="pm-ban-preview-pills">
+                  {youBannedParts.map((b, i) => (
+                    <span key={i} className="pm-ban-preview-pill">{CAT_META[b.cat]?.label} — {b.name.split(" ").slice(0,3).join(" ")}</span>
+                  ))}
+                </div>
+              </div>
+            )}
             <h2 className="pm-h2">🗣️ Pick your pre-match taunt</h2>
             <p className="pm-p pm-dim">Choose a line to send to your opponent (or skip)</p>
             <div className="pm-taunt-grid">
@@ -5394,7 +5434,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
         </div>
       ))}
       {screen === "lobby" && <MoggerLobby mode={mode} onStart={start} onBack={menu} />}
-      {screen === "intro" && round && <MoggerIntro round={round} player={mode === "local" ? "Player 1" : null} onGo={() => setScreen("p1")} />}
+      {screen === "intro" && round && <MoggerIntro round={round} player={mode === "local" ? "Player 1" : null} onGo={() => { matchStartRef.current = Date.now(); setScreen("p1"); }} />}
       {screen === "p1" && round && <MoggerBuild round={round} player={mode === "local" ? "Player 1" : "You"} oppLabel={mode === "ai" ? "AI Opponent" : mode === "ghost" ? ("👻 " + (activeGhost ? activeGhost.label : "Ghost")) : "Player 2"} oppBuild={(mode === "ai" || mode === "ghost") ? opp : null} oppIsAI={mode === "ai"} ghostMode={mode === "ghost"} solo={mode === "gauntlet"} constraint={mode === "gauntlet" ? round.constraint : undefined} oppLocked={false} myElo={mode === "ai" && user ? user.elo : null} oppElo={mode === "ai" ? aiElo : null} bannedParts={mode === "ai" && bannedMode ? youBannedParts : null} onDone={finishP1} />}
       {screen === "gauntlet-result" && round && you && <MoggerGauntletResult round={round} build={you} user={user} onMenu={menu} onPlayAgain={() => { setYou(null); setScreen("intro"); }} />}
       {screen === "handoff" && <div className="pm-card pm-center rf-fade"><h2 className="pm-h2"><Repeat2 size={20} /> Pass the device</h2><p className="pm-p">Player 1 is locked in. Hand the device to <b>Player 2</b> — same challenge, same clock. No peeking.</p><button className="rf-btn" onClick={() => setScreen("intro2")}>I am Player 2 — start <ChevronRight size={16} /></button></div>}
@@ -5404,7 +5444,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
         const aiName = mode === "ai" ? aiPersona(aiElo).name : mode === "ghost" ? (activeGhost ? activeGhost.label : "Ghost") : "Player 2";
         const resultYouLabel = mirrored ? aiName : "You";
         const resultOppName  = mirrored ? "You" : aiName;
-        return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} practice={practice || mode === "ghost"} series={series} onAgain={again} onRematch={mode === "ai" ? rematch : mode === "ghost" ? rematchGhost : undefined} onNextGame={mode === "ai" ? nextSeriesGame : undefined} onAvenge={mode === "ai" ? avengeRival : undefined} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
+        return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} practice={practice || mode === "ghost"} series={series} matchElapsed={matchElapsed} onAgain={again} onRematch={mode === "ai" ? rematch : mode === "ghost" ? rematchGhost : undefined} onNextGame={mode === "ai" ? nextSeriesGame : undefined} onAvenge={mode === "ai" ? avengeRival : undefined} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
       })()}
       {screen === "ban-phase" && round && <BanPhaseScreen round={round} myElo={user?.elo||1000} aiElo={aiElo} onBack={() => setScreen("diff")} onDone={(myBans, aiBans) => { setYouBannedParts(myBans); setAiBannedParts(aiBans); setScreen("taunt-pick"); }} />}
       {screen === "draft" && <MoggerDraft onMenu={menu} />}

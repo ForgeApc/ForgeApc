@@ -3958,3 +3958,129 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   to   { opacity:1; transform:translateY(0)    scale(1); }
 }
 .rf-pop { animation-duration: 0.85s !important; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94) !important; }
+
+/* ================================================================
+   P11 — Draft ban preview
+   ================================================================ */
+.pm-ban-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  border: 1px solid rgba(255,80,80,0.45);
+  background: rgba(255,50,50,0.07);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+.pm-ban-preview-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-bad);
+  white-space: nowrap;
+}
+.pm-ban-preview-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pm-ban-preview-pill {
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: rgba(255,60,60,0.13);
+  border: 1px solid rgba(255,80,80,0.4);
+  color: #ff8a80;
+  text-decoration: line-through;
+  text-decoration-color: rgba(255,80,80,0.7);
+  text-decoration-thickness: 2px;
+}
+
+/* ================================================================
+   P12 — Streak fire indicator
+   ================================================================ */
+@keyframes streakGlow {
+  0%, 100% { text-shadow: 0 0 6px rgba(255,140,0,0.6), 0 0 12px rgba(255,100,0,0.3); }
+  50%       { text-shadow: 0 0 14px rgba(255,160,0,0.9), 0 0 28px rgba(255,80,0,0.5); }
+}
+.pm-streak-fire {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ffb347;
+  margin-left: 6px;
+  animation: streakGlow 1.8s ease-in-out infinite;
+}
+
+/* ================================================================
+   P13 — Match timer badge
+   ================================================================ */
+.pm-match-timer-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--c-accent);
+  background: rgba(31,245,230,0.08);
+  border: 1px solid rgba(31,245,230,0.25);
+  border-radius: 20px;
+  padding: 2px 10px;
+  margin: 4px auto 8px;
+  text-align: center;
+}
+
+/* ================================================================
+   P14 — Difficulty rating bar
+   ================================================================ */
+.pm-diff-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.pm-diff-bar-label {
+  font-size: 0.78rem;
+  color: var(--c-muted);
+  white-space: nowrap;
+  min-width: 110px;
+}
+.pm-diff-bar-track {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+}
+.pm-diff-bar-seg {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.10);
+}
+.pm-diff-bar-seg.on {
+  transition: background 0.3s;
+}
+.pm-diff-bar-val {
+  font-size: 0.75rem;
+  color: var(--c-muted);
+  white-space: nowrap;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* ================================================================
+   P15 — Score delta animation
+   ================================================================ */
+.pm-score-delta-anim {
+  font-size: 2.4rem;
+  font-weight: 900;
+  text-align: center;
+  margin: 8px 0;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.pm-score-delta-anim.win  { color: var(--c-good); }
+.pm-score-delta-anim.lose { color: var(--c-bad); }
