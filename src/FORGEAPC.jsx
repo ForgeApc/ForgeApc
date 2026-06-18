@@ -1104,6 +1104,28 @@ export default function RigForge() {
   const [checkoutReady, setCheckoutReady] = useState(false);
   const checkoutInstanceRef = useRef(null); // { stripe, elements, subscriptionId }
   const [payBanner, setPayBanner] = useState(null); // { ok, text }
+  const [subTier, setSubTier] = useState(() => { try { return localStorage.getItem("mogger_sub_tier") || "free"; } catch(e) { return "free"; } });
+
+  // Perk definitions — what each tier automatically grants
+  const SUB_CRANKS = {
+    plus: JSON.stringify([{ name: "Supporter", color: "#a07aff", icon: "💜" }]),
+    pro:  JSON.stringify([{ name: "Pro", color: "#1ff5e6", icon: "🔥" }]),
+    max:  JSON.stringify([{ name: "MAX", color: "#ffd700", icon: "👑" }]),
+  };
+
+  // Apply subscription perks when tier is set (runs on mount if tier stored)
+  const applySubPerks = useCallback((tier, currentUser) => {
+    if (!tier || tier === "free" || !currentUser) return;
+    const crankStr = SUB_CRANKS[tier];
+    if (!crankStr) return;
+    // Only auto-apply if user has no custom crank yet
+    const existingCrank = parseCrank(currentUser.crank || "");
+    if (existingCrank.length === 0) {
+      const updated = { ...currentUser, crank: crankStr };
+      try { localStorage.setItem("mogger_user", JSON.stringify(updated)); } catch(e) {}
+      setHdrUser(updated);
+    }
+  }, []);
   const [lang, setLang] = useState("en");
   CUR_LANG = lang;
   const [showPatch, setShowPatch] = useState(false);
@@ -1330,9 +1352,18 @@ export default function RigForge() {
         try {
           const r = await fetch("/api/create-checkout-session?subscription_id=" + encodeURIComponent(sid));
           const d = await r.json();
-          if (r.ok && d.status === "active") setPayBanner({ ok: true, text: "Payment successful — your plan is active. Thank you!" });
-          else if (r.ok && (d.status === "incomplete" || d.status === "past_due")) setPayBanner({ ok: false, text: "Checkout wasn't completed. You can try again anytime." });
-          else setPayBanner({ ok: false, text: "We couldn't confirm the payment. If you were charged, contact support." });
+          if (r.ok && d.status === "active") {
+            const tier = d.tier || d.plan || checkoutPlan?.key || "plus";
+            try { localStorage.setItem("mogger_sub_tier", tier); } catch(e) {}
+            setSubTier(tier);
+            const cu = (() => { try { const s = localStorage.getItem("mogger_user"); return s ? JSON.parse(s) : null; } catch(e) { return null; } })();
+            applySubPerks(tier, cu);
+            setPayBanner({ ok: true, text: `✅ Payment successful! Your ${tier.toUpperCase()} perks are now active — check your rank badge.` });
+          } else if (r.ok && (d.status === "incomplete" || d.status === "past_due")) {
+            setPayBanner({ ok: false, text: "Checkout wasn't completed. You can try again anytime." });
+          } else {
+            setPayBanner({ ok: false, text: "We couldn't confirm the payment. If you were charged, contact support." });
+          }
         } catch (e) {
           setPayBanner({ ok: true, text: "Thanks! If your payment went through, your plan is now active." });
         }
@@ -1359,6 +1390,16 @@ export default function RigForge() {
   }, []);
   useEffect(() => { refreshSaved(); }, [refreshSaved]);
   useEffect(() => { if (view === "home") refreshSaved(); }, [view, refreshSaved]);
+
+  // Apply sub perks on mount for already-subscribed users
+  useEffect(() => {
+    const tier = localStorage.getItem("mogger_sub_tier");
+    if (tier && tier !== "free") {
+      setSubTier(tier);
+      const cu = (() => { try { const s = localStorage.getItem("mogger_user"); return s ? JSON.parse(s) : null; } catch(e) { return null; } })();
+      applySubPerks(tier, cu);
+    }
+  }, [applySubPerks]);
 
   // Load shared build from URL hash
   useEffect(() => {
@@ -1639,23 +1680,38 @@ export default function RigForge() {
             ) : (<>
               <h2 className="rf-plans-title"><span className="rf-hero-grad">Choose your plan</span></h2>
               <p className="rf-plans-sub">Upgrade for more power. Cancel anytime.</p>
+              {subTier !== "free" && (
+                <div className="rf-active-sub">
+                  <span className="rf-active-sub-icon">✅</span>
+                  <span>You're on <strong>{subTier.toUpperCase()}</strong> — your perks are active</span>
+                  <RankBadges elo={hdrUser?.elo ?? 0} custom={hdrUser?.crank} />
+                </div>
+              )}
               <div className="rf-plans-grid">
                 {[
-                  { key: "free", name: "Free", price: 0, tag: "", perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device"] },
-                  { key: "plus", name: "Plus", price: 2, tag: "", perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", "Custom rank color"] },
-                  { key: "pro", name: "Pro", price: 5, tag: "Popular", perks: ["Everything in Plus", "Custom rank icon", "Priority price updates", "Early access to features"] },
-                  { key: "max", name: "Max", price: 8, tag: "", perks: ["Everything in Pro", "Exclusive supporter badge", "Beta features first", "Support the developer"] },
-                ].map((p) => (
-                  <div key={p.key} className={"rf-plan" + (p.tag ? " rf-plan-feat" : "")}>
-                    {p.tag && <span className="rf-plan-tag">{p.tag}</span>}
-                    <div className="rf-plan-name">{p.name}</div>
-                    <div className="rf-plan-price"><span className="rf-plan-amt">${p.price}</span><span className="rf-plan-per">/mo</span></div>
-                    <ul className="rf-plan-perks">
-                      {p.perks.map((x, i) => (<li key={i}><Check size={14} /> {x}</li>))}
-                    </ul>
-                    <button className={"rf-plan-cta" + (p.price === 0 ? " rf-plan-cta-free" : "")} disabled={p.price === 0} onClick={() => { if (p.price !== 0) { setCheckoutErr(""); setCheckoutPlan(p); } }}>{p.price === 0 ? "Current plan" : "Get " + p.name}</button>
-                  </div>
-                ))}
+                  { key: "free",  name: "Free",  price: 0, tag: "",         perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device"] },
+                  { key: "plus",  name: "Plus",  price: 2, tag: "",         perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", '💜 "Supporter" rank badge'] },
+                  { key: "pro",   name: "Pro",   price: 5, tag: "Popular",  perks: ['Everything in Plus', '🔥 "Pro" rank badge', "Priority price updates", "Early access to features"] },
+                  { key: "max",   name: "Max",   price: 8, tag: "",         perks: ['Everything in Pro', '👑 "MAX" gold rank badge', "Beta features first", "Support the developer"] },
+                ].map((p) => {
+                  const isActive = subTier === p.key || (p.key === "free" && subTier === "free");
+                  return (
+                    <div key={p.key} className={"rf-plan" + (p.tag ? " rf-plan-feat" : "") + (isActive ? " rf-plan-active" : "")}>
+                      {p.tag && <span className="rf-plan-tag">{p.tag}</span>}
+                      {isActive && <span className="rf-plan-tag rf-plan-tag-active">✓ Active</span>}
+                      <div className="rf-plan-name">{p.name}</div>
+                      <div className="rf-plan-price"><span className="rf-plan-amt">${p.price}</span><span className="rf-plan-per">/mo</span></div>
+                      <ul className="rf-plan-perks">
+                        {p.perks.map((x, i) => (<li key={i}><Check size={14} /> {x}</li>))}
+                      </ul>
+                      <button
+                        className={"rf-plan-cta" + (isActive ? " rf-plan-cta-free" : "")}
+                        disabled={isActive || p.price === 0}
+                        onClick={() => { if (!isActive && p.price !== 0) { setCheckoutErr(""); setCheckoutPlan(p); } }}
+                      >{isActive ? "Current plan" : p.price === 0 ? "Free" : "Get " + p.name}</button>
+                    </div>
+                  );
+                })}
               </div>
             </>)}
           </div>
@@ -2948,6 +3004,27 @@ function ArchetypeBadge({ build, useCase, budget }) {
   return <span className="pm-archetype-badge" title={arch.desc}>{arch.emoji} {arch.tag}</span>;
 }
 
+/* P7: Build rating stars — 1-5 based on moggerScore total */
+function buildStarRating(total) {
+  if (total < 400) return 1;
+  if (total < 550) return 2;
+  if (total < 700) return 3;
+  if (total < 850) return 4;
+  return 5;
+}
+function BuildStars({ total }) {
+  const stars = buildStarRating(total);
+  return (
+    <div className="pm-build-stars">
+      {[1,2,3,4,5].map((n) => (
+        <svg key={n} width="14" height="14" viewBox="0 0 14 14" fill={n <= stars ? "var(--c-warn)" : "none"} stroke="var(--c-warn)" strokeWidth="1.2">
+          <polygon points="7,1 8.8,5.2 13.4,5.6 10.1,8.5 11.1,13 7,10.5 2.9,13 3.9,8.5 0.6,5.6 5.2,5.2" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
 function MoggerScoreCol({ title, build, s, win, shown, rank, useCase, budget }) {
   const big = shown == null ? s.total : shown;
   const gpuName = (build && build.gpu) ? (build.gpu.brand || build.gpu.name || "") : "";
@@ -2960,6 +3037,8 @@ function MoggerScoreCol({ title, build, s, win, shown, rank, useCase, budget }) 
       {rank && <div className={"pm-rank pm-rank-" + rank.cls + " pm-rank-col"} style={rank.custom ? { color: "#fff", background: hexToRgba(rank.color, 0.2), borderColor: rank.color, boxShadow: "0 0 12px " + hexToRgba(rank.color, 0.45) } : undefined}>{rank.icon} {rank.name}</div>}
       {useCase && budget && <ArchetypeBadge build={build} useCase={useCase} budget={budget} />}
       <div className="pm-bigscore" style={rank ? { color: rank.color } : undefined}>{big}<small>/1000</small></div>
+      {/* P7: Build rating stars */}
+      <BuildStars total={s.total} />
       <div className="pm-metrics"><span>Performance <b>{s.perf}</b></span><span>Compatibility <b>{s.compat}</b></span><span>Spent <b className={s.over ? "pm-red" : ""}>{fmt(s.spend)}</b></span></div>
       {s.issues.length > 0 && <div className="pm-issues">{s.issues.map((i, n) => <span key={n}><AlertTriangle size={11} /> {i}</span>)}</div>}
       <div className="pm-buildlist">
@@ -3106,6 +3185,119 @@ function DuelRadarChart({ you, opp, youLabel = "You", oppName, useCase, budget }
   );
 }
 
+// P2 — ELO history sparkline (last 10 ELO readings from mogger_history)
+function EloSparkline() {
+  const points = useMemo(() => {
+    try {
+      const h = JSON.parse(localStorage.getItem("mogger_history") || "[]");
+      return h.slice(-10).map(e => e.myScore ?? 0);
+    } catch(e) { return []; }
+  }, []);
+  if (points.length < 2) return null;
+  const W = 80, H = 22, pad = 2;
+  const mn = Math.min(...points), mx = Math.max(...points);
+  const range = mx - mn || 1;
+  const px = (i) => pad + (i / (points.length - 1)) * (W - pad * 2);
+  const py = (v) => H - pad - ((v - mn) / range) * (H - pad * 2);
+  const d = points.map((v, i) => (i === 0 ? "M" : "L") + px(i).toFixed(1) + "," + py(v).toFixed(1)).join(" ");
+  return (
+    <svg className="pm-elo-sparkline" viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
+      <polyline points={points.map((v,i) => px(i).toFixed(1)+","+py(v).toFixed(1)).join(" ")} fill="none" stroke="var(--c-accent)" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={px(points.length-1).toFixed(1)} cy={py(points[points.length-1]).toFixed(1)} r="2" fill="var(--c-accent)" />
+    </svg>
+  );
+}
+
+// P3 — Pre-match hype countdown overlay (3-2-1)
+function HypeCountdown({ onDone }) {
+  const [num, setNum] = useState(3);
+  useEffect(() => {
+    if (num <= 0) { onDone(); return; }
+    const t = setTimeout(() => setNum(n => n - 1), 800);
+    return () => clearTimeout(t);
+  }, [num]);
+  if (num <= 0) return null;
+  return (
+    <div className="pm-hype-overlay">
+      <span key={num} className="pm-hype-num">{num}</span>
+    </div>
+  );
+}
+
+// P1 — Live match chat panel (quick-taunt buttons + scrollable log)
+const QUICK_TAUNTS = [
+  "Good build! 👏", "You sure about that GPU? 🤔", "Nice CPU pick!", "That RAM is weak 😬",
+  "Respect the budget 💸", "GG already 🏆", "Bold storage choice 👀", "You're going over budget 💀",
+];
+function MatchChat() {
+  const [open, setOpen] = useState(false);
+  const [log, setLog] = useState([]);
+  const logRef = useRef(null);
+  const send = (msg) => {
+    setLog(l => [...l, { msg, ts: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }]);
+    setTimeout(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, 50);
+  };
+  return (
+    <div className={"pm-chat-panel" + (open ? " open" : "")}>
+      <button className="pm-chat-toggle" onClick={() => setOpen(o => !o)}>
+        💬 Chat {open ? "▲" : "▼"}
+      </button>
+      {open && (
+        <div className="pm-chat-body">
+          <div className="pm-chat-log" ref={logRef}>
+            {log.length === 0 && <div className="pm-chat-empty">Send a taunt!</div>}
+            {log.map((e, i) => <div key={i} className="pm-chat-msg"><span className="pm-chat-time">{e.ts}</span> {e.msg}</div>)}
+          </div>
+          <div className="pm-chat-btns">
+            {QUICK_TAUNTS.map((t, i) => (
+              <button key={i} className="pm-chat-taunt-btn" onClick={() => send(t)}>{t}</button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// P4 — Match outcome share card modal
+function ShareCardModal({ you, opp, youLabel, oppName, round, youWin, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const sy = moggerScore(you, round.useCase, round.budget);
+  const so = moggerScore(opp, round.useCase, round.budget);
+  const ucLabel = (USE_CASES[round.useCase] || {}).label || round.useCase;
+  const bar = (score) => {
+    const filled = Math.round(score / 100);
+    return "█".repeat(filled) + "░".repeat(10 - filled);
+  };
+  const card = [
+    "╔══════════════════════════╗",
+    `║  PC DUELS — ${youWin ? "VICTORY 🏆" : "DEFEAT 💀"}  `,
+    "╠══════════════════════════╣",
+    `║  ${ucLabel} · ${fmt(round.budget)}`,
+    "╠══════════════════════════╣",
+    `║  ${youLabel.padEnd(10)} ${bar(sy.total)} ${sy.total}`,
+    `║  ${oppName.padEnd(10)} ${bar(so.total)} ${so.total}`,
+    "╠══════════════════════════╣",
+    `║  🔗 forgeapc.com          `,
+    "╚══════════════════════════╝",
+  ].join("\n");
+  const copy = () => {
+    navigator.clipboard.writeText(card).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); });
+  };
+  return (
+    <div className="pm-share-backdrop" onClick={onClose}>
+      <div className="pm-share-modal" onClick={e => e.stopPropagation()}>
+        <h3 className="pm-share-title">📤 Share your result</h3>
+        <pre className="pm-share-card">{card}</pre>
+        <div className="pm-share-actions">
+          <button className="rf-btn" onClick={copy}>{copied ? "✓ Copied!" : "📋 Copy"}</button>
+          <button className="rf-btn rf-ghost-btn" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, practice, series, onAgain, onMenu, onHistory, onSaveBuild, onMirror, onRematch, onNextGame, onAvenge }) {
   const sy = useMemo(() => moggerScore(you, round.useCase, round.budget), [you, opp]);
   const so = useMemo(() => moggerScore(opp, round.useCase, round.budget), [you, opp]);
@@ -3152,6 +3344,7 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
   }, [youWin, you, round.useCase, round.budget, soSD.total]);
   // Open breakdown automatically when you lose so the player sees why
   const [showBreakdown, setShowBreakdown] = useState(!youWin);
+  const [showOppBuild, setShowOppBuild] = useState(false); // P10
   // AI persona post-match quip
   const aiQuip = oppPersona ? (youWin ? pickRand(oppPersona.losses) : pickRand(oppPersona.wins)) : null;
   const [phase, setPhase] = useState("loading"); // loading -> reveal
@@ -3163,6 +3356,10 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
   const [savedOpp, setSavedOpp] = useState(false);
   const [rCopied, setRCopied] = useState(false);
   const [rateVal, setRateVal] = useState(null);
+  // P4: share card modal
+  const [showShareCard, setShowShareCard] = useState(false);
+  // P5: persona loss quote (last item in taunts array is the "loss quote")
+  const personaLossQuote = youWin && oppPersona ? oppPersona.taunts[oppPersona.taunts.length - 1] : null;
   // A5: budget efficiency
   const budgEff = sy.spend > 0 ? Math.round((sy.spend / round.budget) * 100) : 0;
   const oppBudgEff = so.spend > 0 ? Math.round((so.spend / round.budget) * 100) : 0;
@@ -3241,6 +3438,13 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
           {aiQuip && <span className="pm-opp-persona-quip">"{aiQuip}"</span>}
         </div>
       )}
+      {/* P5: Persona loss quote — speech bubble when you beat an AI */}
+      {personaLossQuote && (
+        <div className="pm-persona-loss-bubble">
+          <span className="pm-plb-name">{oppName} says:</span>
+          <span className="pm-plb-quote">"{personaLossQuote}"</span>
+        </div>
+      )}
       <div className="pm-verdict-box"><span className="pm-verdict-tag"><Sparkles size={12} /> AI JUDGE</span>{busy && !verdict ? <p className="pm-dim">Writing the verdict…</p> : <p>{verdict}</p>}</div>
       {eloMsg && (
         <div className={"pm-elo-result " + (eloMsg.delta > 0 ? "up" : eloMsg.delta < 0 ? "down" : "")}>
@@ -3248,6 +3452,23 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
           {/* A2: ELO ticker */}
           <EloTicker oldElo={eloMsg.newElo - eloMsg.delta} newElo={eloMsg.newElo} delta={eloMsg.delta} /> <span className="pm-elo-now-label">total</span>
           {eloMsg.streakMult > 1 && <span className="pm-streak-mult">🔥 {eloMsg.streak}-win streak · +{Math.round((eloMsg.streakMult - 1) * 100)}% bonus</span>}
+          {/* P8: ELO tier progress bar */}
+          {(() => {
+            const curElo = eloMsg.newElo;
+            const tierIdx = ELO_TIERS.findIndex((t) => curElo >= t.min && curElo <= t.max);
+            const tier = ELO_TIERS[tierIdx >= 0 ? tierIdx : 0];
+            const nextTier = ELO_TIERS[tierIdx + 1] || null;
+            const pct = Math.round(((curElo - tier.min) / (tier.max - tier.min)) * 100);
+            return (
+              <div className="pm-elo-tier-bar-wrap">
+                <span className="pm-elo-tier-label">{tier.name}</span>
+                <div className="pm-elo-tier-bar">
+                  <div className="pm-elo-tier-fill" style={{ width: pct + "%" }} />
+                </div>
+                {nextTier && <span className="pm-elo-tier-next">{nextTier.name}</span>}
+              </div>
+            );
+          })()}
         </div>
       )}
       {series && (
@@ -3269,7 +3490,13 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
       {effMedal && phase === "reveal" && <div className="pm-eff-medal">{effMedal} — Score {sy.total}/1000</div>}
       {/* A5: Budget efficiency row */}
       {phase === "reveal" && <div className="pm-budget-eff-row"><span>Budget used: <b style={{color: budgEff > 100 ? "var(--c-bad)" : budgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{budgEff}%</b> {youLabel} · <b style={{color: oppBudgEff > 100 ? "var(--c-bad)" : oppBudgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{oppBudgEff}%</b> {oppName}</span></div>}
-      {mvpCat && <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? youLabel : oppName}</div>}
+      {/* P6: Category MVP highlight */}
+      {mvpCat && (
+        <div className="pm-mvp-cat-card">
+          <div className="pm-mvp-cat-crown">👑 Category MVP</div>
+          <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? youLabel : oppName}</div>
+        </div>
+      )}
       {weakCat && <div className="pm-weak-banner">📉 Costliest category: <b>{CAT_META[weakCat].label}</b> — {oppName}'s pick scored higher here, worth {USE_CASES[round.useCase].alloc[weakCat]}% of your total score.</div>}
       {rivalInfo && (
         <div className="pm-avenge-row">
@@ -3283,6 +3510,33 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
           <div className="pm-mentor-body">{mentorExplain(mentorSwap, round.useCase)}</div>
           <div className="pm-mentor-score">Score: {sySD.total} → <b>{mentorSwap.newTotal}</b> ({mentorSwap.wouldHaveWon ? "beats" : "vs"} {oppName}'s {soSD.total})</div>
           {(onRematch || onAgain) && <button className="rf-btn rf-ghost-btn pm-mentor-retry" onClick={onRematch || onAgain}><RotateCcw size={14} /> Retry the duel</button>}
+        </div>
+      )}
+      {/* P10: Opponent build reveal */}
+      {phase === "reveal" && (
+        <div className="pm-opp-reveal">
+          <button className="rf-btn rf-ghost-btn pm-breakdown-toggle" onClick={() => setShowOppBuild((v) => !v)}>
+            {showOppBuild ? "▲ Hide" : "▼ Inspect"} opponent build
+          </button>
+          {showOppBuild && (
+            <div className="pm-opp-reveal-list">
+              {CATEGORY_ORDER.map((c) => {
+                const p = opp[c];
+                if (!p) return null;
+                const maxP = ucMaxPerf(c, round.useCase);
+                const perfPct = maxP > 0 ? Math.round(ucPerf(c, p, round.useCase) / maxP * 100) : 0;
+                const Icon = CAT_META[c].Icon;
+                return (
+                  <div key={c} className="pm-opp-reveal-part">
+                    <span className="pm-opp-reveal-cat"><Icon size={11} /> {CAT_META[c].label}</span>
+                    <span className="pm-opp-reveal-name">{p.model || p.name}</span>
+                    <span className="pm-opp-reveal-price">{fmt(p.price)}</span>
+                    <span className="pm-opp-reveal-perf" style={{ color: perfPct >= 70 ? "var(--c-good)" : perfPct >= 40 ? "var(--c-warn)" : "var(--c-bad)" }}>{perfPct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
       <button className="rf-btn rf-ghost-btn pm-breakdown-toggle" onClick={() => setShowBreakdown((v) => !v)}>{showBreakdown ? "▲ Hide" : "▼ Show"} part-by-part breakdown</button>
@@ -3336,8 +3590,12 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
           {rateVal && <span className="pm-rate-thanks">Thanks for rating!</span>}
         </div>
       )}
-      {/* B5: share result */}
-      {phase === "reveal" && <div className="pm-row" style={{justifyContent:"center",marginBottom:"4px"}}><button className="rf-btn rf-ghost-btn" onClick={shareRes}>{rCopied ? <><Check size={14}/> Copied!</> : <>📤 Share result</>}</button></div>}
+      {/* B5: share result + P4: share card modal */}
+      {phase === "reveal" && <div className="pm-row" style={{justifyContent:"center",marginBottom:"4px",gap:"8px"}}>
+        <button className="rf-btn rf-ghost-btn" onClick={shareRes}>{rCopied ? <><Check size={14}/> Copied!</> : <>📤 Share result</>}</button>
+        <button className="rf-btn rf-ghost-btn" onClick={() => setShowShareCard(true)}>🖼️ Share card</button>
+      </div>}
+      {showShareCard && <ShareCardModal you={you} opp={opp} youLabel={youLabel} oppName={oppName} round={round} youWin={youWin} onClose={() => setShowShareCard(false)} />}
       <div className="pm-row pm-center-row">
         <button className="rf-btn rf-ghost-btn" onClick={onMenu}>Menu</button>
         {onMirror && <button className="rf-btn rf-ghost-btn" onClick={onMirror}><Repeat2 size={16} /> Mirror</button>}
@@ -4791,6 +5049,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
   // A7: Pre-match taunt
   const [selectedTaunt, setSelectedTaunt] = useState(null);
   const [activeRogueReward, setActiveRogueReward] = useState(null); // reward chosen for this match, or null
+  // P3: hype countdown flag — shown once when entering taunt-pick
+  const [hypeCountdownDone, setHypeCountdownDone] = useState(false);
   // B2: confetti on win
   const [showConfetti, setShowConfetti] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -4937,7 +5197,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
     if (d.k === "custom") { setAiElo(custom); setAiHidden(false); }
     else if (d.k === "random") { setAiElo(100 + Math.floor(Math.random() * 2900)); setAiHidden(true); }
     else { setAiElo(d.elo); setAiHidden(false); }
-    setScreen(bannedMode ? "ban-phase" : "taunt-pick");
+    setHypeCountdownDone(false); setScreen(bannedMode ? "ban-phase" : "taunt-pick");
   };
   const start = (r) => {
     setRound(r); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null);
@@ -5165,6 +5425,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
               <span>Best <b>{histStats.best}</b></span>
               {streak > 0 && <span>🔥 <b>{streak}</b>{streak >= 3 && <span className="pm-streak-mult-badge"> +{Math.round((Math.min(1+Math.floor(streak/3)*0.10,1.5)-1)*100)}%</span>}</span>}
               {(() => { try { const h=JSON.parse(localStorage.getItem("mogger_history")||"[]").slice(-8); if(h.length<3)return null; return <span className="pm-spark-inline">{h.map((e,i)=><span key={i} className={"pm-spark-dot "+(e.won?"win":"lose")}/>)}</span>; } catch(e){return null;} })()}
+              {/* P2: ELO trend sparkline */}
+              <EloSparkline />
             </div>
           )}
 
@@ -5347,6 +5609,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
         const availableRewards = storedR?.list?.filter(r => r.matchesLeft > 0) || [];
         return (
           <div className="pm-card pm-center rf-fade">
+            {/* P3: Hype countdown before taunt-pick content */}
+            {!hypeCountdownDone && <HypeCountdown onDone={() => setHypeCountdownDone(true)} />}
             {availableRewards.length > 0 && (
               <div className="pm-rogue-reward-picker">
                 <div className="pm-rrp-head">⚔️ Rogue Reward — activate for this match?</div>
@@ -5383,6 +5647,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
               <button className="rf-btn rf-ghost-btn" onClick={() => setScreen("diff")}><ChevronLeft size={16} /> Back</button>
               <button className="rf-btn" onClick={() => setScreen("lobby")}>{selectedTaunt ? "Taunt sent! → Lobby" : "Skip → Lobby"} <ChevronRight size={16} /></button>
             </div>
+            {/* P1: Live match chat panel */}
+            <MatchChat />
           </div>
         );
       })()}
@@ -5406,7 +5672,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
         const resultOppName  = mirrored ? "You" : aiName;
         return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} practice={practice || mode === "ghost"} series={series} onAgain={again} onRematch={mode === "ai" ? rematch : mode === "ghost" ? rematchGhost : undefined} onNextGame={mode === "ai" ? nextSeriesGame : undefined} onAvenge={mode === "ai" ? avengeRival : undefined} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
       })()}
-      {screen === "ban-phase" && round && <BanPhaseScreen round={round} myElo={user?.elo||1000} aiElo={aiElo} onBack={() => setScreen("diff")} onDone={(myBans, aiBans) => { setYouBannedParts(myBans); setAiBannedParts(aiBans); setScreen("taunt-pick"); }} />}
+      {screen === "ban-phase" && round && <BanPhaseScreen round={round} myElo={user?.elo||1000} aiElo={aiElo} onBack={() => setScreen("diff")} onDone={(myBans, aiBans) => { setYouBannedParts(myBans); setAiBannedParts(aiBans); setHypeCountdownDone(false); setScreen("taunt-pick"); }} />}
       {screen === "draft" && <MoggerDraft onMenu={menu} />}
       {screen === "rogue" && <MoggerRogueRun onMenu={menu} user={user} />}
       {screen === "archaeology" && <MoggerArchaeology onMenu={menu} onReplay={challengeGhost} />}
@@ -7429,7 +7695,17 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
 
       {/* part list */}
       <div className="rf-parts">
-        {CATEGORY_ORDER.map((cat, i) => {
+        {(() => {
+          /* P9: compute budget-average price/perf for badge coloring */
+          const ppEntries = CATEGORY_ORDER.map((c) => {
+            const p = parts[c]; const b2 = (budget * UC.alloc[c]) / 100;
+            if (!p || !b2 || b2 <= 0) return null;
+            const compat = isPartCompatible(parts, c);
+            const sc2 = compat ? partScore({ ...p, cat: c }, b2, useCase) : 0;
+            return sc2 > 0 ? p.price / sc2 : null;
+          }).filter((v) => v != null);
+          const avgPP = ppEntries.length > 0 ? ppEntries.reduce((a, b2) => a + b2, 0) / ppEntries.length : null;
+          return CATEGORY_ORDER.map((cat, i) => {
           const part = parts[cat];
           const skip = UC.alloc[cat] === 0 && !part;
           const band = (budget * UC.alloc[cat]) / 100;
@@ -7437,9 +7713,16 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           const status = part ? budgetStatus(part.price, band) : "within";
           const compatible = part ? isPartCompatible(parts, cat) : true;
           const sc = part ? (compatible ? partScore({ ...part, cat }, band, useCase) : 0) : 0;
+          /* P9: price per point */
+          const pp = (part && sc > 0 && !partOOS(part)) ? (part.price / sc) : null;
+          const ppGood = pp != null && avgPP != null && pp < avgPP;
           const isOpen = expanded[cat];
           return (
-            <div key={cat} className="rf-part rf-pop" style={{ animationDelay: i * 45 + "ms" }}>
+            <div key={cat} className="rf-part rf-pop" style={{ animationDelay: i * 45 + "ms", position: "relative" }}>
+              {/* P9: price-per-point badge */}
+              {pp != null && (
+                <span className={"rf-pp-badge" + (ppGood ? " good" : " over")}>${pp < 10 ? pp.toFixed(1) : Math.round(pp)}/pt</span>
+              )}
               <div className="rf-part-top">
                 <div className="rf-part-media">
                 {part && part.img ? (
@@ -7493,7 +7776,8 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
               {part && isOpen && <InfoPanel cat={cat} part={part} band={band} status={status} useCase={useCase} incompatible={!compatible} enableAsk budget={budget} parts={parts} isOnline={isOnline} />}
             </div>
           );
-        })}
+        });
+        })()}
       </div>
     </div>
   );

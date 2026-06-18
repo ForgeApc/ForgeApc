@@ -3958,3 +3958,326 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   to   { opacity:1; transform:translateY(0)    scale(1); }
 }
 .rf-pop { animation-duration: 0.85s !important; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94) !important; }
+
+/* ================================================================
+   P1 — Live match chat panel
+   ================================================================ */
+.pm-chat-panel {
+  margin-top: 16px;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(15,18,32,0.6);
+}
+.pm-chat-toggle {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--c-accent);
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  text-align: left;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.pm-chat-toggle:hover { background: rgba(31,245,230,0.06); }
+.pm-chat-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.pm-chat-log {
+  min-height: 60px;
+  max-height: 120px;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.25);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pm-chat-empty { color: var(--c-muted); font-size: 0.78rem; text-align: center; padding: 12px 0; }
+.pm-chat-msg { font-size: 0.8rem; color: var(--c-text); }
+.pm-chat-time { font-size: 0.7rem; color: var(--c-muted); margin-right: 6px; }
+.pm-chat-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.pm-chat-taunt-btn {
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--c-border);
+  background: rgba(31,245,230,0.07);
+  color: var(--c-text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pm-chat-taunt-btn:hover { background: rgba(31,245,230,0.18); border-color: var(--c-accent); color: var(--c-accent); }
+
+/* =========================================================
+   P2 — ELO sparkline in stats bar
+   ================================================================ */
+.pm-elo-sparkline {
+  display: inline-block;
+  vertical-align: middle;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   P3 — Pre-match hype countdown overlay
+   ================================================================ */
+.pm-hype-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11,13,24,0.78);
+  border-radius: 14px;
+  z-index: 20;
+  pointer-events: none;
+}
+.pm-hype-num {
+  font-size: 6rem;
+  font-weight: 900;
+  color: var(--c-accent);
+  text-shadow: 0 0 40px var(--c-accent), 0 0 80px rgba(31,245,230,0.4);
+  animation: pmHypeIn 0.75s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+@keyframes pmHypeIn {
+  0%   { opacity: 0; transform: scale(2.2); }
+  40%  { opacity: 1; transform: scale(1); }
+  80%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.6); }
+}
+/* Parent needs relative positioning */
+.pm-card { position: relative; }
+
+/* ================================================================
+   P4 — Share card modal
+   ================================================================ */
+.pm-share-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+.pm-share-modal {
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  padding: 24px;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.pm-share-title { font-size: 1rem; font-weight: 700; color: var(--c-text); margin: 0; }
+.pm-share-card {
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--c-accent);
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+.pm-share-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ================================================================
+   P5 — Persona loss quote speech bubble
+   ================================================================ */
+.pm-persona-loss-bubble {
+  position: relative;
+  background: rgba(160,122,255,0.12);
+  border: 1px solid rgba(160,122,255,0.35);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin: 8px 0;
+}
+
+/* P6-P10 FEATURES
+   ================================================================ */
+
+/* P6: Category MVP highlight — golden animated border glow */
+.pm-mvp-cat-card {
+  border: 1.5px solid gold;
+  border-radius: 10px;
+  padding: 6px 10px 2px;
+  margin: 8px 0;
+  background: rgba(255,200,0,0.06);
+  box-shadow: 0 0 0 2px rgba(255,200,0,0.18), 0 0 18px rgba(255,200,0,0.22);
+  animation: mvpGlow 2s ease-in-out infinite alternate;
+}
+.pm-mvp-cat-crown {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: gold;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+@keyframes mvpGlow {
+  from { box-shadow: 0 0 6px rgba(255,200,0,0.22), 0 0 0 2px rgba(255,200,0,0.18); }
+  to   { box-shadow: 0 0 24px rgba(255,200,0,0.50), 0 0 0 2px rgba(255,200,0,0.35); }
+}
+
+/* P7: Build rating stars */
+.pm-build-stars {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  margin: 4px 0 6px;
+}
+
+/* P8: ELO tier progress bar */
+.pm-elo-tier-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--c-muted);
+  width: 100%;
+}
+.pm-elo-tier-label {
+  white-space: nowrap;
+  min-width: 64px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--c-text);
+}
+.pm-elo-tier-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.10);
+  overflow: hidden;
+}
+.pm-elo-tier-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--c-accent2), var(--c-accent));
+  transition: width 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.pm-elo-tier-next {
+  white-space: nowrap;
+  min-width: 64px;
+  color: var(--c-muted);
+  font-size: 0.69rem;
+}
+
+/* P9: Price per point badge */
+.rf-pp-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 3;
+  letter-spacing: 0.03em;
+}
+.rf-pp-badge.good {
+  background: rgba(30,220,120,0.15);
+  border: 1px solid rgba(30,220,120,0.40);
+  color: var(--c-good);
+}
+.rf-pp-badge.over {
+  background: rgba(255,80,80,0.13);
+  border: 1px solid rgba(255,80,80,0.35);
+  color: var(--c-bad);
+}
+
+/* P10: Opponent build reveal */
+.pm-opp-reveal { margin: 8px 0 0; }
+.pm-opp-reveal-list {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pm-persona-loss-bubble::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 24px;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid rgba(160,122,255,0.35);
+}
+.pm-plb-name {
+  font-size: 0.72rem;
+  color: var(--c-accent2);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.pm-plb-quote {
+  font-size: 0.88rem;
+  color: var(--c-text);
+  font-style: italic;
+}
+
+.pm-opp-reveal-part {
+  display: grid;
+  grid-template-columns: 80px 1fr 54px 36px;
+  gap: 6px;
+  align-items: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+}
+.pm-opp-reveal-cat {
+  color: var(--c-muted);
+  font-size: 0.68rem;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.pm-opp-reveal-name {
+  color: var(--c-text);
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.pm-opp-reveal-price { color: var(--c-muted); text-align: right; }
+.pm-opp-reveal-perf { font-weight: 700; text-align: right; }
+
+/* ================================================================
+   SUBSCRIPTION PERKS — active plan styling
+   ================================================================ */
+.rf-active-sub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(31,245,230,0.08);
+  border: 1px solid rgba(31,245,230,0.22);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-size: 0.88rem;
+  color: var(--c-text);
+}
+.rf-active-sub-icon { font-size: 1.1rem; }
+
+.rf-plan-active {
+  border-color: rgba(31,245,230,0.35) !important;
+  box-shadow: 0 0 0 1px rgba(31,245,230,0.18), inset 0 0 32px rgba(31,245,230,0.04) !important;
+}
+.rf-plan-tag-active {
+  background: rgba(31,245,230,0.15) !important;
+  color: var(--c-accent) !important;
+  border-color: rgba(31,245,230,0.30) !important;
+}
