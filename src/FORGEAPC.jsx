@@ -2099,7 +2099,10 @@ function mBuildCandidate(ucKey, budget, cap, metric, topK) {
   // expense of GPU, and stops office builds from buying overkill CPUs.
   const catCap = {};
   for (const c of CATEGORY_ORDER) {
-    catCap[c] = W[c] > 0 ? Math.round(budget * (W[c] / 100) * 2.0) : 0;
+    // Non-performance parts (case/cooler/psu) cap tighter — 1.3× prevents overspending
+    // on aesthetics (e.g. $200 Hyte Y70 in an $1800 gaming build) at the cost of GPU/CPU.
+    const capMult = ["case", "cooler", "psu"].includes(c) ? 1.3 : 2.0;
+    catCap[c] = W[c] > 0 ? Math.round(budget * (W[c] / 100) * capMult) : 0;
   }
   // Structural parts (mobo/cooler/psu/case) always get at least a $70 ceiling
   // even when their alloc weight is small, so they remain upgradeable.
