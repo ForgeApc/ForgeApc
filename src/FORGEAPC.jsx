@@ -7284,6 +7284,18 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
   const [shareStatus, setShareStatus] = useState(null); // null | "posting" | "done" | "error"
   const [textCopied, setTextCopied] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [focusedPart, setFocusedPart] = useState(-1); // R23 keyboard nav
+  const visibleCats = CATEGORY_ORDER.filter(c => !(UC.alloc[c] === 0 && !parts[c]));
+
+  // R23 — ArrowUp/ArrowDown keyboard nav for part cards
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); setFocusedPart(f => Math.min(f + 1, visibleCats.length - 1)); }
+      if (e.key === "ArrowUp")   { e.preventDefault(); setFocusedPart(f => Math.max(f - 1, 0)); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [visibleCats.length]);
   const shownTotal = CATEGORY_ORDER.reduce((s, c) => { const p = parts[c]; return s + (p && !partOOS(p) ? p.price : 0); }, 0);
   const overBudget = shownTotal > budget;
   const copyAsText = () => {
@@ -7291,6 +7303,24 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
     CATEGORY_ORDER.forEach(c => { const p = parts[c]; if (p) lines.push(`${CAT_META[c].label}: ${p.name} (${fmt(p.price)})`); });
     lines.push("", `Total: ${fmt(shownTotal)}`, `Performance: ${a.score}/1000 · Price/Perf: ${a.ppScore}/100`);
     navigator.clipboard.writeText(lines.join("\n")).then(() => { setTextCopied(true); setTimeout(() => setTextCopied(false), 2500); });
+  };
+
+  // R24 — Export build as formatted text table
+  const [exportCopied, setExportCopied] = useState(false);
+  const exportBuild = () => {
+    const col = (s, n) => String(s).padEnd(n);
+    const header = `${col("Category", 14)} | ${col("Part Name", 40)} | ${col("Price", 9)} | Score`;
+    const sep = "-".repeat(header.length);
+    const rows = CATEGORY_ORDER.filter(c => parts[c]).map(c => {
+      const p = parts[c];
+      const band = (budget * USE_CASES[useCase].alloc[c]) / 100;
+      const sc = isPartCompatible(parts, c) ? partScore({ ...p, cat: c }, band, useCase) : 0;
+      const price = partOOS(p) ? "OOS" : fmt(p.price);
+      return `${col(CAT_META[c].label, 14)} | ${col(p.name, 40)} | ${col(price, 9)} | ${sc}`;
+    });
+    const footer = `\nTotal: ${fmt(shownTotal)} / ${fmt(budget)} budget  ·  Perf: ${a.score}/1000  ·  P/P: ${a.ppScore}/100`;
+    const text = [`ForgeAPC — ${USE_CASES[useCase].label} Build`, sep, header, sep, ...rows, sep, footer].join("\n");
+    navigator.clipboard.writeText(text).then(() => { setExportCopied(true); setTimeout(() => setExportCopied(false), 2500); });
   };
 
   const doShare = async () => {
@@ -7363,9 +7393,28 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
         <div className="rf-gauges">
           <Gauge value={a.score} max={1000} label={t("performance")} accent={scoreColor(a.score / 10)} />
           <Gauge value={a.ppScore} label={t("pricePerf")} accent={scoreColor(a.ppScore)} delay={120} />
+          {(() => {
+            const compatScore = Math.max(0, 100 - a.compat.issues.length * 20);
+            const compatColor = compatScore === 100 ? "var(--c-good)" : compatScore >= 60 ? "var(--c-warn)" : "var(--c-bad)";
+            return (
+              <div className="rf-compat-badge" style={{ "--compat-color": compatColor }}>
+                <span className="rf-compat-badge-icon">🛡</span>
+                <span className="rf-compat-badge-score" style={{ color: compatColor }}>{compatScore}</span>
+                <span className="rf-compat-badge-label">Compat score</span>
+              </div>
+            );
+          })()}
         </div>
         <div className="rf-verdict">
-          <div className="rf-verdict-tag"><Sparkles size={13} /> AI verdict <span className="rf-hybrid">Opus 4.8</span>{aiBusy && <span className="rf-verdict-state"> · thinking…</span>}</div>
+          <div className="rf-verdict-tag">
+            <Sparkles size={13} /> AI verdict <span className="rf-hybrid">Opus 4.8</span>
+            {aiBusy && <span className="rf-verdict-state"> · thinking…</span>}
+            {verdict && verdict !== "__offline__" && !aiBusy && (
+              <button className="rf-regen-btn" onClick={onGenerate} title="Regenerate verdict" aria-label="Regenerate verdict">
+                <span className="rf-regen-icon">↻</span>
+              </button>
+            )}
+          </div>
           {verdict === "__offline__" ? (
             <p className="rf-offline-msg">AI unavailable — connect to the internet to generate a verdict.</p>
           ) : verdict ? (
@@ -7422,6 +7471,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
               <button className="rf-ghost rf-sm-btn" onClick={onPower}>⚡ Power cost</button>
               <button className="rf-ghost rf-sm-btn" onClick={onShareLink}>{shareCopied ? <><Check size={12} /> Copied!</> : <><Globe size={12} /> Share link</>}</button>
               <button className="rf-ghost rf-sm-btn" onClick={copyAsText}>{textCopied ? <><Check size={12} /> Copied text!</> : <>📋 Copy as text</>}</button>
+              <button className="rf-ghost rf-sm-btn" onClick={exportBuild}>{exportCopied ? <><Check size={12} /> Exported!</> : <>📤 Export</>}</button>
             </div>
           </div>
         );
@@ -7438,8 +7488,10 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           const compatible = part ? isPartCompatible(parts, cat) : true;
           const sc = part ? (compatible ? partScore({ ...part, cat }, band, useCase) : 0) : 0;
           const isOpen = expanded[cat];
+          const visIdx = visibleCats.indexOf(cat);
+          const isFocused = visIdx !== -1 && visIdx === focusedPart;
           return (
-            <div key={cat} className="rf-part rf-pop" style={{ animationDelay: i * 45 + "ms" }}>
+            <div key={cat} className={"rf-part rf-pop" + (isFocused ? " rf-part-focused" : "")} style={{ animationDelay: i * 45 + "ms" }} onClick={() => visIdx !== -1 && setFocusedPart(visIdx)}>
               <div className="rf-part-top">
                 <div className="rf-part-media">
                 {part && part.img ? (
@@ -7450,6 +7502,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
                   <div className="rf-part-icon"><Meta.Icon size={20} /></div>
                 )}
                 {part && part._source && <span className={"rf-part-src " + part._source}>{({ amazon: "Amazon", newegg: "Newegg", bestbuy: "Best Buy" })[part._source] || ""}</span>}
+                {part && !partOOS(part) && typeof part.price === "number" && <span className="rf-part-price-badge">${part.price}</span>}
                 </div>
                 <div className="rf-part-info">
                   <div className="rf-part-cat">{tCat(cat)}</div>

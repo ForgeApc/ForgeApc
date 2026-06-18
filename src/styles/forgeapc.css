@@ -3958,3 +3958,72 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   to   { opacity:1; transform:translateY(0)    scale(1); }
 }
 .rf-pop { animation-duration: 0.85s !important; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94) !important; }
+
+/* ================================================================
+   R21 — Verdict regenerate button
+   ================================================================ */
+.rf-regen-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 0 0 6px;
+  line-height: 1;
+  opacity: 0.65;
+  transition: opacity 0.2s, transform 0.3s;
+}
+.rf-regen-btn:hover { opacity: 1; }
+.rf-regen-icon {
+  display: inline-block;
+  font-size: 14px;
+  color: var(--c-accent);
+  transition: transform 0.6s ease;
+}
+.rf-regen-btn:hover .rf-regen-icon { transform: rotate(360deg); }
+
+/* ================================================================
+   R22 — Part price badge
+   ================================================================ */
+.rf-part-price-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: rgba(10,12,24,0.82);
+  color: var(--c-accent);
+  border: 1px solid rgba(31,245,230,0.3);
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  pointer-events: none;
+  z-index: 3;
+  letter-spacing: 0.02em;
+}
+
+/* ================================================================
+   R23 — Keyboard nav for parts (focused card highlight)
+   ================================================================ */
+.rf-part-focused {
+  border-color: var(--c-accent) !important;
+  box-shadow: 0 0 0 2px rgba(31,245,230,0.18), inset 0 1.5px 0 rgba(255,255,255,0.13), 0 8px 32px rgba(0,0,0,0.35) !important;
+  outline: none;
+}
+
+/* ================================================================
+   R25 — Compatibility score badge
+   ================================================================ */
+.rf-compat-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 70px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--compat-color, var(--c-accent));
+  background: rgba(10,12,24,0.4);
+  flex-shrink: 0;
+}
+.rf-compat-badge-icon { font-size: 1.1rem; line-height: 1; }
+.rf-compat-badge-score { font-size: 1.4rem; font-weight: 800; line-height: 1.1; }
+.rf-compat-badge-label { font-size: 0.62rem; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
