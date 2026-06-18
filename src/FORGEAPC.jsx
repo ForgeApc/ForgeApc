@@ -1281,7 +1281,11 @@ export default function RigForge() {
         const r = await fetch("/api/create-checkout-session", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ tier: checkoutPlan.key, email: u && u.email ? u.email : undefined }),
+          body: JSON.stringify({
+            tier: checkoutPlan.key,
+            email: u?.email || undefined,
+            username: u?.username || u?.name || undefined,
+          }),
         });
         const data = await r.json().catch(() => ({}));
         if (!r.ok || !data.clientSecret || !data.publishableKey) throw new Error(data.error || (r.ok ? "Could not start checkout." : "Server error — make sure STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY are set in Vercel."));
@@ -1707,7 +1711,11 @@ export default function RigForge() {
                       <button
                         className={"rf-plan-cta" + (isActive ? " rf-plan-cta-free" : "")}
                         disabled={isActive || p.price === 0}
-                        onClick={() => { if (!isActive && p.price !== 0) { setCheckoutErr(""); setCheckoutPlan(p); } }}
+                        onClick={() => {
+                          if (isActive || p.price === 0) return;
+                          if (!hdrUser) { setHdrAuth(true); setPlansOpen(false); return; }
+                          setCheckoutErr(""); setCheckoutPlan(p);
+                        }}
                       >{isActive ? "Current plan" : p.price === 0 ? "Free" : "Get " + p.name}</button>
                     </div>
                   );

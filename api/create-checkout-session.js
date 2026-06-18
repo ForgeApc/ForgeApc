@@ -39,23 +39,26 @@ export default async function handler(req, res) {
       const sid = req.query?.subscription_id;
       if (!sid) return res.status(400).json({ error: "subscription_id required" });
       const sub = await stripeFetch("/subscriptions/" + encodeURIComponent(sid));
-      return res.status(200).json({ status: sub.status });
+      const tierKey = sub?.metadata?.tier || null;
+      return res.status(200).json({ status: sub.status, tier: tierKey });
     }
 
     if (req.method === "POST") {
       const body = req.body || {};
-      const tier = TIERS[body.tier];
+      const tierKey = body.tier;
+      const tier = TIERS[tierKey];
       if (!tier) return res.status(400).json({ error: "Unknown plan." });
 
-      // 1. Create customer
+      // 1. Create customer — name shows in Stripe dashboard so you know who bought
       const custForm = {};
-      if (body.email) custForm.email = body.email;
+      if (body.email)    custForm.email = body.email;
+      if (body.username) custForm.name  = body.username;
       const customer = await stripeFetch("/customers", { method: "POST", form: custForm });
 
       // 2. Create product
       const product = await stripeFetch("/products", { method: "POST", form: { name: tier.name } });
 
-      // 3. Create subscription (expand latest_invoice only — one level is safe)
+      // 3. Create subscription — attach tier + username as metadata so the GET can return it
       const sub = await stripeFetch("/subscriptions", {
         method: "POST",
         form: {
@@ -67,6 +70,8 @@ export default async function handler(req, res) {
           payment_behavior: "default_incomplete",
           "payment_settings[save_default_payment_method]": "on_subscription",
           "expand[0]": "latest_invoice",
+          "metadata[tier]": tierKey,
+          "metadata[username]": body.username || "",
         },
       });
 
