@@ -1075,6 +1075,11 @@ export default function RigForge() {
   const [toast, setToast] = useState(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [isFs, setIsFs] = useState(false);
+  const [viewVisible, setViewVisible] = useState(true);
+  const setViewAnimated = useCallback((nextView) => {
+    setViewVisible(false);
+    setTimeout(() => { setView(nextView); setViewVisible(true); }, 180);
+  }, [setView]);
   const [priceInfo, setPriceInfo] = useState(null);
   const [isOnline, setIsOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
   const [offlinePriceStatus, setOfflinePriceStatus] = useState(null); // null | "cached" | "sample"
@@ -1517,13 +1522,13 @@ export default function RigForge() {
       {!isOnline && <div style={{height:"38px"}} />}
 
       <header className="rf-header">
-        <div className="rf-brand" onClick={() => setView("home")}>
+        <div className="rf-brand" onClick={() => setViewAnimated("home")}>
           <div className="rf-logo"><Zap size={18} /></div>
           <span>FORGE<span className="rf-accent">APC</span></span>
         </div>
         <div className="rf-header-right">
           {view !== "home" && (
-            <button className="rf-ghost" onClick={() => setView("home")}>
+            <button className="rf-ghost" onClick={() => setViewAnimated("home")}>
               <ChevronLeft size={16} /> {t("myRigs")}
             </button>
           )}
@@ -1560,6 +1565,7 @@ export default function RigForge() {
               <div className="rf-acct-chip">
                 <span className="rf-acct-name">{hdrUser.name}</span>
                 <RankBadges elo={hdrUser.elo} custom={hdrUser.crank} />
+                {typeof hdrUser.elo === "number" && (() => { const r = moggerRank(hdrUser.elo, hdrUser.crank); return <span className="rf-hdr-elo" style={{"--rank-color": r.color}}>{hdrUser.elo}</span>; })()}
                 <button className="rf-acct-out" onClick={() => setHdrLogoutAsk(true)} title="Log out"><X size={13} /></button>
               </div>
             </>
@@ -1668,7 +1674,7 @@ export default function RigForge() {
         </div>
       )}
 
-      <main className="rf-main">
+      <main className={"rf-main rf-view-fade" + (viewVisible ? " rf-view-visible" : "")}>
         {view === "home" && (
           <Home saved={saved} loading={loadingSaved} onNew={startSurvey} onOpen={openSaved} onDelete={deleteBuild} priceInfo={priceInfo} onMogger={() => setView("mogger")}
             onClone={async (b) => {
@@ -2452,7 +2458,21 @@ function MoggerHistory({ onBack }) {
   return (
     <div className="pm-card rf-fade">
       <h2 className="pm-h2">📜 Duel History</h2>
-      {hist.length === 0 ? <p className="pm-p pm-dim">No matches yet — play a duel first!</p> : (
+      {hist.length === 0 ? (
+        <div className="pm-hist-empty">
+          <svg className="pm-hist-empty-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="10" y="12" width="100" height="66" rx="6" stroke="currentColor" strokeWidth="3" opacity="0.4"/>
+            <rect x="20" y="22" width="80" height="46" rx="3" fill="currentColor" opacity="0.08"/>
+            <rect x="45" y="78" width="30" height="6" rx="2" fill="currentColor" opacity="0.3"/>
+            <rect x="35" y="84" width="50" height="4" rx="2" fill="currentColor" opacity="0.2"/>
+            <circle cx="60" cy="45" r="12" stroke="currentColor" strokeWidth="2.5" opacity="0.35"/>
+            <path d="M54 45l4 4 8-8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"/>
+          </svg>
+          <p className="pm-hist-empty-msg">No matches yet</p>
+          <p className="pm-p pm-dim" style={{marginBottom:"16px"}}>Build your first PC and duel an AI opponent.</p>
+          <button className="rf-btn rf-cta-btn" onClick={onBack}>Play your first match</button>
+        </div>
+      ) : (
         <div className="pm-hist-list">
           {[...hist].reverse().map((h, i) => (
             <div key={i} className={"pm-hist-row " + (h.won ? "win" : "lose")}>

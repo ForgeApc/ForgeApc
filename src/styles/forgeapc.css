@@ -3661,3 +3661,244 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   margin-right: 4px;
   vertical-align: middle;
 }
+
+/* ===== E1: Glassmorphism scrollbar ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(31,245,230,0.25); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(31,245,230,0.55); }
+* { scrollbar-width: thin; scrollbar-color: rgba(31,245,230,0.25) transparent; }
+
+/* ===== E2: Header ELO glow ===== */
+.rf-hdr-elo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rank-color, var(--c-accent));
+  filter: drop-shadow(0 0 4px var(--rank-color, var(--c-accent)));
+  transition: filter 0.3s ease;
+  letter-spacing: 0.04em;
+}
+.rf-hdr-elo:hover {
+  animation: eloGlowPulse 1s ease-in-out infinite;
+}
+@keyframes eloGlowPulse {
+  0%, 100% { filter: drop-shadow(0 0 4px var(--rank-color, var(--c-accent))); }
+  50%       { filter: drop-shadow(0 0 10px var(--rank-color, var(--c-accent))); }
+}
+
+/* ===== E3: Empty state illustration ===== */
+.pm-hist-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px 24px;
+  color: var(--c-muted);
+}
+.pm-hist-empty-svg {
+  width: 100px;
+  height: 84px;
+  color: var(--c-muted);
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+.pm-hist-empty-msg {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--c-text);
+  margin: 0;
+}
+
+/* ===== E4: Smooth page transitions ===== */
+.rf-view-fade {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  pointer-events: none;
+}
+.rf-view-fade.rf-view-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* =====================================================================
+   BATCH C — C1 Daily Win Calendar, C2 Achievement Toast,
+             C3 Rival Summary Card, C4 Match History Stats Bar
+   ===================================================================== */
+
+/* C1: Daily win streak calendar */
+.pm-streak-calendar{display:flex;gap:6px;align-items:center;margin:8px 0 4px;}
+.pm-cal-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;transition:.2s;}
+.pm-cal-dot.win{background:var(--c-good);box-shadow:0 0 6px var(--c-good);}
+.pm-cal-dot.loss{background:var(--c-warn);box-shadow:0 0 4px var(--c-warn);}
+.pm-cal-dot.none{background:var(--c-track);}
+.pm-cal-label{font-size:0.7rem;color:var(--c-muted);font-family:'JetBrains Mono';margin-left:2px;}
+
+/* C2: Achievement toast */
+.pm-ach-toast{position:fixed;bottom:28px;right:28px;z-index:9999;
+  background:linear-gradient(135deg,var(--c-panel-2),rgba(28,24,52,0.98));
+  border:1px solid var(--c-accent2);border-radius:14px;
+  padding:14px 18px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5),0 0 0 1px rgba(160,122,255,0.2);
+  animation:toastSlideIn 0.4s var(--ease-spring) both;}
+.pm-ach-toast.hiding{animation:toastSlideOut 0.35s var(--ease-soft) both;}
+@keyframes toastSlideIn{from{transform:translateX(120%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+@keyframes toastSlideOut{from{transform:translateX(0);opacity:1;}to{transform:translateX(120%);opacity:0;}}
+.pm-ach-toast-icon{font-size:1.6rem;line-height:1;}
+.pm-ach-toast-body{display:flex;flex-direction:column;gap:2px;}
+.pm-ach-toast-head{font-size:0.65rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--c-accent2);font-family:'JetBrains Mono';}
+.pm-ach-toast-name{font-weight:700;font-size:0.95rem;color:var(--c-text);}
+.pm-ach-toast-desc{font-size:0.78rem;color:var(--c-muted);}
+
+/* C3: Rivals summary card */
+.pm-rivals-card{background:var(--c-panel);border:1px solid var(--c-border);border-radius:14px;
+  padding:14px 16px;margin-bottom:12px;}
+.pm-rivals-card-head{font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--c-muted);
+  font-family:'JetBrains Mono';margin-bottom:10px;}
+.pm-rivals-list{display:flex;flex-direction:column;gap:7px;}
+.pm-rival-row{display:flex;align-items:center;gap:10px;font-size:0.85rem;}
+.pm-rival-tier{font-weight:700;color:var(--c-accent);min-width:90px;}
+.pm-rival-record{color:var(--c-muted);flex:1;}
+.pm-rival-wr{display:inline-block;padding:2px 8px;border-radius:20px;font-size:0.72rem;font-weight:700;
+  font-family:'JetBrains Mono';}
+.pm-rival-wr.good{background:rgba(82,237,172,0.18);color:var(--c-good);border:1px solid rgba(82,237,172,0.3);}
+.pm-rival-wr.mid{background:rgba(255,208,106,0.15);color:var(--c-warn);border:1px solid rgba(255,208,106,0.25);}
+.pm-rival-wr.bad{background:rgba(255,106,122,0.15);color:var(--c-bad);border:1px solid rgba(255,106,122,0.25);}
+
+/* C4: Match history stats bar (in history screen) */
+.pm-hist-stats-bar{display:flex;gap:18px;flex-wrap:wrap;align-items:center;
+  padding:10px 14px;background:var(--c-panel);border:1px solid var(--c-border);
+  border-radius:12px;margin-bottom:12px;font-size:0.82rem;}
+.pm-hist-stat{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.pm-hist-stat-val{font-weight:700;font-size:1rem;color:var(--c-accent);font-family:'JetBrains Mono';}
+.pm-hist-stat-lbl{font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;color:var(--c-muted);}
+
+/* ===== D1: Coaching tip after loss ===== */
+.pm-coaching-tip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(31,245,230,0.07) 0%, rgba(160,122,255,0.07) 100%);
+  border: 1px solid rgba(31,245,230,0.18);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 8px 0;
+}
+.pm-coaching-tip-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-accent);
+  opacity: 0.85;
+}
+.pm-coaching-tip-text {
+  font-size: 0.88rem;
+  color: var(--c-text);
+  line-height: 1.5;
+}
+
+/* ===== D2: Random Challenge button ===== */
+.pm-random-challenge-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(160,122,255,0.10) 0%, rgba(31,245,230,0.07) 100%);
+  border: 1px solid rgba(160,122,255,0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s;
+}
+.pm-random-challenge-card:hover {
+  border-color: rgba(160,122,255,0.5);
+  background: linear-gradient(135deg, rgba(160,122,255,0.16) 0%, rgba(31,245,230,0.10) 100%);
+}
+
+/* ===== D3: Speed run timer display ===== */
+.pm-speed-timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(255,92,114,0.08);
+  border: 1px solid rgba(255,92,114,0.20);
+  border-radius: 10px;
+  padding: 10px 20px;
+  margin-bottom: 10px;
+  transition: background 0.3s, border-color 0.3s;
+}
+.pm-speed-timer-bar.warn {
+  background: rgba(255,92,114,0.13);
+  border-color: rgba(255,92,114,0.40);
+}
+.pm-speed-timer-bar.danger {
+  background: rgba(255,92,114,0.20);
+  border-color: rgba(255,92,114,0.70);
+  animation: speedTimerPulse 0.7s ease-in-out infinite alternate;
+}
+@keyframes speedTimerPulse {
+  from { box-shadow: 0 0 0px rgba(255,92,114,0); }
+  to   { box-shadow: 0 0 18px rgba(255,92,114,0.55); }
+}
+.pm-speed-timer-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  color: #ff5c72;
+  text-transform: uppercase;
+}
+.pm-speed-timer-count {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -2px;
+  color: #ff5c72;
+  text-shadow: 0 0 12px rgba(255,92,114,0.50);
+  font-variant-numeric: tabular-nums;
+}
+.pm-speed-timer-bar.danger .pm-speed-timer-count {
+  text-shadow: 0 0 24px rgba(255,92,114,0.90);
+}
+
+/* ===== D4: Part rarity labels ===== */
+.rf-part {
+  position: relative;
+}
+.rf-part-rarity {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 2;
+}
+.rf-part-rarity.rarity-s {
+  background: rgba(255,215,0,0.15);
+  border: 1px solid rgba(255,215,0,0.45);
+  color: #ffd700;
+}
+.rf-part-rarity.rarity-a {
+  background: rgba(31,245,230,0.12);
+  border: 1px solid rgba(31,245,230,0.35);
+  color: var(--c-accent);
+}
+.rf-part-rarity.rarity-b {
+  background: rgba(150,160,180,0.12);
+  border: 1px solid rgba(150,160,180,0.30);
+  color: #9ca3af;
+}
+.rf-part-rarity.rarity-c {
+  background: rgba(100,110,130,0.10);
+  border: 1px solid rgba(100,110,130,0.22);
+  color: #6b7280;
+}
