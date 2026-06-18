@@ -3958,3 +3958,112 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   to   { opacity:1; transform:translateY(0)    scale(1); }
 }
 .rf-pop { animation-duration: 0.85s !important; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94) !important; }
+
+/* ================================================================
+   R6 — Category score pills
+   ================================================================ */
+.rf-cat-score-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 20px;
+  border: 1px solid;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+
+/* ================================================================
+   R7 — Budget fit meter
+   ================================================================ */
+.rf-budget-fit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--c-muted);
+  margin-top: 4px;
+  gap: 6px;
+}
+.rf-budget-fit-pct {
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+/* ================================================================
+   R8 — Build tier badge
+   ================================================================ */
+.rf-tier-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--tier-color, var(--c-accent));
+  background: color-mix(in srgb, var(--tier-color, var(--c-accent)) 10%, transparent);
+}
+.rf-tier-letter {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--tier-color, var(--c-accent)), #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.rf-tier-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tier-color, var(--c-accent));
+  opacity: 0.85;
+}
+
+/* ================================================================
+   R9 — Part perf sparkline row
+   ================================================================ */
+.rf-part-sparkline {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+}
+.rf-spark-seg {
+  display: inline-block;
+  width: 14px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--c-border, rgba(255,255,255,0.1));
+  transition: background 0.3s;
+}
+.rf-spark-seg.on {
+  background: var(--c-accent);
+}
+
+/* ================================================================
+   R10 — Compat issue detail pills
+   ================================================================ */
+.rf-compat-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.rf-compat-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.73rem;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--c-bad);
+  color: var(--c-bad);
+  background: rgba(255,92,114,0.08);
+  line-height: 1.4;
+}

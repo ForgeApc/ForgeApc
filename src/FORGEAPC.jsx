@@ -7363,6 +7363,12 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
         <div className="rf-gauges">
           <Gauge value={a.score} max={1000} label={t("performance")} accent={scoreColor(a.score / 10)} />
           <Gauge value={a.ppScore} label={t("pricePerf")} accent={scoreColor(a.ppScore)} delay={120} />
+          {(() => { const tier = buildTierRating(a); return (
+            <div className="rf-tier-badge" style={{"--tier-color": tier.color}}>
+              <span className="rf-tier-letter">{tier.tier}</span>
+              <span className="rf-tier-label">{tier.label}</span>
+            </div>
+          );})()}
         </div>
         <div className="rf-verdict">
           <div className="rf-verdict-tag"><Sparkles size={13} /> AI verdict <span className="rf-hybrid">Opus 4.8</span>{aiBusy && <span className="rf-verdict-state"> · thinking…</span>}</div>
@@ -7385,6 +7391,10 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
             </div>
             <span className="rf-muted">{fmt(budget)}</span>
           </div>
+          <div className="rf-budget-fit">
+            <span>🎯 Budget fit</span>
+            <span className="rf-budget-fit-pct" style={{color: overBudget ? "var(--c-bad)" : clamp((shownTotal/budget)*100,0,100) >= 90 ? "var(--c-good)" : "var(--c-accent)"}}>{Math.round(clamp((shownTotal / budget) * 100, 0, 999))}%</span>
+          </div>
         </div>
       </div>
 
@@ -7399,7 +7409,11 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
               ? `${a.missing.length} part${a.missing.length > 1 ? "s" : ""} still to add`
               : "All compatibility checks passed"}
           </strong>
-          {!a.compat.pass && <ul>{a.compat.issues.map((m, i) => <li key={i}>{m}</li>)}</ul>}
+          {!a.compat.pass && (
+            <div className="rf-compat-pills">
+              {a.compat.issues.map((m, i) => <span key={i} className="rf-compat-pill">{m}</span>)}
+            </div>
+          )}
           {a.compat.pass && !a.complete && (
             <span className="rf-compat-sub">{a.missing.map((c) => tCat(c)).join(", ")}</span>
           )}
@@ -7452,9 +7466,15 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
                 {part && part._source && <span className={"rf-part-src " + part._source}>{({ amazon: "Amazon", newegg: "Newegg", bestbuy: "Best Buy" })[part._source] || ""}</span>}
                 </div>
                 <div className="rf-part-info">
-                  <div className="rf-part-cat">{tCat(cat)}</div>
+                  <div className="rf-part-cat">
+                    {tCat(cat)}
+                    {part && (() => { const catNorm = Math.round(ucPerf(cat, part, useCase) / ucMaxPerf(cat, useCase) * 100); return <span className="rf-cat-score-pill" style={{background: scoreColor(catNorm) + "22", borderColor: scoreColor(catNorm), color: scoreColor(catNorm)}}>{catNorm}</span>; })()}
+                  </div>
                   {part ? (
-                    <div className="rf-part-name">{part.name}</div>
+                    <>
+                      <div className="rf-part-name">{part.name}</div>
+                      <div className="rf-part-sparkline">{[0,1,2,3,4].map(i => <span key={i} className={"rf-spark-seg" + (i < Math.round(ucPerf(cat, part, useCase) / ucMaxPerf(cat, useCase) * 5) ? " on" : "")} />)}</div>
+                    </>
                   ) : skip ? (
                     <div className="rf-part-name rf-muted">Integrated graphics — no discrete GPU</div>
                   ) : (
