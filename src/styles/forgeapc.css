@@ -3958,3 +3958,107 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   to   { opacity:1; transform:translateY(0)    scale(1); }
 }
 .rf-pop { animation-duration: 0.85s !important; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94) !important; }
+
+/* ================================================================
+   R16 — Category allocation donut
+   ================================================================ */
+.rf-alloc-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.rf-alloc-bars {
+  flex: 1;
+  min-width: 0;
+}
+.rf-alloc-donut {
+  flex-shrink: 0;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 6px rgba(31,245,230,0.25));
+}
+
+/* ================================================================
+   R17 — Build card glassmorphism hero blob
+   ================================================================ */
+.rf-saved-card {
+  position: relative;
+  overflow: hidden;
+}
+.rf-saved-card::before {
+  content: "";
+  position: absolute;
+  top: -18px;
+  left: -18px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--blob-color, var(--c-accent)) 0%, transparent 70%);
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.4s ease;
+}
+.rf-saved-card:hover::before {
+  opacity: 0.32;
+}
+.rf-saved-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ================================================================
+   R18 — Animated forge button border spin
+   ================================================================ */
+@keyframes borderSpin {
+  0%   { --border-angle: 0turn; }
+  100% { --border-angle: 1turn; }
+}
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0turn;
+}
+.rf-forge-btn.primary {
+  position: relative;
+  z-index: 0;
+  animation: borderSpin 3s linear infinite;
+}
+.rf-forge-btn.primary::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 12px;
+  background: conic-gradient(from var(--border-angle), var(--c-accent), var(--c-accent2), #f59e0b, var(--c-accent));
+  z-index: -1;
+  opacity: 0.85;
+}
+.rf-forge-btn.primary::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--c-accent), #19b89f);
+  z-index: -1;
+}
+
+/* ================================================================
+   R19 — Part category icon
+   ================================================================ */
+.rf-cat-icon {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+.rf-part-cat {
+  display: flex;
+  align-items: center;
+}
+
+/* ================================================================
+   R20 — Score waterfall reveal (60ms stagger is set inline in JSX)
+   ================================================================ */
+.rf-parts .rf-part.rf-pop {
+  animation-fill-mode: both;
+}

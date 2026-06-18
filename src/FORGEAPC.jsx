@@ -5579,8 +5579,15 @@ function Home({ saved, loading, onNew, onOpen, onDelete, priceInfo, onMogger, on
           {sorted.map((b, i) => {
             const UC = USE_CASES[b.useCase];
             const pinned = pins.includes(b.id);
+            // R17: find top-scoring category for glassmorphism blob color
+            const topCat = CATEGORY_ORDER.reduce((best, c) => {
+              const uc = USE_CASES[b.useCase] || USE_CASES.gaming;
+              return (uc.alloc[c] || 0) > (USE_CASES[b.useCase]?.alloc[best] || 0) ? c : best;
+            }, CATEGORY_ORDER[0]);
+            const blobColors = { cpu:"#60a5fa", gpu:"#a07aff", mobo:"#34d399", ram:"#1ff5e6", storage:"#f59e0b", psu:"#fb923c", case:"#f472b6", cooler:"#a3e635" };
+            const blobColor = blobColors[topCat] || "var(--c-accent)";
             return (
-              <div key={b.id} className={"rf-saved-card rf-pop" + (pinned ? " rf-pinned" : "")} style={{ animationDelay: i * 60 + "ms" }} onClick={() => onOpen(b)}>
+              <div key={b.id} className={"rf-saved-card rf-pop" + (pinned ? " rf-pinned" : "")} style={{ animationDelay: i * 60 + "ms", "--blob-color": blobColor }} onClick={() => onOpen(b)}>
                 <div className="rf-saved-top">
                   <div className="rf-saved-uc"><UC.Icon size={15} /> {tUC(b.useCase)}</div>
                   <div style={{display:"flex",gap:"4px",alignItems:"center"}}>
@@ -7213,6 +7220,53 @@ function Survey({ onPick }) {
   );
 }
 
+/* ---- R19: Per-category inline SVG icons ---- */
+const CAT_SVG_PATHS = {
+  cpu:     "M4 4h16v16H4V4zm3 3v10h10V7H7zm3 3h4v4h-4v-4z",
+  gpu:     "M2 7h20v10H2V7zm2 2v6h16V9H4zm3 1h2v4H7v-4zm4 0h2v4h-2v-4zm4 0h2v4h-2v-4z",
+  mobo:    "M3 3h18v18H3V3zm2 2v14h14V5H5zm2 2h4v2H7V7zm6 0h4v2h-4V7zm-6 4h2v4H7v-4zm4 0h6v2h-6v-2zm0 3h6v1h-6v-1z",
+  ram:     "M6 4h12v16H6V4zm2 2v2h8V6H8zm0 4v2h8v-2H8zm0 4v2h8v-2H8z",
+  storage: "M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 2v12h12V6H6zm7 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4z",
+  psu:     "M3 5h18v14H3V5zm2 2v10h14V7H5zm4 2h6v2h-6V9zm2 3h2v4h-2v-4z",
+  case:    "M5 2h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm1 2v16h12V4H6zm3 3h6v2H9V7zm0 4h6v1H9v-1z",
+  cooler:  "M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 2a8 8 0 0 1 0 16A8 8 0 0 1 12 4zm0 3a5 5 0 1 0 0 10A5 5 0 0 0 12 7zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z",
+};
+function CatIcon({ cat }) {
+  const d = CAT_SVG_PATHS[cat];
+  if (!d) return null;
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="rf-cat-icon" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
+}
+
+/* ---- R16: Allocation donut chart ---- */
+const DONUT_COLORS = ["#1ff5e6","#a07aff","#f59e0b","#34d399","#f472b6","#60a5fa","#fb923c","#a3e635"];
+function AllocDonut({ alloc }) {
+  const cats = CATEGORY_ORDER.filter((c) => (alloc[c] || 0) > 0);
+  const total = cats.reduce((s, c) => s + alloc[c], 0);
+  const r = 38, cx = 50, cy = 50, stroke = 14;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+  const segments = cats.map((c, i) => {
+    const pct = alloc[c] / total;
+    const dash = pct * circ;
+    const seg = { c, color: DONUT_COLORS[i % DONUT_COLORS.length], dash, offset };
+    offset += dash;
+    return seg;
+  });
+  return (
+    <svg className="rf-alloc-donut" viewBox="0 0 100 100" width={80} height={80} aria-hidden="true">
+      {segments.map(({ c, color, dash, offset: off }) => (
+        <circle key={c} cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={stroke}
+          strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={-off + circ * 0.25}
+          style={{ transition: "stroke-dasharray 0.7s var(--ease)" }} />
+      ))}
+    </svg>
+  );
+}
+
 /* ----------------------------- BUDGET ----------------------------- */
 function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
   const UC = USE_CASES[useCase];
@@ -7248,14 +7302,17 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
       {/* live allocation preview */}
       <div className="rf-alloc">
         <div className="rf-alloc-title">How your {fmt(budget)} splits for {tUC(useCase)}</div>
-        <div className="rf-alloc-bars">
-          {CATEGORY_ORDER.filter((c) => UC.alloc[c] > 0).map((c) => (
-            <div key={c} className="rf-alloc-row">
-              <span className="rf-alloc-lbl">{tCat(c)}</span>
-              <div className="rf-alloc-track"><div className="rf-alloc-fill" style={{ width: UC.alloc[c] * 2.4 + "%" }} /></div>
-              <span className="rf-alloc-val">{fmt((budget * UC.alloc[c]) / 100)}</span>
-            </div>
-          ))}
+        <div className="rf-alloc-inner">
+          <div className="rf-alloc-bars">
+            {CATEGORY_ORDER.filter((c) => UC.alloc[c] > 0).map((c) => (
+              <div key={c} className="rf-alloc-row">
+                <span className="rf-alloc-lbl">{tCat(c)}</span>
+                <div className="rf-alloc-track"><div className="rf-alloc-fill" style={{ width: UC.alloc[c] * 2.4 + "%" }} /></div>
+                <span className="rf-alloc-val">{fmt((budget * UC.alloc[c]) / 100)}</span>
+              </div>
+            ))}
+          </div>
+          <AllocDonut alloc={UC.alloc} />
         </div>
       </div>
 
@@ -7439,7 +7496,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           const sc = part ? (compatible ? partScore({ ...part, cat }, band, useCase) : 0) : 0;
           const isOpen = expanded[cat];
           return (
-            <div key={cat} className="rf-part rf-pop" style={{ animationDelay: i * 45 + "ms" }}>
+            <div key={cat} className="rf-part rf-pop" style={{ animationDelay: i * 60 + "ms" }}>
               <div className="rf-part-top">
                 <div className="rf-part-media">
                 {part && part.img ? (
@@ -7452,7 +7509,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
                 {part && part._source && <span className={"rf-part-src " + part._source}>{({ amazon: "Amazon", newegg: "Newegg", bestbuy: "Best Buy" })[part._source] || ""}</span>}
                 </div>
                 <div className="rf-part-info">
-                  <div className="rf-part-cat">{tCat(cat)}</div>
+                  <div className="rf-part-cat"><CatIcon cat={cat} />{tCat(cat)}</div>
                   {part ? (
                     <div className="rf-part-name">{part.name}</div>
                   ) : skip ? (
