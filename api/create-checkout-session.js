@@ -11,9 +11,9 @@ const PUBLISHABLE = process.env.STRIPE_PUBLISHABLE_KEY;
 const STRIPE_API  = "https://api.stripe.com/v1";
 
 const TIERS = {
-  plus: { name: "FORGEAPC Plus", monthly: Number(process.env.PRICE_PLUS)        || 2,  annual: Number(process.env.PRICE_PLUS_ANNUAL)  || 12 },
-  pro:  { name: "FORGEAPC Pro",  monthly: Number(process.env.PRICE_PRO)         || 5,  annual: Number(process.env.PRICE_PRO_ANNUAL)   || 18 },
-  max:  { name: "FORGEAPC Max",  monthly: Number(process.env.PRICE_MAX)         || 8,  annual: Number(process.env.PRICE_MAX_ANNUAL)   || 55 },
+  plus: { name: "FORGEAPC Plus", monthly: Number(process.env.PRICE_PLUS)        || 2,  annual: Number(process.env.PRICE_PLUS_ANNUAL)  || 12, lifetime: Number(process.env.PRICE_PLUS_LIFE)  || 15 },
+  pro:  { name: "FORGEAPC Pro",  monthly: Number(process.env.PRICE_PRO)         || 5,  annual: Number(process.env.PRICE_PRO_ANNUAL)   || 22, lifetime: Number(process.env.PRICE_PRO_LIFE)   || 26 },
+  max:  { name: "FORGEAPC Max",  monthly: Number(process.env.PRICE_MAX)         || 8,  annual: Number(process.env.PRICE_MAX_ANNUAL)   || 55, lifetime: Number(process.env.PRICE_MAX_LIFE)   || 66 },
 };
 
 async function stripeFetch(path, { method = "GET", form } = {}) {
@@ -34,10 +34,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    // GET ?subscription_id=xxx — status check after payment
+    // GET — status check after payment
     if (req.method === "GET") {
+      // Lifetime: check payment intent
+      const pid = req.query?.payment_intent_id;
+      if (pid) {
+        const pi = await stripeFetch("/payment_intents/" + encodeURIComponent(pid));
+        const tierKey = pi?.metadata?.tier || null;
+        const status  = pi?.status === "succeeded" ? "active" : pi?.status;
+        return res.status(200).json({ status, tier: tierKey, lifetime: true });
+      }
+      // Subscription: check subscription
       const sid = req.query?.subscription_id;
-      if (!sid) return res.status(400).json({ error: "subscription_id required" });
+      if (!sid) return res.status(400).json({ error: "subscription_id or payment_intent_id required" });
       const sub = await stripeFetch("/subscriptions/" + encodeURIComponent(sid));
       const tierKey = sub?.metadata?.tier || null;
       return res.status(200).json({ status: sub.status, tier: tierKey });
@@ -46,11 +55,9 @@ export default async function handler(req, res) {
     if (req.method === "POST") {
       const body = req.body || {};
       const tierKey = body.tier;
-      const interval = body.interval === "year" ? "year" : "month";
+      const interval = body.interval === "year" ? "year" : body.interval === "lifetime" ? "lifetime" : "month";
       const tier = TIERS[tierKey];
       if (!tier) return res.status(400).json({ error: "Unknown plan." });
-
-      const dollars = interval === "year" ? tier.annual : tier.monthly;
 
       // 1. Create customer — name shows in Stripe dashboard so you know who bought
       const custForm = {};
@@ -58,11 +65,34 @@ export default async function handler(req, res) {
       if (body.username) custForm.name  = body.username;
       const customer = await stripeFetch("/customers", { method: "POST", form: custForm });
 
-      // 2. Create product
+      // LIFETIME — one-time PaymentIntent, no subscription
+      if (interval === "lifetime") {
+        const dollars = tier.lifetime;
+        const pi = await stripeFetch("/payment_intents", {
+          method: "POST",
+          form: {
+            amount: String(Math.round(dollars * 100)),
+            currency: "usd",
+            customer: customer.id,
+            "automatic_payment_methods[enabled]": "true",
+            description: tier.name + " Lifetime",
+            "metadata[tier]": tierKey,
+            "metadata[interval]": "lifetime",
+            "metadata[username]": body.username || "",
+          },
+        });
+        return res.status(200).json({
+          clientSecret:    pi.client_secret,
+          publishableKey:  PUBLISHABLE,
+          paymentIntentId: pi.id,
+        });
+      }
+
+      // MONTHLY / ANNUAL — recurring subscription
+      const dollars = interval === "year" ? tier.annual : tier.monthly;
       const productName = tier.name + (interval === "year" ? " (Annual)" : " (Monthly)");
       const product = await stripeFetch("/products", { method: "POST", form: { name: productName } });
 
-      // 3. Create subscription — attach tier + interval + username as metadata
       const sub = await stripeFetch("/subscriptions", {
         method: "POST",
         form: {
@@ -80,7 +110,6 @@ export default async function handler(req, res) {
         },
       });
 
-      // 4. Get the payment intent ID from the invoice, then fetch it for the client_secret
       const invoicePaymentIntent = sub?.latest_invoice?.payment_intent;
       if (!invoicePaymentIntent) throw new Error("No payment intent on invoice — subscription may already be active.");
 

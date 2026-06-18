@@ -1318,7 +1318,7 @@ export default function RigForge() {
         const elements = stripe.elements({ clientSecret: data.clientSecret, appearance, fonts });
         const paymentEl = elements.create("payment", { layout: "tabs" });
         if (cancelled) return;
-        checkoutInstanceRef.current = { stripe, elements, subscriptionId: data.subscriptionId };
+        checkoutInstanceRef.current = { stripe, elements, subscriptionId: data.subscriptionId, paymentIntentId: data.paymentIntentId };
         paymentEl.on("ready", () => { if (!cancelled) setCheckoutReady(true); });
         paymentEl.mount("#rf-payment-element");
         setCheckoutLoading(false);
@@ -1339,32 +1339,40 @@ export default function RigForge() {
     if (!inst) return;
     setCheckoutSubmitting(true); setCheckoutErr("");
     const origin = window.location.origin;
+    const returnParam = inst.paymentIntentId
+      ? "payment_intent_id=" + encodeURIComponent(inst.paymentIntentId)
+      : "subscription_id=" + encodeURIComponent(inst.subscriptionId);
     const { error } = await inst.stripe.confirmPayment({
       elements: inst.elements,
-      confirmParams: { return_url: origin + "/?checkout=return&subscription_id=" + encodeURIComponent(inst.subscriptionId) },
+      confirmParams: { return_url: origin + "/?checkout=return&" + returnParam },
     });
     if (error) { setCheckoutErr(error.message || "Payment failed."); setCheckoutSubmitting(false); }
   };
 
-  // After payment confirms, Stripe redirects back with ?checkout=return&subscription_id=...
+  // After payment confirms, Stripe redirects back with ?checkout=return&subscription_id=... or &payment_intent_id=...
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.get("checkout") !== "return") return;
       const sid = params.get("subscription_id");
+      const pid = params.get("payment_intent_id");
       window.history.replaceState(null, "", window.location.pathname);
-      if (!sid) return;
+      if (!sid && !pid) return;
       (async () => {
         try {
-          const r = await fetch("/api/create-checkout-session?subscription_id=" + encodeURIComponent(sid));
+          const query = pid
+            ? "/api/create-checkout-session?payment_intent_id=" + encodeURIComponent(pid)
+            : "/api/create-checkout-session?subscription_id=" + encodeURIComponent(sid);
+          const r = await fetch(query);
           const d = await r.json();
           if (r.ok && d.status === "active") {
-            const tier = d.tier || d.plan || checkoutPlan?.key || "plus";
+            const tier = d.tier || "plus";
             try { localStorage.setItem("mogger_sub_tier", tier); } catch(e) {}
             setSubTier(tier);
             const cu = (() => { try { const s = localStorage.getItem("mogger_user"); return s ? JSON.parse(s) : null; } catch(e) { return null; } })();
             applySubPerks(tier, cu);
-            setPayBanner({ ok: true, text: `✅ Payment successful! Your ${tier.toUpperCase()} perks are now active — check your rank badge.` });
+            const lifeMsg = d.lifetime ? "🎉 Lifetime access unlocked!" : "";
+            setPayBanner({ ok: true, text: `✅ ${lifeMsg || "Payment successful!"} Your ${tier.toUpperCase()} perks are now active — check your rank badge.` });
           } else if (r.ok && (d.status === "incomplete" || d.status === "past_due")) {
             setPayBanner({ ok: false, text: "Checkout wasn't completed. You can try again anytime." });
           } else {
@@ -1670,7 +1678,7 @@ export default function RigForge() {
             {checkoutPlan ? (
               <div className="rf-checkout">
                 <button className="rf-checkout-back" onClick={() => { setCheckoutPlan(null); setCheckoutErr(""); setCheckoutSubmitting(false); }}><ChevronLeft size={16} /> Back to plans</button>
-                <h2 className="rf-plans-title"><span className="rf-hero-grad">{checkoutPlan.name} — ${checkoutPlan.price}/{checkoutPlan.interval === "year" ? "yr" : "mo"}</span></h2>
+                <h2 className="rf-plans-title"><span className="rf-hero-grad">{checkoutPlan.name} — ${checkoutPlan.price}{checkoutPlan.interval === "lifetime" ? " one‑time" : checkoutPlan.interval === "year" ? "/yr" : "/mo"}</span></h2>
                 {checkoutLoading && <div className="rf-checkout-loading"><div className="pm-spinner" /> Setting up payment…</div>}
                 {checkoutErr && <div className="rf-checkout-err">{checkoutErr}</div>}
                 <div className="rf-payment-form">
@@ -1694,17 +1702,20 @@ export default function RigForge() {
                 </div>
               )}
               <div className="rf-billing-toggle">
-                <button className={"rf-billing-opt" + (!plansAnnual ? " active" : "")} onClick={() => setPlansAnnual(false)}>Monthly</button>
-                <button className={"rf-billing-opt" + (plansAnnual ? " active" : "")} onClick={() => setPlansAnnual(true)}>Annual <span className="rf-billing-save">Save up to 43%</span></button>
+                <button className={"rf-billing-opt" + (plansAnnual === false ? " active" : "")} onClick={() => setPlansAnnual(false)}>Monthly</button>
+                <button className={"rf-billing-opt" + (plansAnnual === true ? " active" : "")} onClick={() => setPlansAnnual(true)}>Annual <span className="rf-billing-save">Save 50%+</span></button>
+                <button className={"rf-billing-opt" + (plansAnnual === "lifetime" ? " active" : "")} onClick={() => setPlansAnnual("lifetime")}>Lifetime <span className="rf-billing-save">Once</span></button>
               </div>
               <div className="rf-plans-grid">
                 {[
-                  { key: "free", name: "Free", monthly: 0,  annual: 0,  tag: "",        perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device"] },
-                  { key: "plus", name: "Plus", monthly: 2,  annual: 12, tag: "",        perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", '💜 "Supporter" rank badge'] },
-                  { key: "pro",  name: "Pro",  monthly: 5,  annual: 18, tag: "Popular", perks: ['Everything in Plus', '🔥 "Pro" rank badge', "Priority price updates", "Early access to features"] },
-                  { key: "max",  name: "Max",  monthly: 8,  annual: 55, tag: "",        perks: ['Everything in Pro', '👑 "MAX" gold rank badge', "Beta features first", "Support the developer"] },
+                  { key: "free", name: "Free", monthly: 0,  annual: 0,  lifetime: 0,  tag: "",        perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device"] },
+                  { key: "plus", name: "Plus", monthly: 2,  annual: 12, lifetime: 15, tag: "",        perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", '💜 "Supporter" rank badge'] },
+                  { key: "pro",  name: "Pro",  monthly: 5,  annual: 22, lifetime: 26, tag: "Popular", perks: ['Everything in Plus', '🔥 "Pro" rank badge', "Priority price updates", "Early access to features"] },
+                  { key: "max",  name: "Max",  monthly: 8,  annual: 55, lifetime: 66, tag: "",        perks: ['Everything in Pro', '👑 "MAX" gold rank badge', "Beta features first", "Support the developer"] },
                 ].map((p) => {
-                  const price = plansAnnual ? p.annual : p.monthly;
+                  const isLifetime = plansAnnual === "lifetime";
+                  const price = isLifetime ? p.lifetime : plansAnnual ? p.annual : p.monthly;
+                  const interval = isLifetime ? "lifetime" : plansAnnual ? "year" : "month";
                   const isActive = subTier === p.key || (p.key === "free" && subTier === "free");
                   return (
                     <div key={p.key} className={"rf-plan" + (p.tag ? " rf-plan-feat" : "") + (isActive ? " rf-plan-active" : "")}>
@@ -1713,9 +1724,10 @@ export default function RigForge() {
                       <div className="rf-plan-name">{p.name}</div>
                       <div className="rf-plan-price">
                         <span className="rf-plan-amt">${price}</span>
-                        <span className="rf-plan-per">{plansAnnual ? "/yr" : "/mo"}</span>
+                        <span className="rf-plan-per">{isLifetime ? " one‑time" : plansAnnual ? "/yr" : "/mo"}</span>
                       </div>
-                      {plansAnnual && p.annual > 0 && <div className="rf-plan-equiv">${(p.annual / 12).toFixed(2)}/mo equiv</div>}
+                      {plansAnnual === true  && p.annual   > 0 && <div className="rf-plan-equiv">${(p.annual / 12).toFixed(2)}/mo equiv</div>}
+                      {isLifetime            && p.lifetime > 0 && <div className="rf-plan-equiv">Pay once, keep forever</div>}
                       <ul className="rf-plan-perks">
                         {p.perks.map((x, i) => (<li key={i}><Check size={14} /> {x}</li>))}
                       </ul>
@@ -1726,9 +1738,9 @@ export default function RigForge() {
                           if (isActive || price === 0) return;
                           if (!hdrUser) { setHdrAuth(true); setPlansOpen(false); return; }
                           setCheckoutErr("");
-                          setCheckoutPlan({ ...p, price, interval: plansAnnual ? "year" : "month" });
+                          setCheckoutPlan({ ...p, price, interval });
                         }}
-                      >{isActive ? "Current plan" : price === 0 ? "Free" : "Get " + p.name}</button>
+                      >{isActive ? "Current plan" : price === 0 ? "Free" : isLifetime ? "Get lifetime " + p.name : "Get " + p.name}</button>
                     </div>
                   );
                 })}
