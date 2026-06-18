@@ -3958,3 +3958,101 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   to   { opacity:1; transform:translateY(0)    scale(1); }
 }
 .rf-pop { animation-duration: 0.85s !important; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94) !important; }
+
+/* ================================================================
+   P16-P20: History stats panels, personal bests, ghost delta, rogue log
+   ================================================================ */
+
+/* Shared stat panel container */
+.pm-stat-panel {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pm-stat-panel-head {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-accent);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+/* P16: Category win-rate table */
+.pm-cat-wr-table { width: 100%; border-collapse: collapse; }
+.pm-cat-wr-table td { padding: 3px 4px; font-size: 0.78rem; vertical-align: middle; }
+.pm-cat-wr-label { color: var(--c-muted); width: 72px; }
+.pm-cat-wr-bar { padding: 0 8px; }
+.pm-cat-wr-fill {
+  height: 6px;
+  background: var(--c-accent);
+  border-radius: 3px;
+  min-width: 4px;
+  transition: width 0.4s ease;
+}
+.pm-cat-wr-pct { color: var(--c-text); text-align: right; white-space: nowrap; }
+
+/* P17: Personal bests grid */
+.pm-pb-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.pm-pb-item {
+  background: rgba(255,255,255,0.03);
+  border-radius: 7px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pm-pb-val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--c-text);
+}
+.pm-pb-ai { font-size: 0.78rem; }
+.pm-pb-label {
+  font-size: 0.68rem;
+  color: var(--c-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* P18: Tier matchup table */
+.pm-tier-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.pm-tier-table th { color: var(--c-muted); font-weight: 600; text-align: left; padding: 2px 6px; font-size: 0.7rem; }
+.pm-tier-table td { padding: 3px 6px; }
+.pm-tier-w { color: var(--c-good); font-weight: 600; }
+.pm-tier-l { color: var(--c-bad); font-weight: 600; }
+.pm-tier-ratio { font-weight: 700; }
+.pm-tier-ratio.good { color: var(--c-good); }
+.pm-tier-ratio.bad { color: var(--c-bad); }
+
+/* P19: Ghost delta table */
+.pm-ghost-delta { margin: 10px 0; }
+.pm-ghost-delta-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.pm-ghost-delta-table th { color: var(--c-muted); font-weight: 600; text-align: left; padding: 2px 6px; font-size: 0.7rem; }
+.pm-ghost-delta-table td { padding: 3px 6px; }
+.pm-gd-delta { font-weight: 700; }
+.pm-gd-delta.win { color: var(--c-good); }
+.pm-gd-delta.lose { color: var(--c-bad); }
+
+/* P20: Rogue reward log */
+.pm-rogue-log { display: flex; flex-direction: column; gap: 6px; }
+.pm-rogue-log-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.pm-rogue-log-row:last-child { border-bottom: none; }
+.pm-rogue-log-reward { font-weight: 600; color: var(--c-accent2); flex: 1; }
+.pm-rogue-log-meta { color: var(--c-muted); font-size: 0.7rem; }
+.pm-rogue-log-result { font-weight: 700; font-size: 0.7rem; }
+.pm-rogue-log-result.win { color: var(--c-good); }
+.pm-rogue-log-result.lose { color: var(--c-bad); }

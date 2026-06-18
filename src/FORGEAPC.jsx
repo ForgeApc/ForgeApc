@@ -2427,6 +2427,142 @@ function duelMVP(build, useCase, budget) {
   return bestCat;
 }
 
+// P16: category win-rate breakdown — how often each category was your strongest in wins
+function CatWinRateTable({ hist }) {
+  const data = useMemo(() => {
+    const counts = {};
+    for (const c of CATEGORY_ORDER) counts[c] = 0;
+    let total = 0;
+    for (const h of hist) {
+      if (!h.won || !h.you || !h.useCase || !h.budget) continue;
+      total++;
+      let best = null, bestPct = -1;
+      for (const c of CATEGORY_ORDER) {
+        const maxP = ucMaxPerf(c, h.useCase);
+        if (!maxP || !h.you[c]) continue;
+        const pct = ucPerf(c, h.you[c], h.useCase) / maxP * 100;
+        if (pct > bestPct) { bestPct = pct; best = c; }
+      }
+      if (best) counts[best]++;
+    }
+    return { counts, total };
+  }, [hist]);
+  if (data.total === 0) return null;
+  const sorted = [...CATEGORY_ORDER].filter(c => data.counts[c] > 0).sort((a,b) => data.counts[b] - data.counts[a]);
+  return (
+    <div className="pm-stat-panel">
+      <div className="pm-stat-panel-head">📊 Category win-rate (strongest category in wins)</div>
+      <table className="pm-cat-wr-table">
+        <tbody>
+          {sorted.map(c => (
+            <tr key={c}>
+              <td className="pm-cat-wr-label">{CAT_META[c].label}</td>
+              <td className="pm-cat-wr-bar"><div className="pm-cat-wr-fill" style={{width: Math.round(data.counts[c]/data.total*100)+'%'}} /></td>
+              <td className="pm-cat-wr-pct">{data.counts[c]}x ({Math.round(data.counts[c]/data.total*100)}%)</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// P17: Personal bests card
+function PersonalBestsCard() {
+  const bests = useMemo(() => {
+    try {
+      const hist = JSON.parse(localStorage.getItem("mogger_history") || "[]");
+      const bestScore = hist.reduce((m, h) => Math.max(m, h.myScore || 0), 0);
+      const bestPP = hist.reduce((m, h) => {
+        if (!h.you || !h.useCase || !h.budget) return m;
+        const s = moggerScore(h.you, h.useCase, h.budget);
+        return Math.max(m, s.value || 0);
+      }, 0);
+      const longestStreak = (() => { let max=0,cur=0; [...hist].forEach(h=>{ if(h.won){cur++;max=Math.max(max,cur);}else cur=0; }); return max; })();
+      const hardestAI = +(localStorage.getItem("mogger_hardest_ai") || "0");
+      const hardestAIName = hardestAI > 0 ? (aiPersona(hardestAI).name + " (" + hardestAI + " ELO)") : "—";
+      return { bestScore, bestPP, longestStreak, hardestAIName };
+    } catch(e) { return { bestScore: 0, bestPP: 0, longestStreak: 0, hardestAIName: "—" }; }
+  }, []);
+  return (
+    <div className="pm-stat-panel">
+      <div className="pm-stat-panel-head">🏅 Personal bests</div>
+      <div className="pm-pb-grid">
+        <div className="pm-pb-item"><span className="pm-pb-val">{bests.bestScore}</span><span className="pm-pb-label">Best score</span></div>
+        <div className="pm-pb-item"><span className="pm-pb-val">{bests.bestPP > 0 ? bests.bestPP.toFixed(1) : "—"}</span><span className="pm-pb-label">Best PP score</span></div>
+        <div className="pm-pb-item"><span className="pm-pb-val">{bests.longestStreak}</span><span className="pm-pb-label">Longest streak</span></div>
+        <div className="pm-pb-item"><span className="pm-pb-val pm-pb-ai">{bests.hardestAIName}</span><span className="pm-pb-label">Hardest AI beaten</span></div>
+      </div>
+    </div>
+  );
+}
+
+// P18: Matchup history vs AI tier
+function TierMatchupTable({ hist }) {
+  const data = useMemo(() => {
+    const tiers = {};
+    for (const h of hist) {
+      if (!h.oppName) continue;
+      // Determine tier from oppName by matching AI persona names to ELO ranges
+      const persona = AI_PERSONAS.find(p => p.name === h.oppName);
+      if (!persona) continue;
+      const tierName = eloTierName(persona.minElo);
+      if (!tiers[tierName]) tiers[tierName] = { w: 0, l: 0 };
+      if (h.won) tiers[tierName].w++; else tiers[tierName].l++;
+    }
+    return tiers;
+  }, [hist]);
+  const entries = Object.entries(data).filter(([, v]) => v.w + v.l > 0);
+  if (entries.length === 0) return null;
+  return (
+    <div className="pm-stat-panel">
+      <div className="pm-stat-panel-head">⚔️ Record vs AI tier</div>
+      <table className="pm-tier-table">
+        <thead><tr><th>Tier</th><th>W</th><th>L</th><th>Ratio</th></tr></thead>
+        <tbody>
+          {entries.map(([tier, v]) => {
+            const ratio = v.w + v.l > 0 ? (v.w / (v.w + v.l) * 100).toFixed(0) : 0;
+            return (
+              <tr key={tier}>
+                <td>{tier}</td>
+                <td className="pm-tier-w">{v.w}</td>
+                <td className="pm-tier-l">{v.l}</td>
+                <td className={"pm-tier-ratio" + (+ratio >= 50 ? " good" : " bad")}>{ratio}%</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// P20: Rogue reward history log
+function RogueRewardLog({ hist }) {
+  const entries = useMemo(() => {
+    const log = [];
+    for (const h of [...hist].reverse()) {
+      if (h.rogueReward) log.push({ reward: h.rogueReward, date: h.date, useCase: (USE_CASES[h.useCase]||{}).label || h.useCase, result: h.won ? "WIN" : "LOSS" });
+    }
+    return log.slice(0, 5);
+  }, [hist]);
+  if (entries.length === 0) return null;
+  return (
+    <div className="pm-stat-panel">
+      <div className="pm-stat-panel-head">⚔️ Rogue rewards used (last 5)</div>
+      <div className="pm-rogue-log">
+        {entries.map((e, i) => (
+          <div key={i} className="pm-rogue-log-row">
+            <span className="pm-rogue-log-reward">{e.reward}</span>
+            <span className="pm-rogue-log-meta">{e.useCase} · {e.date}</span>
+            <span className={"pm-rogue-log-result " + (e.result === "WIN" ? "win" : "lose")}>{e.result}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MoggerHistory({ onBack }) {
   const hist = useMemo(() => { try { return JSON.parse(localStorage.getItem("mogger_history") || "[]"); } catch(e) { return []; } }, []);
   const [viewEntry, setViewEntry] = useState(null);
@@ -2486,6 +2622,10 @@ function MoggerHistory({ onBack }) {
           ))}
         </div>
       )}
+      {hist.length > 0 && <PersonalBestsCard />}
+      {hist.length > 0 && <CatWinRateTable hist={hist} />}
+      {hist.length > 0 && <TierMatchupTable hist={hist} />}
+      {hist.length > 0 && <RogueRewardLog hist={hist} />}
       <div className="pm-row"><button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button>{hist.length > 0 && <button className="rf-btn rf-ghost-btn" style={{color:"var(--c-bad)"}} onClick={clear}>Clear history</button>}</div>
     </div>
   );
@@ -3106,6 +3246,40 @@ function DuelRadarChart({ you, opp, youLabel = "You", oppName, useCase, budget }
   );
 }
 
+// P19: Ghost delta table — per-category score delta vs ghost
+function GhostDeltaTable({ you, opp, useCase, budget, oppName }) {
+  const rows = useMemo(() => CATEGORY_ORDER.map(c => {
+    const maxP = ucMaxPerf(c, useCase);
+    if (!maxP) return null;
+    const yPct = you[c] ? Math.round(ucPerf(c, you[c], useCase) / maxP * 100) : 0;
+    const oPct = opp[c] ? Math.round(ucPerf(c, opp[c], useCase) / maxP * 100) : 0;
+    const delta = yPct - oPct;
+    const allocW = USE_CASES[useCase]?.alloc[c] || 0;
+    if (!allocW) return null;
+    return { c, yPct, oPct, delta };
+  }).filter(Boolean), [you, opp, useCase]);
+  return (
+    <div className="pm-stat-panel pm-ghost-delta">
+      <div className="pm-stat-panel-head">👻 Ghost delta — your score vs {oppName} per category</div>
+      <table className="pm-ghost-delta-table">
+        <thead><tr><th>Category</th><th>You</th><th>Ghost</th><th>Delta</th></tr></thead>
+        <tbody>
+          {rows.map(({ c, yPct, oPct, delta }) => (
+            <tr key={c}>
+              <td>{CAT_META[c].label}</td>
+              <td>{yPct}%</td>
+              <td>{oPct}%</td>
+              <td className={"pm-gd-delta " + (delta > 0 ? "win" : delta < 0 ? "lose" : "")}>
+                {delta > 0 ? "▲ +" : delta < 0 ? "▼ " : "="}{delta !== 0 ? Math.abs(delta) + "%" : ""}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, practice, series, onAgain, onMenu, onHistory, onSaveBuild, onMirror, onRematch, onNextGame, onAvenge }) {
   const sy = useMemo(() => moggerScore(you, round.useCase, round.budget), [you, opp]);
   const so = useMemo(() => moggerScore(opp, round.useCase, round.budget), [you, opp]);
@@ -3269,6 +3443,8 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
       {effMedal && phase === "reveal" && <div className="pm-eff-medal">{effMedal} — Score {sy.total}/1000</div>}
       {/* A5: Budget efficiency row */}
       {phase === "reveal" && <div className="pm-budget-eff-row"><span>Budget used: <b style={{color: budgEff > 100 ? "var(--c-bad)" : budgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{budgEff}%</b> {youLabel} · <b style={{color: oppBudgEff > 100 ? "var(--c-bad)" : oppBudgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{oppBudgEff}%</b> {oppName}</span></div>}
+      {/* P19: Ghost delta table — show per-category comparison when playing a ghost duel */}
+      {practice && oppElo == null && oppPersona == null && phase === "reveal" && <GhostDeltaTable you={you} opp={opp} useCase={round.useCase} budget={round.budget} oppName={oppName} />}
       {mvpCat && <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? youLabel : oppName}</div>}
       {weakCat && <div className="pm-weak-banner">📉 Costliest category: <b>{CAT_META[weakCat].label}</b> — {oppName}'s pick scored higher here, worth {USE_CASES[round.useCase].alloc[weakCat]}% of your total score.</div>}
       {rivalInfo && (
@@ -5013,6 +5189,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
     const entry = { won, myScore: sy, oppScore: so, oppName: oName, useCase: round.useCase, budget: round.budget, date: new Date().toLocaleDateString() };
     entry.you = JSON.parse(JSON.stringify(you || {}));
     entry.opp = JSON.parse(JSON.stringify(opp || {}));
+    // P20: track which rogue reward (if any) was active this match
+    if (activeRogueReward) entry.rogueReward = activeRogueReward.label;
     try {
       const hist = JSON.parse(localStorage.getItem("mogger_history") || "[]");
       hist.push(entry);
