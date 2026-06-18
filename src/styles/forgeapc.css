@@ -3958,3 +3958,207 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   to   { opacity:1; transform:translateY(0)    scale(1); }
 }
 .rf-pop { animation-duration: 0.85s !important; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94) !important; }
+
+/* ================================================================
+   R11 — Budget slider snap ticks
+   ================================================================ */
+.rf-slider-wrap { position: relative; }
+.rf-slider-ticks { position: relative; height: 22px; margin-top: 4px; }
+.rf-slider-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  color: var(--c-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.rf-slider-tick:hover { color: var(--c-accent); }
+.rf-slider-tick::before {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 5px;
+  background: var(--c-border);
+  margin: 0 auto 2px;
+}
+
+/* ================================================================
+   R12 — Use-case tooltip
+   ================================================================ */
+.rf-uc-tooltip-wrap {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  z-index: 10;
+}
+.rf-uc-q {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--c-muted);
+  color: var(--c-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  cursor: default;
+  line-height: 1;
+}
+.rf-uc-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 200px;
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.74rem;
+  color: var(--c-text);
+  line-height: 1.45;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  z-index: 20;
+}
+.rf-uc-tooltip-wrap:hover .rf-uc-tooltip { display: block; }
+.rf-uc-card { position: relative; }
+
+/* ================================================================
+   R13 — Delete confirm row
+   ================================================================ */
+.rf-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(255,60,60,0.08);
+  border: 1px solid rgba(255,60,60,0.25);
+  border-radius: 7px;
+  margin: 4px 0;
+}
+.rf-del-yes {
+  background: var(--c-bad);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rf-del-no {
+  background: var(--c-panel);
+  color: var(--c-text);
+  border: 1px solid var(--c-border);
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.rf-del-yes:hover { opacity: 0.85; }
+.rf-del-no:hover { border-color: var(--c-accent); }
+
+/* ================================================================
+   R14 — Forge history count badge
+   ================================================================ */
+.rf-forge-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--c-accent);
+  color: #0b0d18;
+  font-size: 0.65rem;
+  font-weight: 800;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+/* ================================================================
+   R15 — Part image zoom modal
+   ================================================================ */
+.rf-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+}
+.rf-zoom-modal {
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 380px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.rf-zoom-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--c-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+}
+.rf-zoom-close:hover { color: var(--c-text); }
+.rf-zoom-img {
+  max-width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.rf-zoom-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--c-text);
+  text-align: center;
+}
+.rf-zoom-cat {
+  font-size: 0.72rem;
+  color: var(--c-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.rf-zoom-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+.rf-zoom-spec {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--c-border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.74rem;
+  color: var(--c-text);
+}
+.rf-zoom-link {
+  font-size: 0.78rem;
+  color: var(--c-accent);
+  text-decoration: none;
+  margin-top: 4px;
+}
+.rf-zoom-link:hover { text-decoration: underline; }
+.rf-part-img-link { background: none; border: none; padding: 0; cursor: zoom-in; }

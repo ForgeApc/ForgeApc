@@ -58,12 +58,12 @@ const CAT_META = {
 
 /* The allocation table — the "secret sauce". % of budget per category. */
 const USE_CASES = {
-  gaming:      { label: "Gaming",          tag: "Max FPS",            Icon: Gamepad2,    alloc: { gpu:34, cpu:16, mobo:8, ram:14, storage:10, psu:7, case:6, cooler:5 } },
-  content:     { label: "Content Creation",tag: "Video & Photo",      Icon: Clapperboard,alloc: { gpu:20, cpu:22, mobo:9, ram:22, storage:14, psu:6, case:4, cooler:3 } },
-  streaming:   { label: "Streaming",       tag: "Play & Broadcast",   Icon: Radio,       alloc: { gpu:27, cpu:22, mobo:9, ram:18, storage:8, psu:7, case:5, cooler:4 } },
-  workstation: { label: "3D / Workstation",tag: "Render & CAD",       Icon: Boxes,       alloc: { gpu:26, cpu:23, mobo:8, ram:22, storage:11, psu:5, case:3, cooler:2 } },
-  ai:          { label: "AI / ML",         tag: "VRAM Hungry",        Icon: BrainCircuit,alloc: { gpu:40, cpu:12, mobo:7, ram:20, storage:10, psu:6, case:3, cooler:2 } },
-  office:      { label: "Office / Everyday",tag: "Snappy & Cheap",    Icon: Briefcase,   alloc: { gpu:0, cpu:24, mobo:13, ram:26, storage:20, psu:8, case:6, cooler:3 } },
+  gaming:      { label: "Gaming",          tag: "Max FPS",            Icon: Gamepad2,    desc: "Optimises for high frame rates by prioritising GPU power and fast RAM.",          alloc: { gpu:34, cpu:16, mobo:8, ram:14, storage:10, psu:7, case:6, cooler:5 } },
+  content:     { label: "Content Creation",tag: "Video & Photo",      Icon: Clapperboard,desc: "Optimises for video editing and photo work with a strong CPU, lots of RAM, and fast storage.", alloc: { gpu:20, cpu:22, mobo:9, ram:22, storage:14, psu:6, case:4, cooler:3 } },
+  streaming:   { label: "Streaming",       tag: "Play & Broadcast",   Icon: Radio,       desc: "Optimises for simultaneous gaming and live broadcasting with a balanced CPU/GPU split.", alloc: { gpu:27, cpu:22, mobo:9, ram:18, storage:8, psu:7, case:5, cooler:4 } },
+  workstation: { label: "3D / Workstation",tag: "Render & CAD",       Icon: Boxes,       desc: "Optimises for 3D rendering and CAD workloads with a powerful CPU, GPU, and ample RAM.", alloc: { gpu:26, cpu:23, mobo:8, ram:22, storage:11, psu:5, case:3, cooler:2 } },
+  ai:          { label: "AI / ML",         tag: "VRAM Hungry",        Icon: BrainCircuit,desc: "Optimises for local AI model inference and training by maximising GPU VRAM above all else.", alloc: { gpu:40, cpu:12, mobo:7, ram:20, storage:10, psu:6, case:3, cooler:2 } },
+  office:      { label: "Office / Everyday",tag: "Snappy & Cheap",    Icon: Briefcase,   desc: "Optimises for everyday productivity tasks, keeping costs low with integrated graphics and efficient parts.", alloc: { gpu:0, cpu:24, mobo:13, ram:26, storage:20, psu:8, case:6, cooler:3 } },
 };
 
 // The six selectable use cases (captured before any blended keys are registered).
@@ -1525,6 +1525,7 @@ export default function RigForge() {
         <div className="rf-brand" onClick={() => setViewAnimated("home")}>
           <div className="rf-logo"><Zap size={18} /></div>
           <span>FORGE<span className="rf-accent">APC</span></span>
+          {(() => { try { const h = JSON.parse(localStorage.getItem("mogger_history") || "[]").length; const s = (saved || []).length; const total = h + s; return total > 0 ? <span className="rf-forge-badge">{total}</span> : null; } catch(e) { return null; } })()}
         </div>
         <div className="rf-header-right">
           {view !== "home" && (
@@ -5521,6 +5522,7 @@ function CompletenessRing({ parts, useCase }) {
 function Home({ saved, loading, onNew, onOpen, onDelete, priceInfo, onMogger, onClone }) {
   const [search, setSearch] = useState("");
   const [pins, setPins] = useState(() => { try { return JSON.parse(localStorage.getItem("rf_pins") || "[]"); } catch(e) { return []; } });
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const togglePin = (id, e) => { e.stopPropagation(); const next = pins.includes(id) ? pins.filter(x => x !== id) : [...pins, id]; setPins(next); try { localStorage.setItem("rf_pins", JSON.stringify(next)); } catch(e2) {} };
   const filtered = saved.filter(b => !search || (b.name || "").toLowerCase().includes(search.toLowerCase()));
   const sorted = [...filtered].sort((a, b2) => { const ap = pins.includes(a.id) ? 1 : 0; const bp = pins.includes(b2.id) ? 1 : 0; return bp - ap; });
@@ -5586,11 +5588,18 @@ function Home({ saved, loading, onNew, onOpen, onDelete, priceInfo, onMogger, on
                   <div style={{display:"flex",gap:"4px",alignItems:"center"}}>
                     <button className="rf-icon-btn" title={pinned ? "Unpin" : "Pin to top"} onClick={(e) => togglePin(b.id, e)} style={{color: pinned ? "var(--c-accent)" : undefined}}>⭐</button>
                     {onClone && <button className="rf-icon-btn" title="Clone build" onClick={(e) => { e.stopPropagation(); onClone(b); }}>⧉</button>}
-                    <button className="rf-icon-btn" onClick={(e) => { e.stopPropagation(); onDelete(b.id); }}>
+                    <button className="rf-icon-btn" onClick={(e) => { e.stopPropagation(); setDeleteConfirm(b.id); }}>
                       <Trash2 size={15} />
                     </button>
                   </div>
                 </div>
+                {deleteConfirm === b.id && (
+                  <div className="rf-delete-confirm" onClick={(e) => e.stopPropagation()}>
+                    <span className="rf-muted" style={{fontSize:"0.82rem"}}>Delete?</span>
+                    <button className="rf-del-yes" onClick={(e) => { e.stopPropagation(); onDelete(b.id); setDeleteConfirm(null); }}>Yes</button>
+                    <button className="rf-del-no" onClick={(e) => { e.stopPropagation(); setDeleteConfirm(null); }}>No</button>
+                  </div>
+                )}
                 <div className="rf-saved-name" style={{display:"flex",alignItems:"center",gap:"8px"}}>
                   <CompletenessRing parts={b.parts} useCase={b.useCase} />
                   <span>{b.name}</span>
@@ -7201,6 +7210,12 @@ function Survey({ onPick }) {
               <div className="rf-uc-label">{tUC(k)}</div>
               <div className="rf-uc-tag">{tUCtag(k)}</div>
               <div className={"rf-uc-check" + (on ? " on" : "")}>{on && <Check size={14} />}</div>
+              {uc.desc && (
+                <div className="rf-uc-tooltip-wrap" onClick={(e) => e.stopPropagation()}>
+                  <span className="rf-uc-q">?</span>
+                  <div className="rf-uc-tooltip">{uc.desc}</div>
+                </div>
+              )}
             </button>
           );
         })}
@@ -7231,12 +7246,17 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
 
       <div className="rf-slider-wrap">
         <input
-          type="range" min={MIN} max={MAX} step={50} value={budget}
+          type="range" min={MIN} max={MAX} step={100} value={budget}
           onChange={(e) => setBudget(Number(e.target.value))}
           className="rf-slider"
           style={{ background: `linear-gradient(90deg, var(--c-accent) ${pct}%, var(--c-track) ${pct}%)` }}
         />
         <div className="rf-slider-ends"><span>{fmt(MIN)}</span><span>{fmt(MAX)}</span></div>
+        <div className="rf-slider-ticks">
+          {[500,1000,1500,2000].map(v => (
+            <button key={v} className="rf-slider-tick" style={{left:`${((v-MIN)/(MAX-MIN))*100}%`}} onClick={() => setBudget(v)}>{fmt(v)}</button>
+          ))}
+        </div>
       </div>
 
       <div className="rf-presets">
@@ -7280,6 +7300,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
   const UC = USE_CASES[useCase];
   const a = analysis;
   const [shareOpen, setShareOpen] = useState(false);
+  const [zoomPart, setZoomPart] = useState(null);
   const [shareTitle, setShareTitle] = useState("");
   const [shareStatus, setShareStatus] = useState(null); // null | "posting" | "done" | "error"
   const [textCopied, setTextCopied] = useState(false);
@@ -7443,9 +7464,9 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
               <div className="rf-part-top">
                 <div className="rf-part-media">
                 {part && part.img ? (
-                  <a href={part.url || "#"} target="_blank" rel="noopener noreferrer" className="rf-part-img-link" onClick={(e) => e.stopPropagation()} title="View product page">
+                  <button className="rf-part-img-link" onClick={(e) => { e.stopPropagation(); setZoomPart({ part, cat }); }} title="View full image">
                     <img src={part.img} alt={part.name} className="rf-part-img" loading="lazy" />
-                  </a>
+                  </button>
                 ) : (
                   <div className="rf-part-icon"><Meta.Icon size={20} /></div>
                 )}
@@ -7495,6 +7516,24 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           );
         })}
       </div>
+      {zoomPart && (
+        <div className="rf-zoom-overlay" onClick={() => setZoomPart(null)}>
+          <div className="rf-zoom-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="rf-zoom-close" onClick={() => setZoomPart(null)}><X size={18} /></button>
+            <img src={zoomPart.part.img} alt={zoomPart.part.name} className="rf-zoom-img" />
+            <div className="rf-zoom-name">{zoomPart.part.name}</div>
+            <div className="rf-zoom-cat">{CAT_META[zoomPart.cat].label}</div>
+            <div className="rf-zoom-specs">
+              {partFacts(zoomPart.cat, zoomPart.part).map((f, i) => (
+                <span key={i} className="rf-zoom-spec">{f}</span>
+              ))}
+            </div>
+            {zoomPart.part.url && (
+              <a href={zoomPart.part.url} target="_blank" rel="noopener noreferrer" className="rf-zoom-link" onClick={(e) => e.stopPropagation()}>View product page</a>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
