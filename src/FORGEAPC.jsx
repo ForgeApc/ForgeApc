@@ -1708,6 +1708,7 @@ export default function RigForge() {
             expanded={expanded} setExpanded={setExpanded}
             onSwap={(c) => setPicker(c)} onRemove={removePart}
             onRegen={generateAuto} onSave={() => setSavingOpen(true)}
+            saved={saved}
             onShare={hdrUser ? async (title) => {
               const a = analysis;
               await netPostCommunity(hdrUser.id, hdrUser.name, { title, useCase, budget, total: a.spend, perfScore: a.perf, parts });
@@ -7276,7 +7277,7 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
 }
 
 /* ----------------------------- RESULTS ----------------------------- */
-function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline, onAnalyze, onTools, onNavigate }) {
+function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline, onAnalyze, onTools, onNavigate, saved }) {
   const UC = USE_CASES[useCase];
   const a = analysis;
   const [shareOpen, setShareOpen] = useState(false);
@@ -7286,6 +7287,36 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const shownTotal = CATEGORY_ORDER.reduce((s, c) => { const p = parts[c]; return s + (p && !partOOS(p) ? p.price : 0); }, 0);
   const overBudget = shownTotal > budget;
+
+  // R1 — part search filter
+  const [partFilter, setPartFilter] = useState("");
+
+  // R2 — build name
+  const [buildName, setBuildName] = useState(() => { try { return localStorage.getItem("mogger_build_name") || ""; } catch { return ""; } });
+  const saveBuildName = (v) => { setBuildName(v); try { localStorage.setItem("mogger_build_name", v); } catch {} };
+
+  // R3 — compare mode
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareIdx, setCompareIdx] = useState(0);
+
+  // R4 — upgrade tooltip state: which cat is showing tooltip
+  const [upgradeTip, setUpgradeTip] = useState(null);
+
+  // R5 — auto-scroll to weakest part after verdict loads
+  const weakestRef = useRef(null);
+  const prevVerdictRef = useRef(null);
+  useEffect(() => {
+    if (verdict && verdict !== "__offline__" && verdict !== prevVerdictRef.current) {
+      prevVerdictRef.current = verdict;
+      setTimeout(() => {
+        if (weakestRef.current) {
+          weakestRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          weakestRef.current.classList.add("rf-weakest-pulse");
+          setTimeout(() => { if (weakestRef.current) weakestRef.current.classList.remove("rf-weakest-pulse"); }, 1500);
+        }
+      }, 300);
+    }
+  }, [verdict]);
   const copyAsText = () => {
     const lines = [`ForgeAPC Build — ${USE_CASES[useCase].label} · ${fmt(budget)} budget`, ""];
     CATEGORY_ORDER.forEach(c => { const p = parts[c]; if (p) lines.push(`${CAT_META[c].label}: ${p.name} (${fmt(p.price)})`); });
@@ -7358,7 +7389,77 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
         </div>
       )}
 
-      {/* scorecard */}
+      {/* R2 — build name field */}
+      <div className="rf-build-name-row">
+        <input
+          className="rf-build-name-input"
+          value={buildName}
+          onChange={e => saveBuildName(e.target.value)}
+          placeholder="Name this build…"
+          maxLength={60}
+        />
+      </div>
+
+      {/* R3 — compare mode toggle + picker */}
+      <div className="rf-compare-bar">
+        <button className={"rf-ghost rf-sm-btn" + (compareMode ? " active" : "")} onClick={() => setCompareMode(m => !m)}>
+          <Columns2 size={13} /> {compareMode ? "Exit Compare" : "Compare"}
+        </button>
+        {compareMode && saved && saved.length > 0 && (
+          <select className="rf-compare-select" value={compareIdx} onChange={e => setCompareIdx(Number(e.target.value))}>
+            {saved.map((b, i) => <option key={i} value={i}>{b.name || b.title || `Build ${i+1}`}</option>)}
+          </select>
+        )}
+        {compareMode && (!saved || saved.length === 0) && (
+          <span className="rf-muted" style={{fontSize:"0.82rem"}}>No saved builds to compare</span>
+        )}
+      </div>
+
+      {/* scorecard — optionally side-by-side compare */}
+      {compareMode && saved && saved.length > 0 ? (() => {
+        const cb = saved[compareIdx] || saved[0];
+        const ca = cb ? analyzeBuild(cb.parts, cb.useCase || useCase, cb.budget || budget) : null;
+        const cTotal = ca ? CATEGORY_ORDER.reduce((s, c) => { const p = cb.parts[c]; return s + (p && !partOOS(p) ? p.price : 0); }, 0) : 0;
+        return (
+          <div className="rf-compare-layout">
+            <div className="rf-compare-col rf-compare-current">
+              <div className="rf-compare-col-label">Current Build</div>
+              <div className="rf-scorecard rf-pop">
+                <div className="rf-gauges">
+                  <Gauge value={a.score} max={1000} label={t("performance")} accent={scoreColor(a.score / 10)} />
+                  <Gauge value={a.ppScore} label={t("pricePerf")} accent={scoreColor(a.ppScore)} delay={120} />
+                </div>
+                <div className="rf-verdict">
+                  <div className="rf-total-row">
+                    <span className="rf-muted">Total</span>
+                    <span className={"rf-total" + (overBudget ? " over" : "")}>{fmt(shownTotal)}</span>
+                  </div>
+                  <div style={{marginTop:"0.5rem"}}>
+                    {CATEGORY_ORDER.map(cat => { const p = parts[cat]; return p ? <div key={cat} className="rf-compare-part-row"><span className="rf-muted" style={{fontSize:"0.78rem"}}>{tCat(cat)}</span><span style={{fontSize:"0.82rem"}}>{p.name}</span><span style={{fontSize:"0.78rem",color:"var(--c-muted)"}}>{fmt(p.price)}</span></div> : null; })}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="rf-compare-col rf-compare-other">
+              <div className="rf-compare-col-label">{cb.name || cb.title || `Build ${compareIdx+1}`}</div>
+              <div className="rf-scorecard rf-pop">
+                <div className="rf-gauges">
+                  {ca && <><Gauge value={ca.score} max={1000} label="Performance" accent={scoreColor(ca.score / 10)} /><Gauge value={ca.ppScore} label="Price/Perf" accent={scoreColor(ca.ppScore)} delay={120} /></>}
+                </div>
+                <div className="rf-verdict">
+                  <div className="rf-total-row">
+                    <span className="rf-muted">Total</span>
+                    <span className="rf-total">{fmt(cTotal)}</span>
+                  </div>
+                  <div style={{marginTop:"0.5rem"}}>
+                    {CATEGORY_ORDER.map(cat => { const p = cb.parts[cat]; return p ? <div key={cat} className="rf-compare-part-row"><span className="rf-muted" style={{fontSize:"0.78rem"}}>{tCat(cat)}</span><span style={{fontSize:"0.82rem"}}>{p.name}</span><span style={{fontSize:"0.78rem",color:"var(--c-muted)"}}>{fmt(p.price)}</span></div> : null; })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })() : (
       <div className="rf-scorecard rf-pop">
         <div className="rf-gauges">
           <Gauge value={a.score} max={1000} label={t("performance")} accent={scoreColor(a.score / 10)} />
@@ -7387,6 +7488,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           </div>
         </div>
       </div>
+      )}
 
       {/* compatibility banner */}
       <div className={"rf-compat " + (!a.compat.pass ? "bad" : !a.complete ? "warn" : "ok")}>
@@ -7427,74 +7529,125 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
         );
       })()}
 
-      {/* part list */}
-      <div className="rf-parts">
-        {CATEGORY_ORDER.map((cat, i) => {
-          const part = parts[cat];
-          const skip = UC.alloc[cat] === 0 && !part;
-          const band = (budget * UC.alloc[cat]) / 100;
-          const Meta = CAT_META[cat];
-          const status = part ? budgetStatus(part.price, band) : "within";
-          const compatible = part ? isPartCompatible(parts, cat) : true;
-          const sc = part ? (compatible ? partScore({ ...part, cat }, band, useCase) : 0) : 0;
-          const isOpen = expanded[cat];
-          return (
-            <div key={cat} className="rf-part rf-pop" style={{ animationDelay: i * 45 + "ms" }}>
-              <div className="rf-part-top">
-                <div className="rf-part-media">
-                {part && part.img ? (
-                  <a href={part.url || "#"} target="_blank" rel="noopener noreferrer" className="rf-part-img-link" onClick={(e) => e.stopPropagation()} title="View product page">
-                    <img src={part.img} alt={part.name} className="rf-part-img" loading="lazy" />
-                  </a>
-                ) : (
-                  <div className="rf-part-icon"><Meta.Icon size={20} /></div>
-                )}
-                {part && part._source && <span className={"rf-part-src " + part._source}>{({ amazon: "Amazon", newegg: "Newegg", bestbuy: "Best Buy" })[part._source] || ""}</span>}
-                </div>
-                <div className="rf-part-info">
-                  <div className="rf-part-cat">{tCat(cat)}</div>
-                  {part ? (
-                    <div className="rf-part-name">{part.name}</div>
-                  ) : skip ? (
-                    <div className="rf-part-name rf-muted">Integrated graphics — no discrete GPU</div>
-                  ) : (
-                    <div className="rf-part-name rf-muted">Empty</div>
-                  )}
-                </div>
+      {/* R1 — part search filter */}
+      <div className="rf-part-filter-bar">
+        <input
+          className="rf-part-filter-input"
+          placeholder="Filter parts…"
+          value={partFilter}
+          onChange={e => setPartFilter(e.target.value)}
+        />
+        {partFilter && <button className="rf-part-filter-clear" onClick={() => setPartFilter("")}>✕</button>}
+      </div>
 
-                {part && (
-                  <>
-                    <div className="rf-part-price-col">
-                      {partOOS(part) ? (
-                        <div className="rf-part-price rf-oos-price">{t("outOfStock")}</div>
+      {/* part list */}
+      {(() => {
+        // R5: compute weakest part cat (lowest matchScore among parts present)
+        let weakestCat = null;
+        let weakestScore = Infinity;
+        CATEGORY_ORDER.forEach(cat => {
+          const p = parts[cat];
+          if (!p) return;
+          const band = (budget * UC.alloc[cat]) / 100;
+          const compatible = isPartCompatible(parts, cat);
+          const sc = compatible ? partScore({ ...p, cat }, band, useCase) : 0;
+          if (sc < weakestScore) { weakestScore = sc; weakestCat = cat; }
+        });
+        return (
+          <div className="rf-parts">
+            {CATEGORY_ORDER.map((cat, i) => {
+              const part = parts[cat];
+              // R1: filter
+              if (partFilter && part && !part.name.toLowerCase().includes(partFilter.toLowerCase())) return null;
+              const skip = UC.alloc[cat] === 0 && !part;
+              const band = (budget * UC.alloc[cat]) / 100;
+              const Meta = CAT_META[cat];
+              const status = part ? budgetStatus(part.price, band) : "within";
+              const compatible = part ? isPartCompatible(parts, cat) : true;
+              const sc = part ? (compatible ? partScore({ ...part, cat }, band, useCase) : 0) : 0;
+              const isOpen = expanded[cat];
+              const isWeakest = part && cat === weakestCat;
+
+              // R4: find next-tier part in same category
+              const nextTier = part ? (CATALOG[cat] || [])
+                .filter(p => p.price > part.price && p.perf > (part.perf || 0) && p.price <= part.price * 1.6)
+                .sort((a, b) => a.price - b.price)[0] : null;
+
+              return (
+                <div
+                  key={cat}
+                  ref={isWeakest ? weakestRef : null}
+                  className="rf-part rf-pop"
+                  style={{ animationDelay: i * 45 + "ms" }}
+                >
+                  <div className="rf-part-top">
+                    <div className="rf-part-media">
+                    {part && part.img ? (
+                      <a href={part.url || "#"} target="_blank" rel="noopener noreferrer" className="rf-part-img-link" onClick={(e) => e.stopPropagation()} title="View product page">
+                        <img src={part.img} alt={part.name} className="rf-part-img" loading="lazy" />
+                      </a>
+                    ) : (
+                      <div className="rf-part-icon"><Meta.Icon size={20} /></div>
+                    )}
+                    {part && part._source && <span className={"rf-part-src " + part._source}>{({ amazon: "Amazon", newegg: "Newegg", bestbuy: "Best Buy" })[part._source] || ""}</span>}
+                    </div>
+                    <div className="rf-part-info">
+                      <div className="rf-part-cat">{tCat(cat)}</div>
+                      {part ? (
+                        <div className="rf-part-name">{part.name}</div>
+                      ) : skip ? (
+                        <div className="rf-part-name rf-muted">Integrated graphics — no discrete GPU</div>
                       ) : (
-                        <>
-                          <div className={"rf-part-price " + status}>{fmt(part.price)}</div>
-                          {status === "over" && <div className="rf-flag over">OVER BUDGET</div>}
-                          {status === "tight" && <div className="rf-flag tight">A bit over</div>}
-                        </>
+                        <div className="rf-part-name rf-muted">Empty</div>
                       )}
                     </div>
-                    <div className="rf-part-score" style={{ borderColor: scoreColor(sc), color: scoreColor(sc) }}>{sc}</div>
-                  </>
-                )}
-              </div>
 
-              <div className="rf-part-actions">
-                {part && (
-                  <button className="rf-chip-btn" onClick={() => setExpanded((e) => ({ ...e, [cat]: !e[cat] }))}>
-                    {isOpen ? <ChevronLeft size={13} style={{ transform: "rotate(90deg)" }} /> : <Sparkles size={13} />}
-                    {isOpen ? t("hideInfo") : t("moreInfo")}
-                  </button>
-                )}
-                <button className="rf-chip-btn primary" onClick={() => onSwap(cat)}><Repeat2 size={13} /> {part ? "Swap" : "Add"}</button>
-              </div>
+                    {part && (
+                      <>
+                        <div className="rf-part-price-col">
+                          {partOOS(part) ? (
+                            <div className="rf-part-price rf-oos-price">{t("outOfStock")}</div>
+                          ) : (
+                            <>
+                              <div className={"rf-part-price " + status}>{fmt(part.price)}</div>
+                              {status === "over" && <div className="rf-flag over">OVER BUDGET</div>}
+                              {status === "tight" && <div className="rf-flag tight">A bit over</div>}
+                            </>
+                          )}
+                        </div>
+                        <div className="rf-part-score" style={{ borderColor: scoreColor(sc), color: scoreColor(sc) }}>{sc}</div>
+                      </>
+                    )}
+                  </div>
 
-              {part && isOpen && <InfoPanel cat={cat} part={part} band={band} status={status} useCase={useCase} incompatible={!compatible} enableAsk budget={budget} parts={parts} isOnline={isOnline} />}
-            </div>
-          );
-        })}
-      </div>
+                  <div className="rf-part-actions">
+                    {part && (
+                      <button className="rf-chip-btn" onClick={() => setExpanded((e) => ({ ...e, [cat]: !e[cat] }))}>
+                        {isOpen ? <ChevronLeft size={13} style={{ transform: "rotate(90deg)" }} /> : <Sparkles size={13} />}
+                        {isOpen ? t("hideInfo") : t("moreInfo")}
+                      </button>
+                    )}
+                    <button className="rf-chip-btn primary" onClick={() => onSwap(cat)}><Repeat2 size={13} /> {part ? "Swap" : "Add"}</button>
+                    {/* R4 — upgrade suggest */}
+                    {part && nextTier && (
+                      <div className="rf-upgrade-wrap">
+                        <button className="rf-chip-btn rf-upgrade-btn" onClick={() => setUpgradeTip(t => t === cat ? null : cat)}>↑ Upgrade</button>
+                        {upgradeTip === cat && (
+                          <div className="rf-upgrade-tip">
+                            <strong>{nextTier.name}</strong> — {fmt(nextTier.price)} (+{fmt(nextTier.price - part.price)})
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {part && isOpen && <InfoPanel cat={cat} part={part} band={band} status={status} useCase={useCase} incompatible={!compatible} enableAsk budget={budget} parts={parts} isOnline={isOnline} />}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }
