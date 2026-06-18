@@ -3958,3 +3958,170 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   to   { opacity:1; transform:translateY(0)    scale(1); }
 }
 .rf-pop { animation-duration: 0.85s !important; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94) !important; }
+
+/* ================================================================
+   P1 — Live match chat panel
+   ================================================================ */
+.pm-chat-panel {
+  margin-top: 16px;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(15,18,32,0.6);
+}
+.pm-chat-toggle {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--c-accent);
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  text-align: left;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.pm-chat-toggle:hover { background: rgba(31,245,230,0.06); }
+.pm-chat-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.pm-chat-log {
+  min-height: 60px;
+  max-height: 120px;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.25);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pm-chat-empty { color: var(--c-muted); font-size: 0.78rem; text-align: center; padding: 12px 0; }
+.pm-chat-msg { font-size: 0.8rem; color: var(--c-text); }
+.pm-chat-time { font-size: 0.7rem; color: var(--c-muted); margin-right: 6px; }
+.pm-chat-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.pm-chat-taunt-btn {
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--c-border);
+  background: rgba(31,245,230,0.07);
+  color: var(--c-text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pm-chat-taunt-btn:hover { background: rgba(31,245,230,0.18); border-color: var(--c-accent); color: var(--c-accent); }
+
+/* ================================================================
+   P2 — ELO sparkline in stats bar
+   ================================================================ */
+.pm-elo-sparkline {
+  display: inline-block;
+  vertical-align: middle;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   P3 — Pre-match hype countdown overlay
+   ================================================================ */
+.pm-hype-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11,13,24,0.78);
+  border-radius: 14px;
+  z-index: 20;
+  pointer-events: none;
+}
+.pm-hype-num {
+  font-size: 6rem;
+  font-weight: 900;
+  color: var(--c-accent);
+  text-shadow: 0 0 40px var(--c-accent), 0 0 80px rgba(31,245,230,0.4);
+  animation: pmHypeIn 0.75s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+@keyframes pmHypeIn {
+  0%   { opacity: 0; transform: scale(2.2); }
+  40%  { opacity: 1; transform: scale(1); }
+  80%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.6); }
+}
+/* Parent needs relative positioning */
+.pm-card { position: relative; }
+
+/* ================================================================
+   P4 — Share card modal
+   ================================================================ */
+.pm-share-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+.pm-share-modal {
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  padding: 24px;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.pm-share-title { font-size: 1rem; font-weight: 700; color: var(--c-text); margin: 0; }
+.pm-share-card {
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--c-accent);
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+.pm-share-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ================================================================
+   P5 — Persona loss quote speech bubble
+   ================================================================ */
+.pm-persona-loss-bubble {
+  position: relative;
+  background: rgba(160,122,255,0.12);
+  border: 1px solid rgba(160,122,255,0.35);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pm-persona-loss-bubble::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 24px;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid rgba(160,122,255,0.35);
+}
+.pm-plb-name {
+  font-size: 0.72rem;
+  color: var(--c-accent2);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.pm-plb-quote {
+  font-size: 0.88rem;
+  color: var(--c-text);
+  font-style: italic;
+}

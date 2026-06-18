@@ -3106,6 +3106,119 @@ function DuelRadarChart({ you, opp, youLabel = "You", oppName, useCase, budget }
   );
 }
 
+// P2 — ELO history sparkline (last 10 ELO readings from mogger_history)
+function EloSparkline() {
+  const points = useMemo(() => {
+    try {
+      const h = JSON.parse(localStorage.getItem("mogger_history") || "[]");
+      return h.slice(-10).map(e => e.myScore ?? 0);
+    } catch(e) { return []; }
+  }, []);
+  if (points.length < 2) return null;
+  const W = 80, H = 22, pad = 2;
+  const mn = Math.min(...points), mx = Math.max(...points);
+  const range = mx - mn || 1;
+  const px = (i) => pad + (i / (points.length - 1)) * (W - pad * 2);
+  const py = (v) => H - pad - ((v - mn) / range) * (H - pad * 2);
+  const d = points.map((v, i) => (i === 0 ? "M" : "L") + px(i).toFixed(1) + "," + py(v).toFixed(1)).join(" ");
+  return (
+    <svg className="pm-elo-sparkline" viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
+      <polyline points={points.map((v,i) => px(i).toFixed(1)+","+py(v).toFixed(1)).join(" ")} fill="none" stroke="var(--c-accent)" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={px(points.length-1).toFixed(1)} cy={py(points[points.length-1]).toFixed(1)} r="2" fill="var(--c-accent)" />
+    </svg>
+  );
+}
+
+// P3 — Pre-match hype countdown overlay (3-2-1)
+function HypeCountdown({ onDone }) {
+  const [num, setNum] = useState(3);
+  useEffect(() => {
+    if (num <= 0) { onDone(); return; }
+    const t = setTimeout(() => setNum(n => n - 1), 800);
+    return () => clearTimeout(t);
+  }, [num]);
+  if (num <= 0) return null;
+  return (
+    <div className="pm-hype-overlay">
+      <span key={num} className="pm-hype-num">{num}</span>
+    </div>
+  );
+}
+
+// P1 — Live match chat panel (quick-taunt buttons + scrollable log)
+const QUICK_TAUNTS = [
+  "Good build! 👏", "You sure about that GPU? 🤔", "Nice CPU pick!", "That RAM is weak 😬",
+  "Respect the budget 💸", "GG already 🏆", "Bold storage choice 👀", "You're going over budget 💀",
+];
+function MatchChat() {
+  const [open, setOpen] = useState(false);
+  const [log, setLog] = useState([]);
+  const logRef = useRef(null);
+  const send = (msg) => {
+    setLog(l => [...l, { msg, ts: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }]);
+    setTimeout(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, 50);
+  };
+  return (
+    <div className={"pm-chat-panel" + (open ? " open" : "")}>
+      <button className="pm-chat-toggle" onClick={() => setOpen(o => !o)}>
+        💬 Chat {open ? "▲" : "▼"}
+      </button>
+      {open && (
+        <div className="pm-chat-body">
+          <div className="pm-chat-log" ref={logRef}>
+            {log.length === 0 && <div className="pm-chat-empty">Send a taunt!</div>}
+            {log.map((e, i) => <div key={i} className="pm-chat-msg"><span className="pm-chat-time">{e.ts}</span> {e.msg}</div>)}
+          </div>
+          <div className="pm-chat-btns">
+            {QUICK_TAUNTS.map((t, i) => (
+              <button key={i} className="pm-chat-taunt-btn" onClick={() => send(t)}>{t}</button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// P4 — Match outcome share card modal
+function ShareCardModal({ you, opp, youLabel, oppName, round, youWin, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const sy = moggerScore(you, round.useCase, round.budget);
+  const so = moggerScore(opp, round.useCase, round.budget);
+  const ucLabel = (USE_CASES[round.useCase] || {}).label || round.useCase;
+  const bar = (score) => {
+    const filled = Math.round(score / 100);
+    return "█".repeat(filled) + "░".repeat(10 - filled);
+  };
+  const card = [
+    "╔══════════════════════════╗",
+    `║  PC DUELS — ${youWin ? "VICTORY 🏆" : "DEFEAT 💀"}  `,
+    "╠══════════════════════════╣",
+    `║  ${ucLabel} · ${fmt(round.budget)}`,
+    "╠══════════════════════════╣",
+    `║  ${youLabel.padEnd(10)} ${bar(sy.total)} ${sy.total}`,
+    `║  ${oppName.padEnd(10)} ${bar(so.total)} ${so.total}`,
+    "╠══════════════════════════╣",
+    `║  🔗 forgeapc.com          `,
+    "╚══════════════════════════╝",
+  ].join("\n");
+  const copy = () => {
+    navigator.clipboard.writeText(card).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); });
+  };
+  return (
+    <div className="pm-share-backdrop" onClick={onClose}>
+      <div className="pm-share-modal" onClick={e => e.stopPropagation()}>
+        <h3 className="pm-share-title">📤 Share your result</h3>
+        <pre className="pm-share-card">{card}</pre>
+        <div className="pm-share-actions">
+          <button className="rf-btn" onClick={copy}>{copied ? "✓ Copied!" : "📋 Copy"}</button>
+          <button className="rf-btn rf-ghost-btn" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppTag, oppPersona, myElo, myCrank, eloMsg, practice, series, onAgain, onMenu, onHistory, onSaveBuild, onMirror, onRematch, onNextGame, onAvenge }) {
   const sy = useMemo(() => moggerScore(you, round.useCase, round.budget), [you, opp]);
   const so = useMemo(() => moggerScore(opp, round.useCase, round.budget), [you, opp]);
@@ -3163,6 +3276,10 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
   const [savedOpp, setSavedOpp] = useState(false);
   const [rCopied, setRCopied] = useState(false);
   const [rateVal, setRateVal] = useState(null);
+  // P4: share card modal
+  const [showShareCard, setShowShareCard] = useState(false);
+  // P5: persona loss quote (last item in taunts array is the "loss quote")
+  const personaLossQuote = youWin && oppPersona ? oppPersona.taunts[oppPersona.taunts.length - 1] : null;
   // A5: budget efficiency
   const budgEff = sy.spend > 0 ? Math.round((sy.spend / round.budget) * 100) : 0;
   const oppBudgEff = so.spend > 0 ? Math.round((so.spend / round.budget) * 100) : 0;
@@ -3239,6 +3356,13 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
           <span className="pm-opp-persona-name">{oppName}</span>
           <span className="pm-opp-persona-tag">{oppTag}</span>
           {aiQuip && <span className="pm-opp-persona-quip">"{aiQuip}"</span>}
+        </div>
+      )}
+      {/* P5: Persona loss quote — speech bubble when you beat an AI */}
+      {personaLossQuote && (
+        <div className="pm-persona-loss-bubble">
+          <span className="pm-plb-name">{oppName} says:</span>
+          <span className="pm-plb-quote">"{personaLossQuote}"</span>
         </div>
       )}
       <div className="pm-verdict-box"><span className="pm-verdict-tag"><Sparkles size={12} /> AI JUDGE</span>{busy && !verdict ? <p className="pm-dim">Writing the verdict…</p> : <p>{verdict}</p>}</div>
@@ -3336,8 +3460,12 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
           {rateVal && <span className="pm-rate-thanks">Thanks for rating!</span>}
         </div>
       )}
-      {/* B5: share result */}
-      {phase === "reveal" && <div className="pm-row" style={{justifyContent:"center",marginBottom:"4px"}}><button className="rf-btn rf-ghost-btn" onClick={shareRes}>{rCopied ? <><Check size={14}/> Copied!</> : <>📤 Share result</>}</button></div>}
+      {/* B5: share result + P4: share card modal */}
+      {phase === "reveal" && <div className="pm-row" style={{justifyContent:"center",marginBottom:"4px",gap:"8px"}}>
+        <button className="rf-btn rf-ghost-btn" onClick={shareRes}>{rCopied ? <><Check size={14}/> Copied!</> : <>📤 Share result</>}</button>
+        <button className="rf-btn rf-ghost-btn" onClick={() => setShowShareCard(true)}>🖼️ Share card</button>
+      </div>}
+      {showShareCard && <ShareCardModal you={you} opp={opp} youLabel={youLabel} oppName={oppName} round={round} youWin={youWin} onClose={() => setShowShareCard(false)} />}
       <div className="pm-row pm-center-row">
         <button className="rf-btn rf-ghost-btn" onClick={onMenu}>Menu</button>
         {onMirror && <button className="rf-btn rf-ghost-btn" onClick={onMirror}><Repeat2 size={16} /> Mirror</button>}
@@ -4791,6 +4919,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
   // A7: Pre-match taunt
   const [selectedTaunt, setSelectedTaunt] = useState(null);
   const [activeRogueReward, setActiveRogueReward] = useState(null); // reward chosen for this match, or null
+  // P3: hype countdown flag — shown once when entering taunt-pick
+  const [hypeCountdownDone, setHypeCountdownDone] = useState(false);
   // B2: confetti on win
   const [showConfetti, setShowConfetti] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -4937,7 +5067,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
     if (d.k === "custom") { setAiElo(custom); setAiHidden(false); }
     else if (d.k === "random") { setAiElo(100 + Math.floor(Math.random() * 2900)); setAiHidden(true); }
     else { setAiElo(d.elo); setAiHidden(false); }
-    setScreen(bannedMode ? "ban-phase" : "taunt-pick");
+    setHypeCountdownDone(false); setScreen(bannedMode ? "ban-phase" : "taunt-pick");
   };
   const start = (r) => {
     setRound(r); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null);
@@ -5165,6 +5295,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
               <span>Best <b>{histStats.best}</b></span>
               {streak > 0 && <span>🔥 <b>{streak}</b>{streak >= 3 && <span className="pm-streak-mult-badge"> +{Math.round((Math.min(1+Math.floor(streak/3)*0.10,1.5)-1)*100)}%</span>}</span>}
               {(() => { try { const h=JSON.parse(localStorage.getItem("mogger_history")||"[]").slice(-8); if(h.length<3)return null; return <span className="pm-spark-inline">{h.map((e,i)=><span key={i} className={"pm-spark-dot "+(e.won?"win":"lose")}/>)}</span>; } catch(e){return null;} })()}
+              {/* P2: ELO trend sparkline */}
+              <EloSparkline />
             </div>
           )}
 
@@ -5347,6 +5479,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
         const availableRewards = storedR?.list?.filter(r => r.matchesLeft > 0) || [];
         return (
           <div className="pm-card pm-center rf-fade">
+            {/* P3: Hype countdown before taunt-pick content */}
+            {!hypeCountdownDone && <HypeCountdown onDone={() => setHypeCountdownDone(true)} />}
             {availableRewards.length > 0 && (
               <div className="pm-rogue-reward-picker">
                 <div className="pm-rrp-head">⚔️ Rogue Reward — activate for this match?</div>
@@ -5383,6 +5517,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
               <button className="rf-btn rf-ghost-btn" onClick={() => setScreen("diff")}><ChevronLeft size={16} /> Back</button>
               <button className="rf-btn" onClick={() => setScreen("lobby")}>{selectedTaunt ? "Taunt sent! → Lobby" : "Skip → Lobby"} <ChevronRight size={16} /></button>
             </div>
+            {/* P1: Live match chat panel */}
+            <MatchChat />
           </div>
         );
       })()}
@@ -5406,7 +5542,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
         const resultOppName  = mirrored ? "You" : aiName;
         return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} practice={practice || mode === "ghost"} series={series} onAgain={again} onRematch={mode === "ai" ? rematch : mode === "ghost" ? rematchGhost : undefined} onNextGame={mode === "ai" ? nextSeriesGame : undefined} onAvenge={mode === "ai" ? avengeRival : undefined} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
       })()}
-      {screen === "ban-phase" && round && <BanPhaseScreen round={round} myElo={user?.elo||1000} aiElo={aiElo} onBack={() => setScreen("diff")} onDone={(myBans, aiBans) => { setYouBannedParts(myBans); setAiBannedParts(aiBans); setScreen("taunt-pick"); }} />}
+      {screen === "ban-phase" && round && <BanPhaseScreen round={round} myElo={user?.elo||1000} aiElo={aiElo} onBack={() => setScreen("diff")} onDone={(myBans, aiBans) => { setYouBannedParts(myBans); setAiBannedParts(aiBans); setHypeCountdownDone(false); setScreen("taunt-pick"); }} />}
       {screen === "draft" && <MoggerDraft onMenu={menu} />}
       {screen === "rogue" && <MoggerRogueRun onMenu={menu} user={user} />}
       {screen === "archaeology" && <MoggerArchaeology onMenu={menu} onReplay={challengeGhost} />}
