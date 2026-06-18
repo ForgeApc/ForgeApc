@@ -3902,3 +3902,59 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   border: 1px solid rgba(100,110,130,0.22);
   color: #6b7280;
 }
+
+/* ================================================================
+   SLOWER / SMOOTHER ANIMATIONS + DEEPER GLASS
+   ================================================================ */
+* { transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94) !important; }
+
+.rf-part,.rf-pick,.rf-saved-card,.rf-uc-card,.rf-cta-card,
+.pm-mode,.pm-hero-4 .pm-mode-hero,.pm-card,.rf-scorecard,
+.pm-diff,.pm-quick-btn,.pm-lb-row,.pm-hist-entry,.pm-achieve-card,
+.pm-special-mode-card,.rf-preset,.rf-chip-btn,.rf-ghost,.rf-ghost-btn {
+  transition-duration: 0.38s !important;
+}
+.rf-btn { transition-duration: 0.30s !important; }
+
+/* deeper glass panels */
+.rf-part,.rf-pick {
+  background: rgba(12,14,28,0.28) !important;
+  backdrop-filter: blur(56px) saturate(2.2) brightness(1.10) !important;
+  -webkit-backdrop-filter: blur(56px) saturate(2.2) brightness(1.10) !important;
+  border: 1px solid rgba(255,255,255,0.11) !important;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.13), 0 8px 32px rgba(0,0,0,0.35) !important;
+}
+.rf-saved-card,.rf-uc-card,.rf-cta-card {
+  background: rgba(12,14,28,0.28) !important;
+  backdrop-filter: blur(52px) saturate(2.2) brightness(1.10) !important;
+  -webkit-backdrop-filter: blur(52px) saturate(2.2) brightness(1.10) !important;
+  border: 1px solid rgba(255,255,255,0.11) !important;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.13), 0 8px 32px rgba(0,0,0,0.35) !important;
+}
+.pm-mode,.pm-hero-4 .pm-mode-hero {
+  background: rgba(12,14,28,0.26) !important;
+  backdrop-filter: blur(52px) saturate(2.2) brightness(1.10) !important;
+  -webkit-backdrop-filter: blur(52px) saturate(2.2) brightness(1.10) !important;
+  border: 1px solid rgba(255,255,255,0.11) !important;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.12), 0 6px 24px rgba(0,0,0,0.32) !important;
+}
+.pm-card,.rf-scorecard {
+  background: rgba(10,12,24,0.30) !important;
+  backdrop-filter: blur(64px) saturate(2.4) brightness(1.10) !important;
+  -webkit-backdrop-filter: blur(64px) saturate(2.4) brightness(1.10) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.14), 0 24px 64px rgba(0,0,0,0.42) !important;
+}
+.rf-header {
+  background: rgba(8,10,20,0.45) !important;
+  backdrop-filter: blur(64px) saturate(2.2) !important;
+  -webkit-backdrop-filter: blur(64px) saturate(2.2) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.09) !important;
+}
+
+/* smoother keyframe animations */
+@keyframes rfUp {
+  from { opacity:0; transform:translateY(18px) scale(0.97); }
+  to   { opacity:1; transform:translateY(0)    scale(1); }
+}
+.rf-pop { animation-duration: 0.85s !important; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94) !important; }
