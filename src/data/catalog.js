@@ -51,7 +51,7 @@ const CATALOG = {
     {id:"cpu43",brand:"Intel",name:"Core i9-14900KF",model:"Core i9-14900KF",variantLabel:"Intel",price:370,perf:86,socket:"LGA1700",tdp:125,cores:24,igpu:false},
     {id:"cpu44",brand:"Intel",name:"Core i3-12100F",model:"Core i3-12100F",variantLabel:"Intel",price:80,perf:44,socket:"LGA1700",tdp:58,cores:4,igpu:false},
     {id:"cpu45",brand:"Intel",name:"Core i3-13100F",model:"Core i3-13100F",variantLabel:"Intel",price:90,perf:46,socket:"LGA1700",tdp:58,cores:4,igpu:false},
-    {id:"cpu46",brand:"AMD",name:"Ryzen 9 9950X3D2",model:"Ryzen 9 9950X3D2",variantLabel:"AMD",price:950,perf:100,socket:"AM5",tdp:200,cores:16,igpu:true},
+    {id:"cpu46",brand:"AMD",name:"Ryzen 9 9950X3D",model:"Ryzen 9 9950X3D",variantLabel:"AMD",price:950,perf:100,socket:"AM5",tdp:200,cores:16,igpu:true},
   ],
   gpu: [
     {id:"gpu_1",name:"Intel Limited Edition Intel Arc B570",brand:"Intel",model:"Intel Arc B570",variantLabel:"Intel Limited Edition",price:220,perf:24,vram:10,tdp:150,len:250},
