@@ -2948,6 +2948,27 @@ function ArchetypeBadge({ build, useCase, budget }) {
   return <span className="pm-archetype-badge" title={arch.desc}>{arch.emoji} {arch.tag}</span>;
 }
 
+/* P7: Build rating stars — 1-5 based on moggerScore total */
+function buildStarRating(total) {
+  if (total < 400) return 1;
+  if (total < 550) return 2;
+  if (total < 700) return 3;
+  if (total < 850) return 4;
+  return 5;
+}
+function BuildStars({ total }) {
+  const stars = buildStarRating(total);
+  return (
+    <div className="pm-build-stars">
+      {[1,2,3,4,5].map((n) => (
+        <svg key={n} width="14" height="14" viewBox="0 0 14 14" fill={n <= stars ? "var(--c-warn)" : "none"} stroke="var(--c-warn)" strokeWidth="1.2">
+          <polygon points="7,1 8.8,5.2 13.4,5.6 10.1,8.5 11.1,13 7,10.5 2.9,13 3.9,8.5 0.6,5.6 5.2,5.2" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
 function MoggerScoreCol({ title, build, s, win, shown, rank, useCase, budget }) {
   const big = shown == null ? s.total : shown;
   const gpuName = (build && build.gpu) ? (build.gpu.brand || build.gpu.name || "") : "";
@@ -2960,6 +2981,8 @@ function MoggerScoreCol({ title, build, s, win, shown, rank, useCase, budget }) 
       {rank && <div className={"pm-rank pm-rank-" + rank.cls + " pm-rank-col"} style={rank.custom ? { color: "#fff", background: hexToRgba(rank.color, 0.2), borderColor: rank.color, boxShadow: "0 0 12px " + hexToRgba(rank.color, 0.45) } : undefined}>{rank.icon} {rank.name}</div>}
       {useCase && budget && <ArchetypeBadge build={build} useCase={useCase} budget={budget} />}
       <div className="pm-bigscore" style={rank ? { color: rank.color } : undefined}>{big}<small>/1000</small></div>
+      {/* P7: Build rating stars */}
+      <BuildStars total={s.total} />
       <div className="pm-metrics"><span>Performance <b>{s.perf}</b></span><span>Compatibility <b>{s.compat}</b></span><span>Spent <b className={s.over ? "pm-red" : ""}>{fmt(s.spend)}</b></span></div>
       {s.issues.length > 0 && <div className="pm-issues">{s.issues.map((i, n) => <span key={n}><AlertTriangle size={11} /> {i}</span>)}</div>}
       <div className="pm-buildlist">
@@ -3152,6 +3175,7 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
   }, [youWin, you, round.useCase, round.budget, soSD.total]);
   // Open breakdown automatically when you lose so the player sees why
   const [showBreakdown, setShowBreakdown] = useState(!youWin);
+  const [showOppBuild, setShowOppBuild] = useState(false); // P10
   // AI persona post-match quip
   const aiQuip = oppPersona ? (youWin ? pickRand(oppPersona.losses) : pickRand(oppPersona.wins)) : null;
   const [phase, setPhase] = useState("loading"); // loading -> reveal
@@ -3248,6 +3272,23 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
           {/* A2: ELO ticker */}
           <EloTicker oldElo={eloMsg.newElo - eloMsg.delta} newElo={eloMsg.newElo} delta={eloMsg.delta} /> <span className="pm-elo-now-label">total</span>
           {eloMsg.streakMult > 1 && <span className="pm-streak-mult">🔥 {eloMsg.streak}-win streak · +{Math.round((eloMsg.streakMult - 1) * 100)}% bonus</span>}
+          {/* P8: ELO tier progress bar */}
+          {(() => {
+            const curElo = eloMsg.newElo;
+            const tierIdx = ELO_TIERS.findIndex((t) => curElo >= t.min && curElo <= t.max);
+            const tier = ELO_TIERS[tierIdx >= 0 ? tierIdx : 0];
+            const nextTier = ELO_TIERS[tierIdx + 1] || null;
+            const pct = Math.round(((curElo - tier.min) / (tier.max - tier.min)) * 100);
+            return (
+              <div className="pm-elo-tier-bar-wrap">
+                <span className="pm-elo-tier-label">{tier.name}</span>
+                <div className="pm-elo-tier-bar">
+                  <div className="pm-elo-tier-fill" style={{ width: pct + "%" }} />
+                </div>
+                {nextTier && <span className="pm-elo-tier-next">{nextTier.name}</span>}
+              </div>
+            );
+          })()}
         </div>
       )}
       {series && (
@@ -3269,7 +3310,13 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
       {effMedal && phase === "reveal" && <div className="pm-eff-medal">{effMedal} — Score {sy.total}/1000</div>}
       {/* A5: Budget efficiency row */}
       {phase === "reveal" && <div className="pm-budget-eff-row"><span>Budget used: <b style={{color: budgEff > 100 ? "var(--c-bad)" : budgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{budgEff}%</b> {youLabel} · <b style={{color: oppBudgEff > 100 ? "var(--c-bad)" : oppBudgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{oppBudgEff}%</b> {oppName}</span></div>}
-      {mvpCat && <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? youLabel : oppName}</div>}
+      {/* P6: Category MVP highlight */}
+      {mvpCat && (
+        <div className="pm-mvp-cat-card">
+          <div className="pm-mvp-cat-crown">👑 Category MVP</div>
+          <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? youLabel : oppName}</div>
+        </div>
+      )}
       {weakCat && <div className="pm-weak-banner">📉 Costliest category: <b>{CAT_META[weakCat].label}</b> — {oppName}'s pick scored higher here, worth {USE_CASES[round.useCase].alloc[weakCat]}% of your total score.</div>}
       {rivalInfo && (
         <div className="pm-avenge-row">
@@ -3283,6 +3330,33 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
           <div className="pm-mentor-body">{mentorExplain(mentorSwap, round.useCase)}</div>
           <div className="pm-mentor-score">Score: {sySD.total} → <b>{mentorSwap.newTotal}</b> ({mentorSwap.wouldHaveWon ? "beats" : "vs"} {oppName}'s {soSD.total})</div>
           {(onRematch || onAgain) && <button className="rf-btn rf-ghost-btn pm-mentor-retry" onClick={onRematch || onAgain}><RotateCcw size={14} /> Retry the duel</button>}
+        </div>
+      )}
+      {/* P10: Opponent build reveal */}
+      {phase === "reveal" && (
+        <div className="pm-opp-reveal">
+          <button className="rf-btn rf-ghost-btn pm-breakdown-toggle" onClick={() => setShowOppBuild((v) => !v)}>
+            {showOppBuild ? "▲ Hide" : "▼ Inspect"} opponent build
+          </button>
+          {showOppBuild && (
+            <div className="pm-opp-reveal-list">
+              {CATEGORY_ORDER.map((c) => {
+                const p = opp[c];
+                if (!p) return null;
+                const maxP = ucMaxPerf(c, round.useCase);
+                const perfPct = maxP > 0 ? Math.round(ucPerf(c, p, round.useCase) / maxP * 100) : 0;
+                const Icon = CAT_META[c].Icon;
+                return (
+                  <div key={c} className="pm-opp-reveal-part">
+                    <span className="pm-opp-reveal-cat"><Icon size={11} /> {CAT_META[c].label}</span>
+                    <span className="pm-opp-reveal-name">{p.model || p.name}</span>
+                    <span className="pm-opp-reveal-price">{fmt(p.price)}</span>
+                    <span className="pm-opp-reveal-perf" style={{ color: perfPct >= 70 ? "var(--c-good)" : perfPct >= 40 ? "var(--c-warn)" : "var(--c-bad)" }}>{perfPct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
       <button className="rf-btn rf-ghost-btn pm-breakdown-toggle" onClick={() => setShowBreakdown((v) => !v)}>{showBreakdown ? "▲ Hide" : "▼ Show"} part-by-part breakdown</button>
@@ -7429,7 +7503,17 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
 
       {/* part list */}
       <div className="rf-parts">
-        {CATEGORY_ORDER.map((cat, i) => {
+        {(() => {
+          /* P9: compute budget-average price/perf for badge coloring */
+          const ppEntries = CATEGORY_ORDER.map((c) => {
+            const p = parts[c]; const b2 = (budget * UC.alloc[c]) / 100;
+            if (!p || !b2 || b2 <= 0) return null;
+            const compat = isPartCompatible(parts, c);
+            const sc2 = compat ? partScore({ ...p, cat: c }, b2, useCase) : 0;
+            return sc2 > 0 ? p.price / sc2 : null;
+          }).filter((v) => v != null);
+          const avgPP = ppEntries.length > 0 ? ppEntries.reduce((a, b2) => a + b2, 0) / ppEntries.length : null;
+          return CATEGORY_ORDER.map((cat, i) => {
           const part = parts[cat];
           const skip = UC.alloc[cat] === 0 && !part;
           const band = (budget * UC.alloc[cat]) / 100;
@@ -7437,9 +7521,16 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           const status = part ? budgetStatus(part.price, band) : "within";
           const compatible = part ? isPartCompatible(parts, cat) : true;
           const sc = part ? (compatible ? partScore({ ...part, cat }, band, useCase) : 0) : 0;
+          /* P9: price per point */
+          const pp = (part && sc > 0 && !partOOS(part)) ? (part.price / sc) : null;
+          const ppGood = pp != null && avgPP != null && pp < avgPP;
           const isOpen = expanded[cat];
           return (
-            <div key={cat} className="rf-part rf-pop" style={{ animationDelay: i * 45 + "ms" }}>
+            <div key={cat} className="rf-part rf-pop" style={{ animationDelay: i * 45 + "ms", position: "relative" }}>
+              {/* P9: price-per-point badge */}
+              {pp != null && (
+                <span className={"rf-pp-badge" + (ppGood ? " good" : " over")}>${pp < 10 ? pp.toFixed(1) : Math.round(pp)}/pt</span>
+              )}
               <div className="rf-part-top">
                 <div className="rf-part-media">
                 {part && part.img ? (
@@ -7493,7 +7584,8 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
               {part && isOpen && <InfoPanel cat={cat} part={part} band={band} status={status} useCase={useCase} incompatible={!compatible} enableAsk budget={budget} parts={parts} isOnline={isOnline} />}
             </div>
           );
-        })}
+        });
+        })()}
       </div>
     </div>
   );

@@ -3958,3 +3958,135 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   to   { opacity:1; transform:translateY(0)    scale(1); }
 }
 .rf-pop { animation-duration: 0.85s !important; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94) !important; }
+
+/* ================================================================
+   P6-P10 FEATURES
+   ================================================================ */
+
+/* P6: Category MVP highlight — golden animated border glow */
+.pm-mvp-cat-card {
+  border: 1.5px solid gold;
+  border-radius: 10px;
+  padding: 6px 10px 2px;
+  margin: 8px 0;
+  background: rgba(255,200,0,0.06);
+  box-shadow: 0 0 0 2px rgba(255,200,0,0.18), 0 0 18px rgba(255,200,0,0.22);
+  animation: mvpGlow 2s ease-in-out infinite alternate;
+}
+.pm-mvp-cat-crown {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: gold;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+@keyframes mvpGlow {
+  from { box-shadow: 0 0 6px rgba(255,200,0,0.22), 0 0 0 2px rgba(255,200,0,0.18); }
+  to   { box-shadow: 0 0 24px rgba(255,200,0,0.50), 0 0 0 2px rgba(255,200,0,0.35); }
+}
+
+/* P7: Build rating stars */
+.pm-build-stars {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  margin: 4px 0 6px;
+}
+
+/* P8: ELO tier progress bar */
+.pm-elo-tier-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--c-muted);
+  width: 100%;
+}
+.pm-elo-tier-label {
+  white-space: nowrap;
+  min-width: 64px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--c-text);
+}
+.pm-elo-tier-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.10);
+  overflow: hidden;
+}
+.pm-elo-tier-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--c-accent2), var(--c-accent));
+  transition: width 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.pm-elo-tier-next {
+  white-space: nowrap;
+  min-width: 64px;
+  color: var(--c-muted);
+  font-size: 0.69rem;
+}
+
+/* P9: Price per point badge */
+.rf-pp-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 3;
+  letter-spacing: 0.03em;
+}
+.rf-pp-badge.good {
+  background: rgba(30,220,120,0.15);
+  border: 1px solid rgba(30,220,120,0.40);
+  color: var(--c-good);
+}
+.rf-pp-badge.over {
+  background: rgba(255,80,80,0.13);
+  border: 1px solid rgba(255,80,80,0.35);
+  color: var(--c-bad);
+}
+
+/* P10: Opponent build reveal */
+.pm-opp-reveal { margin: 8px 0 0; }
+.pm-opp-reveal-list {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pm-opp-reveal-part {
+  display: grid;
+  grid-template-columns: 80px 1fr 54px 36px;
+  gap: 6px;
+  align-items: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+}
+.pm-opp-reveal-cat {
+  color: var(--c-muted);
+  font-size: 0.68rem;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.pm-opp-reveal-name {
+  color: var(--c-text);
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.pm-opp-reveal-price { color: var(--c-muted); text-align: right; }
+.pm-opp-reveal-perf { font-weight: 700; text-align: right; }
