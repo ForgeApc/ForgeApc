@@ -11,9 +11,9 @@ const PUBLISHABLE = process.env.STRIPE_PUBLISHABLE_KEY;
 const STRIPE_API  = "https://api.stripe.com/v1";
 
 const TIERS = {
-  plus: { name: "FORGEAPC Plus", dollars: Number(process.env.PRICE_PLUS) || 2 },
-  pro:  { name: "FORGEAPC Pro",  dollars: Number(process.env.PRICE_PRO)  || 5 },
-  max:  { name: "FORGEAPC Max",  dollars: Number(process.env.PRICE_MAX)  || 8 },
+  plus: { name: "FORGEAPC Plus", monthly: Number(process.env.PRICE_PLUS)        || 2,  annual: Number(process.env.PRICE_PLUS_ANNUAL)  || 12 },
+  pro:  { name: "FORGEAPC Pro",  monthly: Number(process.env.PRICE_PRO)         || 5,  annual: Number(process.env.PRICE_PRO_ANNUAL)   || 18 },
+  max:  { name: "FORGEAPC Max",  monthly: Number(process.env.PRICE_MAX)         || 8,  annual: Number(process.env.PRICE_MAX_ANNUAL)   || 55 },
 };
 
 async function stripeFetch(path, { method = "GET", form } = {}) {
@@ -46,8 +46,11 @@ export default async function handler(req, res) {
     if (req.method === "POST") {
       const body = req.body || {};
       const tierKey = body.tier;
+      const interval = body.interval === "year" ? "year" : "month";
       const tier = TIERS[tierKey];
       if (!tier) return res.status(400).json({ error: "Unknown plan." });
+
+      const dollars = interval === "year" ? tier.annual : tier.monthly;
 
       // 1. Create customer — name shows in Stripe dashboard so you know who bought
       const custForm = {};
@@ -56,21 +59,23 @@ export default async function handler(req, res) {
       const customer = await stripeFetch("/customers", { method: "POST", form: custForm });
 
       // 2. Create product
-      const product = await stripeFetch("/products", { method: "POST", form: { name: tier.name } });
+      const productName = tier.name + (interval === "year" ? " (Annual)" : " (Monthly)");
+      const product = await stripeFetch("/products", { method: "POST", form: { name: productName } });
 
-      // 3. Create subscription — attach tier + username as metadata so the GET can return it
+      // 3. Create subscription — attach tier + interval + username as metadata
       const sub = await stripeFetch("/subscriptions", {
         method: "POST",
         form: {
           customer: customer.id,
           "items[0][price_data][currency]": "usd",
-          "items[0][price_data][unit_amount]": String(Math.round(tier.dollars * 100)),
-          "items[0][price_data][recurring][interval]": "month",
+          "items[0][price_data][unit_amount]": String(Math.round(dollars * 100)),
+          "items[0][price_data][recurring][interval]": interval,
           "items[0][price_data][product]": product.id,
           payment_behavior: "default_incomplete",
           "payment_settings[save_default_payment_method]": "on_subscription",
           "expand[0]": "latest_invoice",
           "metadata[tier]": tierKey,
+          "metadata[interval]": interval,
           "metadata[username]": body.username || "",
         },
       });

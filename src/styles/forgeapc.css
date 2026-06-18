@@ -4281,3 +4281,49 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   color: var(--c-accent) !important;
   border-color: rgba(31,245,230,0.30) !important;
 }
+
+/* ---- Annual/Monthly billing toggle ---- */
+.rf-billing-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  padding: 3px;
+  width: fit-content;
+  margin: 0 auto 1.2rem;
+}
+.rf-billing-opt {
+  background: transparent;
+  border: none;
+  color: var(--c-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 5px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rf-billing-opt.active {
+  background: var(--c-accent);
+  color: #000;
+}
+.rf-billing-save {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(0,0,0,0.25);
+  border-radius: 999px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.rf-plan-equiv {
+  font-size: 0.72rem;
+  color: var(--c-muted);
+  margin-top: -8px;
+  margin-bottom: 6px;
+  text-align: center;
+}

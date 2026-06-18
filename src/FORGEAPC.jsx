@@ -1097,6 +1097,7 @@ export default function RigForge() {
   const [hdrAuth, setHdrAuth] = useState(false);
   const [hdrLogoutAsk, setHdrLogoutAsk] = useState(false);
   const [plansOpen, setPlansOpen] = useState(false);
+  const [plansAnnual, setPlansAnnual] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState(null); // the tier object being purchased
   const [checkoutErr, setCheckoutErr] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -1283,6 +1284,7 @@ export default function RigForge() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             tier: checkoutPlan.key,
+            interval: checkoutPlan.interval || "month",
             email: u?.email || undefined,
             username: u?.username || u?.name || undefined,
           }),
@@ -1668,7 +1670,7 @@ export default function RigForge() {
             {checkoutPlan ? (
               <div className="rf-checkout">
                 <button className="rf-checkout-back" onClick={() => { setCheckoutPlan(null); setCheckoutErr(""); setCheckoutSubmitting(false); }}><ChevronLeft size={16} /> Back to plans</button>
-                <h2 className="rf-plans-title"><span className="rf-hero-grad">{checkoutPlan.name} — ${checkoutPlan.price}/mo</span></h2>
+                <h2 className="rf-plans-title"><span className="rf-hero-grad">{checkoutPlan.name} — ${checkoutPlan.price}/{checkoutPlan.interval === "year" ? "yr" : "mo"}</span></h2>
                 {checkoutLoading && <div className="rf-checkout-loading"><div className="pm-spinner" /> Setting up payment…</div>}
                 {checkoutErr && <div className="rf-checkout-err">{checkoutErr}</div>}
                 <div className="rf-payment-form">
@@ -1691,32 +1693,42 @@ export default function RigForge() {
                   <RankBadges elo={hdrUser?.elo ?? 0} custom={hdrUser?.crank} />
                 </div>
               )}
+              <div className="rf-billing-toggle">
+                <button className={"rf-billing-opt" + (!plansAnnual ? " active" : "")} onClick={() => setPlansAnnual(false)}>Monthly</button>
+                <button className={"rf-billing-opt" + (plansAnnual ? " active" : "")} onClick={() => setPlansAnnual(true)}>Annual <span className="rf-billing-save">Save up to 43%</span></button>
+              </div>
               <div className="rf-plans-grid">
                 {[
-                  { key: "free",  name: "Free",  price: 0, tag: "",         perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device"] },
-                  { key: "plus",  name: "Plus",  price: 2, tag: "",         perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", '💜 "Supporter" rank badge'] },
-                  { key: "pro",   name: "Pro",   price: 5, tag: "Popular",  perks: ['Everything in Plus', '🔥 "Pro" rank badge', "Priority price updates", "Early access to features"] },
-                  { key: "max",   name: "Max",   price: 8, tag: "",         perks: ['Everything in Pro', '👑 "MAX" gold rank badge', "Beta features first", "Support the developer"] },
+                  { key: "free", name: "Free", monthly: 0,  annual: 0,  tag: "",        perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device"] },
+                  { key: "plus", name: "Plus", monthly: 2,  annual: 12, tag: "",        perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", '💜 "Supporter" rank badge'] },
+                  { key: "pro",  name: "Pro",  monthly: 5,  annual: 18, tag: "Popular", perks: ['Everything in Plus', '🔥 "Pro" rank badge', "Priority price updates", "Early access to features"] },
+                  { key: "max",  name: "Max",  monthly: 8,  annual: 55, tag: "",        perks: ['Everything in Pro', '👑 "MAX" gold rank badge', "Beta features first", "Support the developer"] },
                 ].map((p) => {
+                  const price = plansAnnual ? p.annual : p.monthly;
                   const isActive = subTier === p.key || (p.key === "free" && subTier === "free");
                   return (
                     <div key={p.key} className={"rf-plan" + (p.tag ? " rf-plan-feat" : "") + (isActive ? " rf-plan-active" : "")}>
                       {p.tag && <span className="rf-plan-tag">{p.tag}</span>}
                       {isActive && <span className="rf-plan-tag rf-plan-tag-active">✓ Active</span>}
                       <div className="rf-plan-name">{p.name}</div>
-                      <div className="rf-plan-price"><span className="rf-plan-amt">${p.price}</span><span className="rf-plan-per">/mo</span></div>
+                      <div className="rf-plan-price">
+                        <span className="rf-plan-amt">${price}</span>
+                        <span className="rf-plan-per">{plansAnnual ? "/yr" : "/mo"}</span>
+                      </div>
+                      {plansAnnual && p.annual > 0 && <div className="rf-plan-equiv">${(p.annual / 12).toFixed(2)}/mo equiv</div>}
                       <ul className="rf-plan-perks">
                         {p.perks.map((x, i) => (<li key={i}><Check size={14} /> {x}</li>))}
                       </ul>
                       <button
                         className={"rf-plan-cta" + (isActive ? " rf-plan-cta-free" : "")}
-                        disabled={isActive || p.price === 0}
+                        disabled={isActive || price === 0}
                         onClick={() => {
-                          if (isActive || p.price === 0) return;
+                          if (isActive || price === 0) return;
                           if (!hdrUser) { setHdrAuth(true); setPlansOpen(false); return; }
-                          setCheckoutErr(""); setCheckoutPlan(p);
+                          setCheckoutErr("");
+                          setCheckoutPlan({ ...p, price, interval: plansAnnual ? "year" : "month" });
                         }}
-                      >{isActive ? "Current plan" : p.price === 0 ? "Free" : "Get " + p.name}</button>
+                      >{isActive ? "Current plan" : price === 0 ? "Free" : "Get " + p.name}</button>
                     </div>
                   );
                 })}
