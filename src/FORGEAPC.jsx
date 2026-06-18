@@ -1946,6 +1946,51 @@ function ConfettiBurst({ active }) {
   return <canvas ref={canvasRef} style={{ position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:9999 }} />;
 }
 
+// P21: Particle ring — brief expanding ring of particles on win
+function ParticleRing({ active }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    if (!active) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const cx = canvas.width / 2, cy = canvas.height / 2;
+    const COUNT = 48;
+    const particles = Array.from({ length: COUNT }, (_, i) => {
+      const angle = (i / COUNT) * Math.PI * 2;
+      return { angle, r: 0, speed: 3 + Math.random() * 2, size: 3 + Math.random() * 3 };
+    });
+    const start = performance.now();
+    let raf;
+    const draw = (now) => {
+      const elapsed = now - start;
+      const t = elapsed / 800;
+      const alpha = Math.max(0, 1 - t);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((p) => {
+        p.r += p.speed;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = "#1ff5e6";
+        ctx.shadowColor = "#1ff5e6";
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(p.angle) * p.r, cy + Math.sin(p.angle) * p.r, p.size * (1 - t * 0.5), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+      if (elapsed < 800) raf = requestAnimationFrame(draw);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => { if (raf) cancelAnimationFrame(raf); };
+  }, [active]);
+  if (!active) return null;
+  return <canvas ref={canvasRef} style={{ position:"fixed", top:0, left:0, pointerEvents:"none", zIndex:10000 }} />;
+}
+
 // A2: ELO ticker — animates from old to new ELO over 1.2s
 function EloTicker({ oldElo, newElo, delta }) {
   const [displayed, setDisplayed] = useState(oldElo);
@@ -2409,6 +2454,18 @@ const AI_PERSONAS = [
 
 function aiPersona(elo) {
   return [...AI_PERSONAS].reverse().find((p) => elo >= p.minElo) || AI_PERSONAS[0];
+}
+
+// P23: Circular avatar with first 2 letters of persona name, coloured by ELO tier
+function PersonaAvatar({ persona, elo }) {
+  if (!persona) return null;
+  const initials = persona.name.replace(/[^A-Za-z0-9 ]/g, "").trim().split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || persona.name.slice(0, 2).toUpperCase();
+  const rank = eloRank(elo ?? persona.minElo ?? 0);
+  return (
+    <span className="pm-persona-avatar" style={{ background: `${rank.color}22`, border: `2px solid ${rank.color}`, color: rank.color, boxShadow: `0 0 12px ${rank.color}55` }}>
+      {initials}
+    </span>
+  );
 }
 
 // Random pick from an array — no side effects, safe to call anywhere
@@ -2953,7 +3010,13 @@ function MoggerScoreCol({ title, build, s, win, shown, rank, useCase, budget }) 
   const gpuName = (build && build.gpu) ? (build.gpu.brand || build.gpu.name || "") : "";
   const isNvidia = /nvidia|rtx|gtx/i.test(gpuName);
   const isAmd = /amd|radeon|rx\s?\d/i.test(gpuName);
-  const glowStyle = win ? (isNvidia ? { boxShadow: "0 0 18px rgba(118,185,0,0.35)" } : isAmd ? { boxShadow: "0 0 18px rgba(237,28,36,0.35)" } : undefined) : undefined;
+  // P22: score-based glow color
+  const scoreGlowColor = s.total > 700 ? "var(--c-good)" : s.total > 450 ? "var(--c-warn)" : "var(--c-bad)";
+  const glowStyle = win
+    ? (isNvidia ? { boxShadow: "0 0 18px rgba(118,185,0,0.35)", borderColor: scoreGlowColor }
+      : isAmd ? { boxShadow: "0 0 18px rgba(237,28,36,0.35)", borderColor: scoreGlowColor }
+      : { borderColor: scoreGlowColor, boxShadow: `0 0 18px color-mix(in srgb, ${scoreGlowColor} 40%, transparent)` })
+    : { borderColor: scoreGlowColor, boxShadow: `0 0 10px color-mix(in srgb, ${scoreGlowColor} 25%, transparent)` };
   return (
     <div className={"pm-scorecol" + (win ? " win" : "")} style={glowStyle}>
       <div className="pm-scorecol-head"><span className="pm-scorecol-title">{title}</span>{win && <span className="pm-crown">WINNER</span>}</div>
@@ -3226,6 +3289,8 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
     <div className="pm-result rf-fade">
       {/* A1: Win confetti burst */}
       <ConfettiBurst active={youWin && phase === "reveal"} />
+      {/* P21: Win particle ring */}
+      <ParticleRing active={youWin && phase === "reveal"} />
       <h2 className={"pm-verdict-title " + (youWin ? "win" : "lose")}>
         {youWin ? "🏆 YOU WIN" : "💀 YOU LOSE"}
         {/* A6: Close Call badge */}
@@ -3236,6 +3301,8 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
       </h2>
       {oppPersona && (
         <div className="pm-opp-persona">
+          {/* P23: persona avatar initials */}
+          <PersonaAvatar persona={oppPersona} elo={oppElo} />
           <span className="pm-opp-persona-name">{oppName}</span>
           <span className="pm-opp-persona-tag">{oppTag}</span>
           {aiQuip && <span className="pm-opp-persona-quip">"{aiQuip}"</span>}
@@ -3258,13 +3325,16 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
             : <span className="pm-series-game">Game {series.game} of 3</span>}
         </div>
       )}
-      <div className="pm-scorecols">
+      {/* P25: staggered cascade — scorecols, radar, bars, buttons each 100ms later */}
+      <div className="pm-scorecols pm-reveal-anim" style={{ animationDelay: "100ms" }}>
         <MoggerScoreCol title={youLabel} build={you} s={sySD} win={youWin} shown={ay} rank={myRank} useCase={round.useCase} budget={round.budget} />
         <MoggerScoreCol title={oppName} build={opp} s={soSD} win={!youWin} shown={ao} rank={oppRank} useCase={round.useCase} budget={round.budget} />
       </div>
-      <DuelRadarChart you={you} opp={opp} oppName={oppName} youLabel={youLabel} useCase={round.useCase} budget={round.budget} />
+      <div className="pm-reveal-anim" style={{ animationDelay: "200ms" }}>
+        <DuelRadarChart you={you} opp={opp} oppName={oppName} youLabel={youLabel} useCase={round.useCase} budget={round.budget} />
+      </div>
       {/* A4: Score breakdown bar chart */}
-      {phase === "reveal" && <ScoreBarChart you={you} opp={opp} youLabel={youLabel} oppName={oppName} useCase={round.useCase} budget={round.budget} />}
+      {phase === "reveal" && <div className="pm-reveal-anim" style={{ animationDelay: "300ms" }}><ScoreBarChart you={you} opp={opp} youLabel={youLabel} oppName={oppName} useCase={round.useCase} budget={round.budget} /></div>}
       {/* B4: efficiency medal */}
       {effMedal && phase === "reveal" && <div className="pm-eff-medal">{effMedal} — Score {sy.total}/1000</div>}
       {/* A5: Budget efficiency row */}
@@ -3338,7 +3408,7 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
       )}
       {/* B5: share result */}
       {phase === "reveal" && <div className="pm-row" style={{justifyContent:"center",marginBottom:"4px"}}><button className="rf-btn rf-ghost-btn" onClick={shareRes}>{rCopied ? <><Check size={14}/> Copied!</> : <>📤 Share result</>}</button></div>}
-      <div className="pm-row pm-center-row">
+      <div className="pm-row pm-center-row pm-reveal-anim" style={{ animationDelay: "400ms" }}>
         <button className="rf-btn rf-ghost-btn" onClick={onMenu}>Menu</button>
         {onMirror && <button className="rf-btn rf-ghost-btn" onClick={onMirror}><Repeat2 size={16} /> Mirror</button>}
         {series && !series.done && onNextGame ? (
@@ -5372,6 +5442,17 @@ function MoggerGame({ onExit, onSaveBuild }) {
                 {activeRogueReward && <div className="pm-rrp-active-note">✅ <b>{activeRogueReward.label}</b> will be used this match</div>}
               </div>
             )}
+            {/* P23: persona avatar in taunt-pick */}
+            {mode === "ai" && aiElo != null && (() => {
+              const p = aiPersona(aiElo);
+              return (
+                <div className="pm-taunt-persona-row">
+                  <PersonaAvatar persona={p} elo={aiElo} />
+                  <span className="pm-taunt-persona-name">{p.name}</span>
+                  <span className="pm-taunt-persona-tag">{p.tag}</span>
+                </div>
+              );
+            })()}
             <h2 className="pm-h2">🗣️ Pick your pre-match taunt</h2>
             <p className="pm-p pm-dim">Choose a line to send to your opponent (or skip)</p>
             <div className="pm-taunt-grid">
@@ -7250,7 +7331,7 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
         <div className="rf-alloc-title">How your {fmt(budget)} splits for {tUC(useCase)}</div>
         <div className="rf-alloc-bars">
           {CATEGORY_ORDER.filter((c) => UC.alloc[c] > 0).map((c) => (
-            <div key={c} className="rf-alloc-row">
+            <div key={c} className="rf-alloc-row" data-alloc-tip={`${tCat(c)} — ${UC.alloc[c]}%`}>
               <span className="rf-alloc-lbl">{tCat(c)}</span>
               <div className="rf-alloc-track"><div className="rf-alloc-fill" style={{ width: UC.alloc[c] * 2.4 + "%" }} /></div>
               <span className="rf-alloc-val">{fmt((budget * UC.alloc[c]) / 100)}</span>

@@ -3958,3 +3958,92 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   to   { opacity:1; transform:translateY(0)    scale(1); }
 }
 .rf-pop { animation-duration: 0.85s !important; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94) !important; }
+
+/* ================================================================
+   P21-P25 FEATURE CSS
+   ================================================================ */
+
+/* P23: Persona avatar initials */
+.pm-persona-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+.pm-opp-persona {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pm-taunt-persona-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+}
+.pm-taunt-persona-name {
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--c-text);
+}
+.pm-taunt-persona-tag {
+  font-size: 0.78rem;
+  color: var(--c-muted);
+}
+
+/* P24: Alloc bar hover tooltip — CSS-only via data attribute */
+.rf-alloc-row {
+  position: relative;
+}
+.rf-alloc-row[data-alloc-tip]:hover::before {
+  content: attr(data-alloc-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 99;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.rf-alloc-row[data-alloc-tip]:hover::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--c-border);
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* P25: Staggered reveal animation */
+@keyframes pmRevealUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pm-reveal-anim {
+  opacity: 0;
+  animation: pmRevealUp 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
