@@ -1723,10 +1723,19 @@ export default function RigForge() {
                       {isActive && <span className="rf-plan-tag rf-plan-tag-active">✓ Active</span>}
                       <div className="rf-plan-name">{p.name}</div>
                       <div className="rf-plan-price">
-                        <span className="rf-plan-amt">${price}</span>
-                        <span className="rf-plan-per">{isLifetime ? " one‑time" : plansAnnual ? "/yr" : "/mo"}</span>
+                        {plansAnnual === true && p.annual > 0 ? (
+                          <>
+                            <span className="rf-plan-amt">${(p.annual / 12).toFixed(2)}</span>
+                            <span className="rf-plan-per">/mo</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="rf-plan-amt">${price}</span>
+                            <span className="rf-plan-per">{isLifetime ? " one‑time" : "/mo"}</span>
+                          </>
+                        )}
                       </div>
-                      {plansAnnual === true  && p.annual   > 0 && <div className="rf-plan-equiv">${(p.annual / 12).toFixed(2)}/mo equiv</div>}
+                      {plansAnnual === true  && p.annual   > 0 && <div className="rf-plan-equiv">billed ${p.annual}/yr</div>}
                       {isLifetime            && p.lifetime > 0 && <div className="rf-plan-equiv">Pay once, keep forever</div>}
                       <ul className="rf-plan-perks">
                         {p.perks.map((x, i) => (<li key={i}><Check size={14} /> {x}</li>))}
