@@ -1740,6 +1740,8 @@ export default function RigForge() {
                       </div>
                       {plansAnnual === true  && p.annual   > 0 && <div className="rf-plan-equiv">billed ${p.annual}/yr</div>}
                       {isLifetime            && p.lifetime > 0 && <div className="rf-plan-equiv">Pay once, keep forever</div>}
+                      {plansAnnual === true  && p.annual   > 0 && <div className="rf-plan-save">Save ${p.monthly * 12 - p.annual}/yr</div>}
+                      {isLifetime            && p.lifetime > 0 && <div className="rf-plan-save">Save ${p.monthly * 12 - p.lifetime} vs 1yr monthly</div>}
                       <ul className="rf-plan-perks">
                         {p.perks.map((x, i) => (<li key={i}><Check size={14} /> {x}</li>))}
                       </ul>
