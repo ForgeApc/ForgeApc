@@ -1114,21 +1114,26 @@ export default function RigForge() {
     max:  JSON.stringify([{ name: "MAX", color: "#ffd700", icon: "👑" }]),
   };
 
-  // Apply subscription perks when tier is set (runs on mount + after checkout)
+  // Apply subscription perks when tier is set (runs after checkout)
   const applySubPerks = useCallback((tier, currentUser) => {
     if (!tier || tier === "free" || !currentUser) return;
     const newBadge = JSON.parse(SUB_CRANKS[tier] || "null");
     if (!newBadge) return;
-    // Keep all existing cranks except any previous sub badge (by icon), then append new one
     const subIcons = new Set(["💜", "🔥", "👑"]);
-    const existing = parseCrank(currentUser.crank || "").filter(b => !subIcons.has(b.icon));
-    const merged = JSON.stringify([...existing, newBadge]);
-    const updated = { ...currentUser, crank: merged };
-    try { localStorage.setItem("mogger_user", JSON.stringify(updated)); } catch(e) {}
-    setHdrUser(updated);
-    // Persist to Supabase so badge survives logout/login on any device
+    // Always fetch fresh crank from Supabase so we never overwrite admin-set badges
+    // with stale localStorage data
+    const doMerge = (baseCrank) => {
+      const existing = parseCrank(baseCrank || "").filter(b => !subIcons.has(b.icon));
+      const merged = JSON.stringify([...existing, newBadge]);
+      const updated = { ...currentUser, crank: merged };
+      try { localStorage.setItem("mogger_user", JSON.stringify(updated)); } catch(e) {}
+      setHdrUser(updated);
+      if (currentUser.id) netSetCustomRank(currentUser.id, merged);
+    };
     if (currentUser.id) {
-      netSetCustomRank(currentUser.id, merged);
+      netFetchUser(currentUser.id).then(fresh => doMerge(fresh?.crank ?? currentUser.crank)).catch(() => doMerge(currentUser.crank));
+    } else {
+      doMerge(currentUser.crank);
     }
   }, []);
   const [lang, setLang] = useState("en");
@@ -1409,15 +1414,11 @@ export default function RigForge() {
   useEffect(() => { refreshSaved(); }, [refreshSaved]);
   useEffect(() => { if (view === "home") refreshSaved(); }, [view, refreshSaved]);
 
-  // Apply sub perks on mount for already-subscribed users
+  // Restore sub tier display state from localStorage on mount (badge itself lives in Supabase)
   useEffect(() => {
     const tier = localStorage.getItem("mogger_sub_tier");
-    if (tier && tier !== "free") {
-      setSubTier(tier);
-      const cu = (() => { try { const s = localStorage.getItem("mogger_user"); return s ? JSON.parse(s) : null; } catch(e) { return null; } })();
-      applySubPerks(tier, cu);
-    }
-  }, [applySubPerks]);
+    if (tier && tier !== "free") setSubTier(tier);
+  }, []);
 
   // Load shared build from URL hash
   useEffect(() => {
@@ -1668,7 +1669,7 @@ export default function RigForge() {
         </div>
       </header>
 
-      {hdrAuth && <MoggerAuth onClose={() => setHdrAuth(false)} onAuth={(u) => { try { localStorage.setItem("mogger_user", JSON.stringify(u)); } catch (e) {} setHdrUser(u); setHdrAuth(false); const tier = (() => { try { return localStorage.getItem("mogger_sub_tier") || "free"; } catch(e) { return "free"; } })(); if (tier && tier !== "free") applySubPerks(tier, u); }} />}
+      {hdrAuth && <MoggerAuth onClose={() => setHdrAuth(false)} onAuth={(u) => { try { localStorage.setItem("mogger_user", JSON.stringify(u)); } catch (e) {} setHdrUser(u); setHdrAuth(false); }} />}
       {payBanner && (
         <div className="rf-pay-banner" style={payBanner.ok ? {} : { background: "linear-gradient(135deg,#ff8a5c,#e23a52)", color: "#fff" }}>
           {payBanner.ok ? <Check size={18} /> : <AlertTriangle size={18} />} {payBanner.text}
