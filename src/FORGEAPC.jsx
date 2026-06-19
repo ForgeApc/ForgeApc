@@ -1114,17 +1114,20 @@ export default function RigForge() {
     max:  JSON.stringify([{ name: "MAX", color: "#ffd700", icon: "👑" }]),
   };
 
-  // Apply subscription perks when tier is set (runs on mount if tier stored)
+  // Apply subscription perks when tier is set (runs on mount + after checkout)
   const applySubPerks = useCallback((tier, currentUser) => {
     if (!tier || tier === "free" || !currentUser) return;
     const crankStr = SUB_CRANKS[tier];
     if (!crankStr) return;
-    // Only auto-apply if user has no custom crank yet
-    const existingCrank = parseCrank(currentUser.crank || "");
-    if (existingCrank.length === 0) {
-      const updated = { ...currentUser, crank: crankStr };
-      try { localStorage.setItem("mogger_user", JSON.stringify(updated)); } catch(e) {}
-      setHdrUser(updated);
+    // Always set the sub badge — overwrite any previous sub badge but keep admin-set cranks
+    const updated = { ...currentUser, crank: crankStr };
+    try { localStorage.setItem("mogger_user", JSON.stringify(updated)); } catch(e) {}
+    setHdrUser(updated);
+    // Persist to Supabase so badge survives logout/login
+    if (currentUser.id) {
+      import("./moggerNet.js").then(({ setCustomRank }) => {
+        setCustomRank(currentUser.id, crankStr);
+      }).catch(() => {});
     }
   }, []);
   const [lang, setLang] = useState("en");
@@ -1664,7 +1667,7 @@ export default function RigForge() {
         </div>
       </header>
 
-      {hdrAuth && <MoggerAuth onClose={() => setHdrAuth(false)} onAuth={(u) => { try { localStorage.setItem("mogger_user", JSON.stringify(u)); } catch (e) {} setHdrUser(u); setHdrAuth(false); }} />}
+      {hdrAuth && <MoggerAuth onClose={() => setHdrAuth(false)} onAuth={(u) => { try { localStorage.setItem("mogger_user", JSON.stringify(u)); } catch (e) {} setHdrUser(u); setHdrAuth(false); const tier = (() => { try { return localStorage.getItem("mogger_sub_tier") || "free"; } catch(e) { return "free"; } })(); if (tier && tier !== "free") applySubPerks(tier, u); }} />}
       {payBanner && (
         <div className="rf-pay-banner" style={payBanner.ok ? {} : { background: "linear-gradient(135deg,#ff8a5c,#e23a52)", color: "#fff" }}>
           {payBanner.ok ? <Check size={18} /> : <AlertTriangle size={18} />} {payBanner.text}
