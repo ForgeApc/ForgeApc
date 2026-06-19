@@ -1514,9 +1514,21 @@ export default function RigForge() {
 
   const flash = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
 
+  // AutoForge quota — keyed by "mogger_af_YYYY-MM" in localStorage
+  const AF_QUOTA = { free: 3, plus: 12, pro: 25, max: Infinity };
+  const afMonthKey = () => { const d = new Date(); return `mogger_af_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; };
+  const afUsed = () => { try { return Number(localStorage.getItem(afMonthKey()) || 0); } catch(e) { return 0; } };
+  const afLimit = AF_QUOTA[subTier] ?? 3;
+  const afRemaining = afLimit === Infinity ? Infinity : Math.max(0, afLimit - afUsed());
+  const incAfUsed = () => { try { localStorage.setItem(afMonthKey(), String(afUsed() + 1)); } catch(e) {} };
+
   const startSurvey = () => { setUseCase(null); setView("survey"); };
   const chooseUseCase = (sel) => { setUseCase(makeUseCase(Array.isArray(sel) ? sel : [sel])); setView("budget"); };
-  const generateAuto = () => { setAutoGen(true); setParts(assembleBuild(useCase, budget)); setExpanded({}); setView("results"); };
+  const generateAuto = () => {
+    if (afRemaining <= 0) { flash(`You've used all ${afLimit} AutoForges this month — upgrade your plan for more.`); return; }
+    incAfUsed();
+    setAutoGen(true); setParts(assembleBuild(useCase, budget)); setExpanded({}); setView("results");
+  };
   const startManual = () => { setAutoGen(false); setParts({}); setExpanded({}); setView("results"); };
 
   // Auto-Forge is never cached: whenever live prices arrive/refresh (or budget/use-case
@@ -1802,14 +1814,14 @@ export default function RigForge() {
         {view === "mogger-coadmin" && <MoggerCoAdmin onBack={() => setView("home")} bypass={true} />}
         {view === "survey" && <Survey onPick={chooseUseCase} />}
         {view === "budget" && (
-          <BudgetStep useCase={useCase} budget={budget} setBudget={setBudget} onBack={() => setView("survey")} onAuto={generateAuto} onManual={startManual} />
+          <BudgetStep useCase={useCase} budget={budget} setBudget={setBudget} onBack={() => setView("survey")} onAuto={generateAuto} onManual={startManual} afRemaining={afRemaining} afLimit={afLimit} />
         )}
         {view === "results" && parts && analysis && (
           <Results
             useCase={useCase} budget={budget} parts={parts} analysis={analysis} verdict={aiVerdict} aiBusy={aiBusy} onGenerate={runVerdict} isOnline={isOnline}
             expanded={expanded} setExpanded={setExpanded}
             onSwap={(c) => setPicker(c)} onRemove={removePart}
-            onRegen={generateAuto} onSave={() => setSavingOpen(true)}
+            onRegen={generateAuto} afRemaining={afRemaining} afLimit={afLimit} onSave={() => setSavingOpen(true)}
             onShare={hdrUser ? async (title) => {
               const a = analysis;
               await netPostCommunity(hdrUser.id, hdrUser.name, { title, useCase, budget, total: a.spend, perfScore: a.perf, parts });
@@ -6532,7 +6544,7 @@ function Survey({ onPick }) {
 }
 
 /* ----------------------------- BUDGET ----------------------------- */
-function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
+function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual, afRemaining, afLimit }) {
   const UC = USE_CASES[useCase];
   const MIN = 500, MAX = 4000;
   const pct = ((budget - MIN) / (MAX - MIN)) * 100;
@@ -6578,8 +6590,9 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
       </div>
 
       <div className="rf-forge-btns">
-        <button type="button" className="rf-forge-btn primary" onClick={onAuto}>
+        <button type="button" className={"rf-forge-btn primary" + (afRemaining <= 0 ? " disabled" : "")} onClick={onAuto} disabled={afRemaining <= 0}>
           <Sparkles size={15} /> {t("autoForge")}
+          {afLimit !== Infinity && <span className="rf-af-quota">{afRemaining <= 0 ? "0 left" : `${afRemaining} left`}</span>}
         </button>
         <button type="button" className="rf-forge-btn outline" onClick={onManual}>
           <Wrench size={15} /> {t("buildYourself")}
@@ -6594,7 +6607,7 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual }) {
 }
 
 /* ----------------------------- RESULTS ----------------------------- */
-function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline, onAnalyze, onTools, onNavigate }) {
+function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, afRemaining, afLimit, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline, onAnalyze, onTools, onNavigate }) {
   const UC = USE_CASES[useCase];
   const a = analysis;
   const [shareOpen, setShareOpen] = useState(false);
@@ -6627,7 +6640,9 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           <h2>{t("yourBuild")}</h2>
         </div>
         <div className="rf-results-actions">
-          <button className="rf-ghost" onClick={onRegen}><Sparkles size={15} /> Auto-forge</button>
+          <button className="rf-ghost" onClick={onRegen} disabled={afRemaining <= 0} title={afRemaining <= 0 ? "No AutoForges left this month" : undefined}>
+            <Sparkles size={15} /> Auto-forge{afLimit !== Infinity && <span className="rf-af-quota-sm">{afRemaining <= 0 ? " (0 left)" : ` (${afRemaining} left)`}</span>}
+          </button>
           <button className="rf-ghost" onClick={on3D}><LayoutGrid size={15} /> 3D View</button>
           <div style={{position:"relative"}}>
             <button className="rf-ghost" onClick={() => setMoreMenuOpen((o) => !o)}>
