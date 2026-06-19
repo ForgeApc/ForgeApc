@@ -4330,7 +4330,7 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 
 /* ---- Plan savings badge ---- */
 .rf-plan-save {
-  font-size: 1.15rem;
+  font-size: 0.82rem;
   font-weight: 800;
   color: #ff4444;
   text-align: center;
