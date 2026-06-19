@@ -1117,16 +1117,19 @@ export default function RigForge() {
   // Apply subscription perks when tier is set (runs on mount + after checkout)
   const applySubPerks = useCallback((tier, currentUser) => {
     if (!tier || tier === "free" || !currentUser) return;
-    const crankStr = SUB_CRANKS[tier];
-    if (!crankStr) return;
-    // Always set the sub badge — overwrite any previous sub badge but keep admin-set cranks
-    const updated = { ...currentUser, crank: crankStr };
+    const newBadge = JSON.parse(SUB_CRANKS[tier] || "null");
+    if (!newBadge) return;
+    // Keep all existing cranks except any previous sub badge (by icon), then append new one
+    const subIcons = new Set(["💜", "🔥", "👑"]);
+    const existing = parseCrank(currentUser.crank || "").filter(b => !subIcons.has(b.icon));
+    const merged = JSON.stringify([...existing, newBadge]);
+    const updated = { ...currentUser, crank: merged };
     try { localStorage.setItem("mogger_user", JSON.stringify(updated)); } catch(e) {}
     setHdrUser(updated);
     // Persist to Supabase so badge survives logout/login
     if (currentUser.id) {
       import("./moggerNet.js").then(({ setCustomRank }) => {
-        setCustomRank(currentUser.id, crankStr);
+        setCustomRank(currentUser.id, merged);
       }).catch(() => {});
     }
   }, []);
