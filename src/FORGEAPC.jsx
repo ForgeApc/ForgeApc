@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   Cpu, CircuitBoard, MemoryStick, HardDrive, Power, Box, Fan, MonitorPlay,
   Gamepad2, Clapperboard, Radio, Boxes, BrainCircuit, Briefcase,
@@ -6,7 +6,7 @@ import {
   ChevronLeft, Zap, DollarSign, RotateCcw, ShieldCheck, ShieldAlert, Repeat2, Wrench, Send, Bot, MessageCircle, Maximize, Minimize, Settings, Sun, Moon, Search, Users, Upload, Globe, Columns2, PackageSearch, LayoutGrid
 } from "lucide-react";
 import { MEDIA, MEDIA_NE } from "../data/part-media.js";
-import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity, submitFeedback as netSubmitFeedback, listFeedback as netListFeedback, deleteFeedback as netDeleteFeedback, recordFactionPoints as netRecordFactionPoints, fetchFactionTotals as netFactionTotals, setFactionPick as netSetFactionPick, applyFactionWeekReward as netApplyFactionWeekReward, recordGauntletScore as netRecordGauntletScore, gauntletLeaderboard as netGauntletLeaderboard, fetchBalance as netFetchBalance, placeBet as netPlaceBet, settleBet as netSettleBet, fetchRoguePerks as netFetchRoguePerks, saveRogueRun as netSaveRogueRun, supabase as netSupabase, fetchProfile as netFetchProfile, saveProfile as netSaveProfile } from "./moggerNet.js";
+import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity, submitFeedback as netSubmitFeedback, listFeedback as netListFeedback, deleteFeedback as netDeleteFeedback, supabase as netSupabase, fetchProfile as netFetchProfile, saveProfile as netSaveProfile } from "./moggerNet.js";
 /* ----------------------------- i18n ----------------------------- */
 const LANGS = [{"code": "en", "name": "English"}, {"code": "es", "name": "Español"}, {"code": "zh", "name": "中文"}, {"code": "hi", "name": "हिन्दी"}, {"code": "ar", "name": "العربية"}, {"code": "pt", "name": "Português"}, {"code": "fr", "name": "Français"}, {"code": "ru", "name": "Русский"}, {"code": "ja", "name": "日本語"}, {"code": "de", "name": "Deutsch"}];
 const I18N = {"en": {"myRigs": "My Rigs", "settings": "Settings", "appearance": "Appearance", "language": "Language", "theme": "Theme", "dark": "Dark", "light": "Light", "back": "Back", "saveRig": "Save rig", "select": "Select", "selected": "Selected", "moreInfo": "More info", "hideInfo": "Hide info", "autoForge": "Auto-Forge", "buildYourself": "Build It Yourself", "yourBuild": "Your build", "budgetQ": "What's your budget?", "useCaseQ": "What will this PC be for?", "livePrices": "Live prices", "samplePrices": "sample prices", "updated": "updated", "componentsDb": "components in the database", "overBudgetCat": "Over your {x} budget", "performance": "PERFORMANCE", "pricePerf": "PRICE / PERF", "pros": "PROS", "cons": "CONS"}, "es": {"myRigs": "Mis Equipos", "settings": "Ajustes", "appearance": "Apariencia", "language": "Idioma", "theme": "Tema", "dark": "Oscuro", "light": "Claro", "back": "Atrás", "saveRig": "Guardar", "select": "Elegir", "selected": "Elegido", "moreInfo": "Más info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Hazlo tú mismo", "yourBuild": "Tu equipo", "budgetQ": "¿Cuál es tu presupuesto?", "useCaseQ": "¿Para qué será este PC?", "livePrices": "Precios en vivo", "samplePrices": "precios de muestra", "updated": "actualizado", "componentsDb": "componentes en la base de datos", "overBudgetCat": "Supera tu presupuesto de {x}", "performance": "RENDIMIENTO", "pricePerf": "PRECIO / REND", "pros": "PROS", "cons": "CONTRAS"}, "zh": {"myRigs": "我的配置", "settings": "设置", "appearance": "外观", "language": "语言", "theme": "主题", "dark": "深色", "light": "浅色", "back": "返回", "saveRig": "保存配置", "select": "选择", "selected": "已选", "moreInfo": "更多信息", "hideInfo": "隐藏", "autoForge": "自动配置", "buildYourself": "自己组装", "yourBuild": "你的配置", "budgetQ": "你的预算是多少？", "useCaseQ": "这台电脑用来做什么？", "livePrices": "实时价格", "samplePrices": "示例价格", "updated": "更新于", "componentsDb": "个组件已入库", "overBudgetCat": "超出{x}预算", "performance": "性能", "pricePerf": "性价比", "pros": "优点", "cons": "缺点"}, "hi": {"myRigs": "मेरे रिग", "settings": "सेटिंग्स", "appearance": "रूप", "language": "भाषा", "theme": "थीम", "dark": "गहरा", "light": "हल्का", "back": "वापस", "saveRig": "सहेजें", "select": "चुनें", "selected": "चयनित", "moreInfo": "और जानकारी", "hideInfo": "छिपाएं", "autoForge": "ऑटो-फोर्ज", "buildYourself": "खुद बनाएं", "yourBuild": "आपका बिल्ड", "budgetQ": "आपका बजट क्या है?", "useCaseQ": "यह पीसी किसलिए होगा?", "livePrices": "लाइव कीमतें", "samplePrices": "नमूना कीमतें", "updated": "अपडेट", "componentsDb": "घटक डेटाबेस में", "overBudgetCat": "{x} बजट से अधिक", "performance": "प्रदर्शन", "pricePerf": "मूल्य/प्रदर्शन", "pros": "फायदे", "cons": "नुकसान"}, "ar": {"myRigs": "أجهزتي", "settings": "الإعدادات", "appearance": "المظهر", "language": "اللغة", "theme": "السمة", "dark": "داكن", "light": "فاتح", "back": "رجوع", "saveRig": "حفظ", "select": "اختيار", "selected": "محدد", "moreInfo": "المزيد", "hideInfo": "إخفاء", "autoForge": "تجميع تلقائي", "buildYourself": "اصنعه بنفسك", "yourBuild": "تجميعتك", "budgetQ": "ما هي ميزانيتك؟", "useCaseQ": "لأي غرض هذا الحاسوب؟", "livePrices": "أسعار حية", "samplePrices": "أسعار تجريبية", "updated": "محدّث", "componentsDb": "مكوّن في قاعدة البيانات", "overBudgetCat": "يتجاوز ميزانية {x}", "performance": "الأداء", "pricePerf": "السعر/الأداء", "pros": "الإيجابيات", "cons": "السلبيات"}, "pt": {"myRigs": "Meus PCs", "settings": "Configurações", "appearance": "Aparência", "language": "Idioma", "theme": "Tema", "dark": "Escuro", "light": "Claro", "back": "Voltar", "saveRig": "Salvar", "select": "Selecionar", "selected": "Selecionado", "moreInfo": "Mais info", "hideInfo": "Ocultar", "autoForge": "Auto-Forjar", "buildYourself": "Faça você mesmo", "yourBuild": "Sua build", "budgetQ": "Qual é o seu orçamento?", "useCaseQ": "Para que será este PC?", "livePrices": "Preços ao vivo", "samplePrices": "preços de exemplo", "updated": "atualizado", "componentsDb": "componentes no banco de dados", "overBudgetCat": "Acima do orçamento de {x}", "performance": "DESEMPENHO", "pricePerf": "PREÇO / DESEMP", "pros": "PRÓS", "cons": "CONTRAS"}, "fr": {"myRigs": "Mes Configs", "settings": "Réglages", "appearance": "Apparence", "language": "Langue", "theme": "Thème", "dark": "Sombre", "light": "Clair", "back": "Retour", "saveRig": "Enregistrer", "select": "Choisir", "selected": "Choisi", "moreInfo": "Plus d'infos", "hideInfo": "Masquer", "autoForge": "Auto-Forge", "buildYourself": "Faites-le vous-même", "yourBuild": "Votre config", "budgetQ": "Quel est votre budget ?", "useCaseQ": "À quoi servira ce PC ?", "livePrices": "Prix en direct", "samplePrices": "prix indicatifs", "updated": "mis à jour", "componentsDb": "composants dans la base", "overBudgetCat": "Au-dessus du budget {x}", "performance": "PERFORMANCE", "pricePerf": "PRIX / PERF", "pros": "ATOUTS", "cons": "INCONVÉNIENTS"}, "ru": {"myRigs": "Мои сборки", "settings": "Настройки", "appearance": "Вид", "language": "Язык", "theme": "Тема", "dark": "Тёмная", "light": "Светлая", "back": "Назад", "saveRig": "Сохранить", "select": "Выбрать", "selected": "Выбрано", "moreInfo": "Подробнее", "hideInfo": "Скрыть", "autoForge": "Авто-сборка", "buildYourself": "Собрать самому", "yourBuild": "Ваша сборка", "budgetQ": "Каков ваш бюджет?", "useCaseQ": "Для чего этот ПК?", "livePrices": "Цены в реальном времени", "samplePrices": "примерные цены", "updated": "обновлено", "componentsDb": "компонентов в базе", "overBudgetCat": "Сверх бюджета на {x}", "performance": "ПРОИЗВОДИТ.", "pricePerf": "ЦЕНА/КАЧ.", "pros": "ПЛЮСЫ", "cons": "МИНУСЫ"}, "ja": {"myRigs": "マイ構成", "settings": "設定", "appearance": "外観", "language": "言語", "theme": "テーマ", "dark": "ダーク", "light": "ライト", "back": "戻る", "saveRig": "保存", "select": "選択", "selected": "選択済", "moreInfo": "詳細", "hideInfo": "隠す", "autoForge": "自動構成", "buildYourself": "自分で組む", "yourBuild": "あなたの構成", "budgetQ": "予算はいくらですか？", "useCaseQ": "このPCの用途は？", "livePrices": "ライブ価格", "samplePrices": "サンプル価格", "updated": "更新", "componentsDb": "個のパーツを収録", "overBudgetCat": "{x}予算オーバー", "performance": "性能", "pricePerf": "価格性能", "pros": "長所", "cons": "短所"}, "de": {"myRigs": "Meine Builds", "settings": "Einstellungen", "appearance": "Darstellung", "language": "Sprache", "theme": "Thema", "dark": "Dunkel", "light": "Hell", "back": "Zurück", "saveRig": "Speichern", "select": "Wählen", "selected": "Gewählt", "moreInfo": "Mehr Info", "hideInfo": "Verbergen", "autoForge": "Auto-Forge", "buildYourself": "Selbst bauen", "yourBuild": "Dein Build", "budgetQ": "Wie hoch ist dein Budget?", "useCaseQ": "Wofür ist dieser PC?", "livePrices": "Live-Preise", "samplePrices": "Beispielpreise", "updated": "aktualisiert", "componentsDb": "Komponenten in der Datenbank", "overBudgetCat": "Über dem {x}-Budget", "performance": "LEISTUNG", "pricePerf": "PREIS / LEIST", "pros": "VORTEILE", "cons": "NACHTEILE"}};
@@ -1601,7 +1601,6 @@ export default function RigForge() {
                 <button className="rf-lang-opt" onClick={() => { setView("community"); setMoreOpen(false); }}><Users size={14} /> Community</button>
                 <button className="rf-lang-opt" onClick={() => { setView("parts"); setMoreOpen(false); }}><PackageSearch size={14} /> Parts</button>
                 <button className="rf-lang-opt" onClick={() => { setView("compare"); setMoreOpen(false); }}><Columns2 size={14} /> Compare</button>
-                <button className="rf-lang-opt" onClick={() => { setView("calendar"); setMoreOpen(false); }}><LayoutGrid size={14} /> Launches</button>
                 <button className="rf-lang-opt" onClick={() => { setView("analyze"); setMoreOpen(false); }}><Zap size={14} /> Analyze Build</button>
                 <button className="rf-lang-opt" onClick={() => { setView("tools"); setMoreOpen(false); }}><DollarSign size={14} /> Cost Tools</button>
                 <div style={{height:"1px",background:"var(--c-border)",margin:"4px 0"}}/>
@@ -1792,7 +1791,6 @@ export default function RigForge() {
         {view === "community" && <CommunityBuilds user={hdrUser} onLogin={() => setHdrAuth(true)} onBack={() => setView("home")} />}
         {view === "parts" && <PartsExplorer onBack={() => setView("home")} />}
         {view === "compare" && <CompareBuilds saved={saved} onBack={() => setView("home")} />}
-        {view === "calendar" && <LaunchCalendar />}
         {view === "analyze" && <AnalyzeView parts={parts} analysis={analysis} useCase={useCase} onBack={() => setView(parts ? "results" : "home")} saved={saved} onPickSaved={(b) => { setUseCase(b.useCase); setBudget(b.budget); setParts(b.parts); }} />}
         {view === "tools" && <ToolsView parts={parts} analysis={analysis} useCase={useCase} budget={budget} onBack={() => setView(parts ? "results" : "home")} saved={saved} onPickSaved={(b) => { setUseCase(b.useCase); setBudget(b.budget); setParts(b.parts); }} />}
         {view === "fps-games" && <FpsGamesView parts={parts} onBack={() => setView(parts ? "results" : "home")} saved={saved} onPickSaved={(b) => { setUseCase(b.useCase); setBudget(b.budget); setParts(b.parts); }} />}
@@ -1839,8 +1837,7 @@ export default function RigForge() {
               <button className="rf-icon-btn" onClick={() => setShowPatch(false)}><X size={16} /></button>
             </div>
             <div className="rf-patch-list">
-              <div className="rf-patch-entry"><span className="rf-patch-ver">v2.8</span><span className="rf-patch-date">Jun 2026</span><ul><li>PC Duels: Draft Mode Duel — snake-draft from a shared 5-part pool per category; deny the AI's best picks</li><li>PC Duels: Spectator Betting Market — wager in-app coins on the outcome with dynamic ELO-based odds</li><li>PC Duels: Rogue Run — 5 escalating AI stages (350→2400 ELO) with permanent passive perks on each clear</li><li>PC Duels: Build Archaeology — community builds grouped by month, replay any as a Ghost Duel</li><li>PC Duels: Collaborative Syndicate Builds — 3–5 players each claim one PC category, in-app chat, team build vs AI</li><li>PC Duels: Adversarial Component Bans — ban 2 AI parts before the duel; AI retaliates</li><li>PC Duels: Faction Wars now weekly with contribution-based ELO rewards</li></ul></div>
-              <div className="rf-patch-entry"><span className="rf-patch-ver">v2.7</span><span className="rf-patch-date">Jun 2026</span><ul><li>PC Duels: Ghost Duel Replay — challenge any past build, the opponent replays its real parts move-by-move</li><li>PC Duels: Meta Shift Alerts — flags when the catalog's optimal pick for a category changes</li><li>PC Duels: Build Archetype Classifier — flavor badges like Budget Slayer, Thermal Monster, Glass Cannon</li><li>PC Duels: Faction Wars — monthly Intel vs AMD / Air vs Liquid event with a live dominance bar</li><li>PC Duels: Constraint Gauntlet — daily solo score-attack under a rotating hard constraint, own leaderboard</li><li>PC Duels: Build Mentor AI — after a loss, the single component swap that would have moved the score the most</li></ul></div>
+              <div className="rf-patch-entry"><span className="rf-patch-ver">v2.7</span><span className="rf-patch-date">Jun 2026</span><ul><li>PC Duels: Build Archetype Classifier — flavor badges like Budget Slayer, Thermal Monster, Glass Cannon</li><li>PC Duels: Build Mentor AI — after a loss, the single component swap that would have moved the score the most</li></ul></div>
               <div className="rf-patch-entry"><span className="rf-patch-ver">v2.6</span><span className="rf-patch-date">Jun 2026</span><ul><li>PC Duels: Best-of-3 series mode against the same opponent</li><li>PC Duels: Win-streak ELO bonus multiplier (+10% per streak level, capped at +50%)</li><li>PC Duels: Radar-chart breakdown comparing both builds across gaming/productivity/value/efficiency/balance</li><li>PC Duels: "Avenge the Rival" instant rematch against a tier you have a losing record vs</li><li>PC Duels: Prominent Quick Rematch button in practice mode</li><li>PC Duels: Live build-pacing bar during Speed Duel showing budget spend vs time elapsed</li></ul></div>
               <div className="rf-patch-entry"><span className="rf-patch-ver">v2.5</span><span className="rf-patch-date">Jun 2026</span><ul><li>PC Duels: Match replay — re-watch any past duel part-by-part</li><li>PC Duels: Pre-match taunt picker</li><li>PC Duels: Confetti on win, Sudden Death mode, Mirror Match</li><li>PC Duels: Daily Challenge, achievement badges, build efficiency medal</li><li>My Rigs: Clone build, search, pin/favorite, build notes, completeness ring</li><li>Analyze: Noise estimate, weight estimate, streaming quality card, upgrade path</li><li>Analyze: Streaming &amp; LAN setup checklists</li><li>Tools: Monthly cost planner, cashback &amp; tax calculator</li><li>Share: Copy build as text or URL, share duel result</li><li>Parts: Sale badges in PC Duels picker</li><li>Shortcuts: Press D to jump to PC Duels</li></ul></div>
               <div className="rf-patch-entry"><span className="rf-patch-ver">v2.4</span><span className="rf-patch-date">Apr 2026</span><ul><li>Online multiplayer with real-time matchmaking</li><li>Global elo leaderboard</li><li>Ranked crank titles (Rookie → God Tier)</li><li>AI judge verdict after every duel</li></ul></div>
@@ -1937,37 +1934,6 @@ export default function RigForge() {
 const MOGGER_BUDGETS = [800, 1000, 1200, 1500, 1800, 2200, 2800, 3500];
 const MOGGER_UCS = ["gaming", "content", "streaming", "workstation", "ai", "office"];
 const mRand = (a) => a[Math.floor(Math.random() * a.length)];
-
-/* ----------------------------- CONSTRAINT GAUNTLET ----------------------------- */
-// Solo daily score-attack: build under a rotating hard constraint. Violating it zeroes
-// the score, same mechanism as an incompatible build or going over budget.
-const GAUNTLET_CONSTRAINTS = [
-  { id: "gpu-300", label: "No GPU over $300", violates: (b) => !!(b.gpu && b.gpu.price > 300) },
-  { id: "tdp-65", label: "CPU TDP cap: 65W", violates: (b) => !!(b.cpu && b.cpu.tdp > 65) },
-  { id: "itx-only", label: "ITX only", violates: (b) => !!(b.mobo && b.mobo.form !== "ITX") },
-  { id: "no-gpu", label: "No discrete GPU — iGPU only", violates: (b) => !!b.gpu },
-  { id: "ram-32", label: "RAM cap: 32GB", violates: (b) => !!(b.ram && b.ram.cap > 32) },
-  { id: "stock-cooler", label: "Cooler budget: $40 max", violates: (b) => !!(b.cooler && b.cooler.price > 40) },
-  { id: "air-only", label: "Air cooling only — no AIOs", violates: (b) => !!(b.cooler && b.cooler.type === "aio") },
-];
-function dailyGauntlet() {
-  const d = new Date(); const dayKey = d.toISOString().slice(0, 10);
-  const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
-  const constraint = GAUNTLET_CONSTRAINTS[(seed + 7) % GAUNTLET_CONSTRAINTS.length];
-  // "no-gpu" only pairs with a use case that doesn't require a discrete GPU — otherwise
-  // the build is permanently incomplete and the day is unwinnable no matter the skill.
-  const useCase = constraint.id === "no-gpu" ? "office" : MOGGER_UCS[(seed + 3) % MOGGER_UCS.length];
-  const budget = MOGGER_BUDGETS[(seed + 5) % MOGGER_BUDGETS.length];
-  return { dayKey, constraint, useCase, budget, secs: 150 };
-}
-// Same shape as moggerScore(), but a constraint violation zeroes the build like any other issue.
-function gauntletScore(build, ucKey, budget, constraint) {
-  const s = moggerScore(build, ucKey, budget);
-  if (constraint && constraint.violates(build) && s.issues.length === 0) {
-    return { ...s, total: 0, issues: ["Constraint violated: " + constraint.label] };
-  }
-  return s;
-}
 
 // deduped, cheapest-per-model options for a category (uses live prices)
 function moggerOptions(cat) {
@@ -2598,170 +2564,6 @@ function MoggerHistory({ onBack }) {
   );
 }
 
-// Ghost Duel Replay — challenge any past build (yours or an AI opponent's you've faced),
-// the AI side replays its real recorded parts move-by-move instead of generating a fresh build.
-function MoggerGhosts({ onBack, onChallenge }) {
-  const [ghosts, setGhosts] = useState(() => {
-    try { return [...JSON.parse(localStorage.getItem("mogger_ghosts") || "[]")].reverse(); } catch (e) { return []; }
-  });
-  const removeGhost = (id) => {
-    try {
-      const all = JSON.parse(localStorage.getItem("mogger_ghosts") || "[]").filter((g) => g.id !== id);
-      localStorage.setItem("mogger_ghosts", JSON.stringify(all));
-    } catch (e) {}
-    setGhosts((g) => g.filter((x) => x.id !== id));
-  };
-  return (
-    <div className="pm-card rf-fade">
-      <h2 className="pm-h2">👻 Ghost Duels</h2>
-      <p className="pm-p pm-dim">Challenge a recorded build from a past duel — the AI side replays its real parts, move by move.</p>
-      {ghosts.length === 0 ? <p className="pm-p pm-dim">No ghosts yet — finish a duel to bank one.</p> : (
-        <div className="pm-ghost-list">
-          {ghosts.map((g) => (
-            <div key={g.id} className="pm-ghost-row">
-              <div className="pm-ghost-info">
-                <span className="pm-ghost-label">{g.label}</span>
-                <span className="pm-ghost-meta">{(USE_CASES[g.useCase] || {}).label || g.useCase} · {fmt(g.budget)} · Score {g.score}</span>
-                {g.build && <ArchetypeBadge build={g.build} useCase={g.useCase} budget={g.budget} />}
-              </div>
-              <div className="pm-ghost-actions">
-                <button className="rf-btn pm-ghost-challenge" onClick={() => onChallenge(g)}>⚔️ Challenge</button>
-                <button className="rf-icon-btn" onClick={() => removeGhost(g.id)} title="Remove ghost"><Trash2 size={14} /></button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      <button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button>
-    </div>
-  );
-}
-
-// Faction Wars — monthly event, pick a side, ranked wins earn it points, dominance bar
-// shows the live split, and last month's winner gets a cosmetic trophy badge.
-function FactionDominanceBar({ totals }) {
-  const total = Math.max(1, (totals.a || 0) + (totals.b || 0));
-  const aPct = Math.round((totals.a || 0) / total * 100);
-  return (
-    <div className="pm-faction-bar">
-      <div className="pm-faction-bar-fill a" style={{ width: aPct + "%" }} />
-      <div className="pm-faction-bar-fill b" style={{ width: (100 - aPct) + "%" }} />
-    </div>
-  );
-}
-function MoggerFactions({ onBack, user, onUserUpdate }) {
-  const { war, weekKey } = useMemo(() => currentFactionWar(), []);
-  const localKey = "mogger_faction_local_" + weekKey + "_" + war.id;
-  const [pick, setPick] = useState(() => {
-    try { const p = JSON.parse(localStorage.getItem("mogger_faction_pick") || "null"); return (p && p.weekKey === weekKey && p.warId === war.id) ? p.faction : null; } catch (e) { return null; }
-  });
-  const [totals, setTotals] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(localKey) || '{"a":0,"b":0}'); } catch (e) { return { a: 0, b: 0 }; }
-  });
-  const [remote, setRemote] = useState(false);
-  const [trophy, setTrophy] = useState(null);
-  const [rewardMsg, setRewardMsg] = useState(null);
-  useEffect(() => {
-    netFactionTotals(weekKey, war.id).then((r) => { if (r) { setTotals(r); setRemote(true); } });
-    const { war: pw, weekKey: pwk } = previousFactionWar();
-    netFactionTotals(pwk, pw.id).then((r) => {
-      const t = r || (() => { try { return JSON.parse(localStorage.getItem("mogger_faction_local_" + pwk + "_" + pw.id) || "null"); } catch (e) { return null; } })();
-      if (t && (t.a > 0 || t.b > 0)) setTrophy({ war: pw, weekKey: pwk, winner: t.a >= t.b ? "a" : "b" });
-    });
-    // Opportunistically settle last week's reward — any client visiting this screen can
-    // trigger it, the DB function itself guards against double-paying. No cron needed.
-    netApplyFactionWeekReward(pwk).then((res) => {
-      if (!res || !res.winner || !user) return;
-      netFetchUser(user.id).then((srv) => {
-        if (srv && srv.elo !== user.elo) { onUserUpdate({ id: srv.id, name: srv.name, elo: srv.elo, crank: srv.crank || null }); setRewardMsg("🏆 Last week's Faction War paid out — your elo just updated!"); }
-      });
-    });
-  }, [weekKey, war.id]);
-  const choose = (faction) => {
-    setPick(faction);
-    try { localStorage.setItem("mogger_faction_pick", JSON.stringify({ weekKey, warId: war.id, faction })); } catch (e) {}
-    if (user) netSetFactionPick(user.id, weekKey, war.id, faction);
-  };
-  const sideCard = (side, key) => (
-    <button key={key} className={"pm-faction-card" + (pick === key ? " on" : "")} onClick={() => choose(key)}>
-      <span className="pm-faction-emoji">{side.emoji}</span>
-      <span className="pm-faction-name">{side.label}</span>
-      <span className="pm-faction-pts">{totals[key] || 0} pts</span>
-      {pick === key && <span className="pm-faction-joined">✓ Your faction</span>}
-    </button>
-  );
-  return (
-    <div className="pm-card rf-fade">
-      <h2 className="pm-h2">⚔️ {war.label}</h2>
-      <p className="pm-p pm-dim">This week's faction event — pick a side. Every ranked win earns your faction points (+bonus if your build's hardware matches). When the week ends, each winning member's ELO bonus equals their personal contribution % (capped at 5% × contributors/10).{!remote && " Showing this device's local tally until the next sync."}</p>
-      {rewardMsg && <div className="pm-faction-trophy" style={{ borderColor: "var(--c-good)", color: "var(--c-good)" }}>{rewardMsg}</div>}
-      <div className="pm-faction-grid">
-        {sideCard(war.a, "a")}
-        {sideCard(war.b, "b")}
-      </div>
-      <FactionDominanceBar totals={totals} />
-      {!user && <p className="pm-seg-note">Log in and play ranked duels — winning faction members earn an ELO bonus proportional to their personal contribution at week's end.</p>}
-      {trophy && (
-        <div className="pm-faction-trophy">
-          🏆 Last week's {trophy.war.label} went to <b>{trophy.winner === "a" ? trophy.war.a.label : trophy.war.b.label}</b> — members earned ELO bonuses based on their contribution
-        </div>
-      )}
-      <button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16} /> Back</button>
-    </div>
-  );
-}
-
-// Constraint Gauntlet result — solo score-attack, personal best, and a local/global leaderboard.
-function MoggerGauntletResult({ round, build, user, onMenu, onPlayAgain }) {
-  const s = useMemo(() => gauntletScore(build, round.useCase, round.budget, round.constraint), [build, round]);
-  const violated = s.issues.length > 0;
-  const [best, setBest] = useState(0);
-  const [isNewBest, setIsNewBest] = useState(false);
-  const [rows, setRows] = useState([]);
-  const savedRef = useRef(false);
-  useEffect(() => {
-    if (savedRef.current) return;
-    savedRef.current = true;
-    try {
-      const prevBest = +(localStorage.getItem("mogger_gauntlet_best") || "0");
-      setBest(Math.max(prevBest, s.total));
-      if (s.total > prevBest) { localStorage.setItem("mogger_gauntlet_best", String(s.total)); setIsNewBest(true); }
-      const all = JSON.parse(localStorage.getItem("mogger_gauntlet_scores") || "[]");
-      all.push({ user_name: user ? user.name : "You", day_key: round.dayKey, constraint_id: round.constraint.id, use_case: round.useCase, budget: round.budget, score: s.total });
-      if (all.length > 100) all.splice(0, all.length - 100);
-      localStorage.setItem("mogger_gauntlet_scores", JSON.stringify(all));
-      const today = all.filter((r) => r.day_key === round.dayKey).sort((a, b) => b.score - a.score).slice(0, 10);
-      setRows(today);
-    } catch (e) {}
-    netRecordGauntletScore(user ? user.id : null, user ? user.name : "Anonymous", round.dayKey, round.constraint.id, round.useCase, round.budget, s.total);
-    netGauntletLeaderboard(round.dayKey, 10).then((r) => { if (r && r.length) setRows(r); });
-  }, []);
-  return (
-    <div className="pm-result pm-gauntlet-result rf-fade">
-      <h2 className="pm-h2">🎯 Constraint Gauntlet</h2>
-      <p className="pm-p pm-dim">{round.constraint.label} · {USE_CASES[round.useCase].label} · {fmt(round.budget)}</p>
-      <div className={"pm-gauntlet-score" + (violated ? " pm-gauntlet-violated" : "")}>{s.total}<small style={{ fontSize: "1rem" }}>/1000</small></div>
-      {violated ? <p className="pm-p" style={{ color: "var(--c-bad)" }}>{s.issues.join(" · ")}</p> : <ArchetypeBadge build={build} useCase={round.useCase} budget={round.budget} />}
-      <div className="pm-gauntlet-best">{isNewBest ? "🏆 New personal best!" : <>Personal best: <b>{best}</b></>}</div>
-      {rows.length > 0 && (
-        <div className="pm-gauntlet-lb">
-          {rows.slice(0, 10).map((r, i) => (
-            <div key={i} className="pm-gauntlet-lb-row">
-              <span className="pm-gauntlet-lb-rank">#{i + 1}</span>
-              <span>{r.user_name || "You"} — {(GAUNTLET_CONSTRAINTS.find((c) => c.id === r.constraint_id) || {}).label || ""}</span>
-              <span className="pm-gauntlet-lb-score">{r.score}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="pm-row pm-center-row">
-        <button className="rf-btn rf-ghost-btn" onClick={onMenu}>Menu</button>
-        <button className="rf-btn" onClick={onPlayAgain}><Repeat2 size={16} /> Retry today's gauntlet</button>
-      </div>
-    </div>
-  );
-}
-
 // C11: Sale badge helpers (deterministic hash based on id/name+date)
 function isOnSale(part) {
   if (!part) return false;
@@ -2776,7 +2578,7 @@ function saleAmt(part) {
   return 5 + (h % 4) * 5; // 5%, 10%, 15%, or 20%
 }
 
-function MoggerPicker({ cat, current, budget, spent, onPick, onClose, useCase, bannedParts = null }) {
+function MoggerPicker({ cat, current, budget, spent, onPick, onClose, useCase }) {
   const all = useMemo(() => moggerOptionsAll(cat), [cat]);
   const bestValueId = useMemo(() => {
     let best = null, bestRatio = -1;
@@ -2804,10 +2606,6 @@ function MoggerPicker({ cat, current, budget, spent, onPick, onClose, useCase, b
   const opts = useMemo(() => {
     const t = q.trim().toLowerCase();
     let list = !t ? all : all.filter((o) => ((o.model || "") + " " + (o.name || "") + " " + (o.brand || "")).toLowerCase().includes(t));
-    if (bannedParts && bannedParts.length > 0) {
-      const bannedKeys = new Set(bannedParts.map(b => b.cat+":"+b.name));
-      list = list.filter(o => !bannedKeys.has(cat+":"+o.name));
-    }
     for (const f of filters) {
       const sel = flt[f.k];
       if (sel == null || sel === "") continue;
@@ -2877,7 +2675,7 @@ const DUEL_TIPS = [
   "For AI/ML, GPU VRAM matters more than clock speed",
 ];
 
-function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, ghostMode, liveOpp, oppLiveScore, oppLiveDone, onMyScore, myElo, oppElo, onDone, solo, constraint, bannedParts = null }) {
+function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, liveOpp, oppLiveScore, oppLiveDone, onMyScore, myElo, oppElo, onDone, solo, constraint }) {
   const oppFinal = useMemo(() => (oppBuild ? moggerScore(oppBuild, round.useCase, round.budget).total : null), []);
   const [build, setBuild] = useState({});
   const [open, setOpen] = useState(null);
@@ -2914,7 +2712,7 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, gh
   // AI opponent: score fluctuates upward (chunky +50-120, occasional -50-120), then locks in.
   // Each score tick swaps exactly ONE part in its (blurred) build — not all at once.
   useEffect(() => {
-    if (oppFinal == null || oppLocked || ghostMode) return;
+    if (oppFinal == null || oppLocked) return;
     const lockAt = round.secs * (0.55 + Math.random() * 0.3); // seconds elapsed when AI locks
     const ceiling = Math.max(0, oppFinal); // climb toward the AI's real score (0 if its build is incompatible)
     const t0 = Date.now();
@@ -2936,35 +2734,12 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, gh
     iv = setTimeout(step, 900);
     return () => clearTimeout(iv);
   }, []);
-  // Ghost Duel Replay: instead of random decoys, reveal the ghost's REAL parts one
-  // category at a time (in build order) so it genuinely replays move-by-move.
-  useEffect(() => {
-    if (!ghostMode || !oppBuild || oppFinal == null || oppLocked) return;
-    const lockAt = round.secs * (0.55 + Math.random() * 0.3);
-    const cats = CATEGORY_ORDER.filter((c) => oppBuild[c]);
-    const stepMs = cats.length ? Math.max(400, (lockAt * 1000) / cats.length) : 1000;
-    let revealed = 0;
-    let iv;
-    const step = () => {
-      revealed++;
-      setDecoy((prev) => {
-        const next = { ...prev };
-        for (let i = 0; i < revealed && i < cats.length; i++) next[cats[i]] = oppBuild[cats[i]];
-        return next;
-      });
-      if (revealed >= cats.length) { setOppShown(oppFinal); setOppDone(true); return; }
-      setOppShown(Math.round(oppFinal * (revealed / cats.length)));
-      iv = setTimeout(step, stepMs);
-    };
-    iv = setTimeout(step, stepMs);
-    return () => clearTimeout(iv);
-  }, []);
   const spent = CATEGORY_ORDER.reduce((s, c) => s + (build[c] ? build[c].price : 0), 0);
   const over = spent > round.budget;
   const filled = CATEGORY_ORDER.filter((c) => build[c]).length;
   const bottleneck = useMemo(() => analyzeBuild(build, round.useCase, round.budget).bottleneck, [build]);
-  const shownOpp = (oppIsAI || ghostMode) ? oppShown : oppLocked ? oppFinal : liveOpp ? (oppLiveScore == null ? null : oppLiveScore) : null;
-  const shownDone = (oppIsAI || ghostMode) ? oppDone : oppLocked ? true : liveOpp ? !!oppLiveDone : false;
+  const shownOpp = oppIsAI ? oppShown : oppLocked ? oppFinal : liveOpp ? (oppLiveScore == null ? null : oppLiveScore) : null;
+  const shownDone = oppIsAI ? oppDone : oppLocked ? true : liveOpp ? !!oppLiveDone : false;
   const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, "0");
   const low = left <= 15;
   const UC = USE_CASES[round.useCase];
@@ -3029,7 +2804,7 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, gh
         </div>
         {!solo && (
           <div className="pm-col opp">
-            <div className="pm-col-h">{oppLabel}{oppLocked ? " · locked in" : oppIsAI ? " · building" : ghostMode ? " · replaying" : ""}</div>
+            <div className="pm-col-h">{oppLabel}{oppLocked ? " · locked in" : oppIsAI ? " · building" : ""}</div>
             <div className={"pm-col-parts" + (hasOpp ? " blur" : "")}>
               {CATEGORY_ORDER.map((c) => { const Icon = CAT_META[c].Icon; const p = hasOpp ? decoy[c] : null; return (
                 <div key={c} className="pm-ctile opp">
@@ -3043,7 +2818,7 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, gh
         )}
       </div>
       <button className="rf-btn rf-btn-lg pm-lockin" onClick={() => onDone(build)}><Check size={16} /> Lock in build</button>
-      {open && <MoggerPicker cat={open} current={build[open]} budget={round.budget} spent={spent} useCase={round.useCase} bannedParts={bannedParts} onPick={(o) => { setBuild((b) => ({ ...b, [open]: o })); setOpen(null); }} onClose={() => setOpen(null)} />}
+      {open && <MoggerPicker cat={open} current={build[open]} budget={round.budget} spent={spent} useCase={round.useCase} onPick={(o) => { setBuild((b) => ({ ...b, [open]: o })); setOpen(null); }} onClose={() => setOpen(null)} />}
     </div>
   );
 }
@@ -4175,127 +3950,6 @@ const ELO_TIERS = [{ name: "Beginner", min: 0, max: 599 }, { name: "Novice", min
 function eloTierName(elo) { return (ELO_TIERS.find((t) => elo >= t.min && elo <= t.max) || ELO_TIERS[0]).name; }
 function eloTierRandom(tierName) { const t = ELO_TIERS.find((x) => x.name === tierName) || ELO_TIERS[0]; return t.min + Math.floor(Math.random() * (t.max - t.min + 1)); }
 
-/* ----------------------------- FACTION WARS ----------------------------- */
-// Weekly event — the war rotates every week through an 80-theme cycle so it never repeats
-// for over a year and a half straight. ~20 of the 80 themes map to a real, detectable build
-// trait (so picking hardware that matches your faction earns a small points bonus); the rest
-// are pure flavor — still fully playable, just without the hardware-match bonus.
-const FACTION_AXES = {
-  "cpu-brand": (b) => { const v = b.cpu && b.cpu.brand; return v === "Intel" ? "a" : v === "AMD" ? "b" : null; },
-  "gpu-vendor": (b) => { const n = (b.gpu && (b.gpu.model || b.gpu.name)) || ""; if (/nvidia|rtx|gtx/i.test(n)) return "a"; if (/radeon|\brx\s?\d/i.test(n)) return "b"; return null; },
-  "cooling": (b) => { const t = b.cooler && b.cooler.type; return t === "air" ? "a" : t === "aio" ? "b" : null; },
-  "ram-gen": (b) => { const t = b.ram && b.ram.ramType; return t === "DDR4" ? "a" : t === "DDR5" ? "b" : null; },
-  "case-form": (b) => { const f = b.mobo && b.mobo.form; return f === "ITX" ? "a" : f === "ATX" ? "b" : null; },
-  "psu-eff": (b) => { const e = b.psu && b.psu.eff; if (!e) return null; return /bronze|silver/i.test(e) ? "a" : "b"; },
-  "budget-tier": (b, budget) => { if (!budget) return null; const spend = CATEGORY_ORDER.reduce((s, c) => s + (b[c] ? b[c].price : 0), 0); return spend < budget * 0.6 ? "a" : spend > budget * 0.9 ? "b" : null; },
-  "storage-iface": (b) => { const k = b.storage && (b.storage.iface || b.storage.kind); if (!k) return null; return /sata/i.test(k) ? "a" : "b"; },
-  "core-count": (b) => { const c = b.cpu && b.cpu.cores; if (!c) return null; return c <= 6 ? "a" : "b"; },
-  "vram": (b) => { const v = b.gpu && b.gpu.vram; if (!v) return null; return v <= 8 ? "a" : "b"; },
-};
-function mkWar(id, label, aLabel, aEmoji, bLabel, bEmoji, axis) {
-  return { id, label, a: { key: "a", label: aLabel, emoji: aEmoji }, b: { key: "b", label: bLabel, emoji: bEmoji }, axis: axis || null };
-}
-const FACTION_WARS = [
-  mkWar("w01", "CPU Wars", "Intel", "🔵", "AMD", "🔴", "cpu-brand"),
-  mkWar("w02", "Silicon Showdown", "Team Blue", "🔷", "Team Red", "🟥", "cpu-brand"),
-  mkWar("w03", "GPU Wars", "Nvidia", "💚", "Radeon", "❤️", "gpu-vendor"),
-  mkWar("w04", "Frame Rate Faction", "GeForce Nation", "🟢", "Radeon Rebellion", "🔺", "gpu-vendor"),
-  mkWar("w05", "Cooling Wars", "Air-Cooled", "💨", "Liquid", "💧", "cooling"),
-  mkWar("w06", "Thermal Throwdown", "Fan Club", "🌬️", "Pump Squad", "🌊", "cooling"),
-  mkWar("w07", "Memory Wars", "DDR4", "🟦", "DDR5", "🟪", "ram-gen"),
-  mkWar("w08", "Old Guard vs New Wave", "DDR4 Veterans", "📼", "DDR5 Pioneers", "✨", "ram-gen"),
-  mkWar("w09", "Form Factor Wars", "Mini-ITX", "📦", "Full Tower", "🏰", "case-form"),
-  mkWar("w10", "Small Form Faction", "Pocket Rockets", "🚀", "Tower Titans", "🗼", "case-form"),
-  mkWar("w11", "Efficiency Wars", "Bronze Tier", "🥉", "Gold+ Tier", "🥇", "psu-eff"),
-  mkWar("w12", "Watt Wars", "Power Savers", "🔋", "Power Hungry", "⚡", "psu-eff"),
-  mkWar("w13", "Budget Wars", "Budget Builders", "💵", "Flagship Faithful", "💎", "budget-tier"),
-  mkWar("w14", "Value vs Halo", "Value Vanguard", "🛡️", "Halo Hunters", "👑", "budget-tier"),
-  mkWar("w15", "Storage Wars", "SATA Sentinels", "💾", "NVMe Nation", "⚡", "storage-iface"),
-  mkWar("w16", "Speed Lane", "Old Rails", "🐢", "Fast Lane", "🚄", "storage-iface"),
-  mkWar("w17", "Core Wars", "Lean Six", "6️⃣", "Core Overload", "🔢", "core-count"),
-  mkWar("w18", "Multitask Wars", "Efficiency Corps", "🎯", "Multitask Mob", "🧵", "core-count"),
-  mkWar("w19", "VRAM Wars", "VRAM Minimalists", "🪶", "VRAM Maximalists", "🐘", "vram"),
-  mkWar("w20", "Texture Wars", "Texture Tightwads", "📉", "Frame Buffer Fanatics", "📈", "vram"),
-  mkWar("w21", "PCIe Wars", "PCIe 4", "4️⃣", "PCIe 5", "5️⃣"),
-  mkWar("w22", "Storage Gen Wars", "Gen3 SSDs", "🐌", "Gen5 SSDs", "🚀"),
-  mkWar("w23", "Display Wars", "1080p Loyalists", "📺", "4K Believers", "🖥️"),
-  mkWar("w24", "Refresh Rate Wars", "60Hz Veterans", "🎞️", "High Refresh Junkies", "⚡"),
-  mkWar("w25", "Aspect Ratio Wars", "16:9 Classic", "📐", "Ultrawide Believers", "📏"),
-  mkWar("w26", "RGB Wars", "Stealth Black", "🖤", "RGB Everything", "🌈"),
-  mkWar("w27", "Overclocking Wars", "Stock Clocks", "📋", "Pushed to the Limit", "🔥"),
-  mkWar("w28", "Cable Wars", "Cable Managed", "✨", "Rat's Nest", "🕸️"),
-  mkWar("w29", "Window Wars", "Glass Panel", "🪟", "Solid Panel", "⬛"),
-  mkWar("w30", "Front Panel Wars", "Mesh Front", "🕳️", "Glass Front", "🔲"),
-  mkWar("w31", "Fan Count Wars", "Minimalist Airflow", "🌀", "Fan Wall", "💨"),
-  mkWar("w32", "Dust Wars", "Clean Freaks", "🧼", "Dust Collectors", "🌫️"),
-  mkWar("w33", "Monitor Count Wars", "Single Monitor", "🖥️", "Multi-Monitor", "🖥️🖥️"),
-  mkWar("w34", "Input Wars", "Keyboard & Mouse", "⌨️", "Controller", "🎮"),
-  mkWar("w35", "Genre Wars", "FPS Fanatics", "🔫", "RPG Loyalists", "🗡️"),
-  mkWar("w36", "Benchmark Wars", "Synthetic Scores", "📊", "Real-World Frames", "🎮"),
-  mkWar("w37", "Build Reveal Wars", "Time-Lapse Editors", "🎬", "Livestream Builders", "📡"),
-  mkWar("w38", "Sound Profile Wars", "Silent Running", "🤫", "Loud and Proud", "📢"),
-  mkWar("w39", "Case Material Wars", "Steel Builders", "🔩", "Aluminum Builders", "🛠️"),
-  mkWar("w40", "PSU Modularity Wars", "Fully Modular", "🔌", "Non-Modular Nostalgia", "🧷"),
-  mkWar("w41", "GPU Mount Wars", "Horizontal Mount", "➡️", "Vertical Mount", "⬆️"),
-  mkWar("w42", "M.2 Wars", "Heatsink Covered", "🛡️", "Bare Boards", "🔓"),
-  mkWar("w43", "Build Time Wars", "Speedrunners", "⏱️", "Perfectionists", "🔍"),
-  mkWar("w44", "Warranty Wars", "RMA Veterans", "📦", "Never Broke a Part", "🍀"),
-  mkWar("w45", "Upgrade Cycle Wars", "Yearly Upgraders", "🔄", "Long Haulers", "⏳"),
-  mkWar("w46", "Streaming Codec Wars", "NVENC Encoders", "🎥", "x264 Purists", "🖥️"),
-  mkWar("w47", "Sales Event Wars", "Black Friday Hunters", "🛒", "Full Price Payers", "💳"),
-  mkWar("w48", "Fan Bearing Wars", "Sleeve Bearing Loyalists", "🌀", "Maglev Believers", "🧲"),
-  mkWar("w49", "FPS Counter Wars", "Always-On Overlay", "📈", "Never Shown Purists", "🙈"),
-  mkWar("w50", "VRM Wars", "Bare Board Believers", "🔲", "Armored VRM Fans", "🛡️"),
-  mkWar("w51", "Case Feet Wars", "Rubber Feet", "🟫", "Metal Feet", "⚙️"),
-  mkWar("w52", "Build Platform Wars", "Reddit Posters", "👽", "YouTube Creators", "📹"),
-  mkWar("w53", "Multi-GPU Nostalgia", "SLI Believers", "🔗", "Single Card Purists", "🃏"),
-  mkWar("w54", "Legacy Hardware Wars", "Retro Rig Collectors", "📼", "Bleeding Edge Adopters", "⚡"),
-  mkWar("w55", "BIOS Tuning Wars", "Stock BIOS Defaults", "📄", "Custom Curve Tuners", "🎛️"),
-  mkWar("w56", "Fan Curve Wars", "Silent Profile", "🤐", "Max Cooling Profile", "🌬️"),
-  mkWar("w57", "Desk Setup Wars", "Standing Desk", "🧍", "Sitting Desk", "🪑"),
-  mkWar("w58", "Gaming Chair Wars", "Racing Style", "🏎️", "Ergonomic Office", "🪑"),
-  mkWar("w59", "Fuel Wars", "Energy Drinks", "🥤", "Coffee", "☕"),
-  mkWar("w60", "Schedule Wars", "Night Owls", "🦉", "Early Birds", "🐦"),
-  mkWar("w61", "Build Music Wars", "Lo-fi Beats", "🎧", "Metal Riffs", "🎸"),
-  mkWar("w62", "Sleeving Wars", "Custom Sleeved Cables", "🎨", "Stock Cable Loyalists", "📦"),
-  mkWar("w63", "Thermal Paste Wars", "Stock Paste Stans", "🧪", "Premium Paste Believers", "⚗️"),
-  mkWar("w64", "Capture Card Wars", "Hardware Encode", "📼", "Software Encode", "💻"),
-  mkWar("w65", "Build Log Wars", "Spreadsheet Planners", "📊", "Wing-It Builders", "🎲"),
-  mkWar("w66", "Part Source Wars", "Local Shop Loyalists", "🏪", "Online Order Diehards", "📦"),
-  mkWar("w67", "Extended Warranty Wars", "Always Buy It", "🛡️", "Never Bother", "🎲"),
-  mkWar("w68", "Case Fan Wars", "PWM Purists", "🔌", "DC Diehards", "🔋"),
-  mkWar("w69", "Cable Length Wars", "Custom Cut Cables", "✂️", "Stock Length Loyalists", "📏"),
-  mkWar("w70", "Aesthetic Wars", "Minimalist Builders", "⬜", "Maximalist Builders", "🌈"),
-  mkWar("w71", "Lighting Wars", "Static Color", "💡", "Rainbow Cycle", "🌈"),
-  mkWar("w72", "Battlestation Wars", "Bedroom Rig", "🛏️", "Office Battlestation", "🏢"),
-  mkWar("w73", "Software Tuning Wars", "Default Settings", "⚙️", "Tuned to the Teeth", "🔧"),
-  mkWar("w74", "Thermal Camera Wars", "Thermal Camera Users", "📷", "Guess-and-Check Builders", "🤷"),
-  mkWar("w75", "Driver Update Wars", "Day-One Updaters", "📥", "If It Ain't Broke Holdouts", "🗝️"),
-  mkWar("w76", "Backup Wars", "Cloud Backup Believers", "☁️", "Local Drive Loyalists", "💽"),
-  mkWar("w77", "Browser Wars", "Tab Hoarders", "🗂️", "Tab Minimalists", "🧹"),
-  mkWar("w78", "Peripheral Wars", "Wired Diehards", "🔌", "Wireless Believers", "📡"),
-  mkWar("w79", "Mousepad Wars", "Cloth Pad Loyalists", "🧶", "Hard Pad Believers", "🪵"),
-  mkWar("w80", "Headset Wars", "Headset Squad", "🎧", "Speaker Squad", "🔊"),
-];
-// Fixed epoch so week numbers are stable and monotonically increasing — never resets, never repeats early.
-const FACTION_EPOCH = new Date(2026, 0, 1).getTime();
-function weekIndexOf(d) { return Math.floor((d.getTime() - FACTION_EPOCH) / (7 * 24 * 60 * 60 * 1000)); }
-function factionWarAt(weekIdx) {
-  const idx = ((weekIdx % FACTION_WARS.length) + FACTION_WARS.length) % FACTION_WARS.length;
-  return { war: FACTION_WARS[idx], weekKey: "W" + weekIdx };
-}
-function currentFactionWar() { return factionWarAt(weekIndexOf(new Date())); }
-function previousFactionWar() { return factionWarAt(weekIndexOf(new Date()) - 1); }
-// Which side of the current war this build's relevant part actually belongs to (or null —
-// either no axis is defined for this theme, or the build doesn't lean either way).
-function buildFactionMatch(build, warId, budget) {
-  if (!build) return null;
-  const war = FACTION_WARS.find((w) => w.id === warId);
-  if (!war || !war.axis) return null;
-  const fn = FACTION_AXES[war.axis];
-  return fn ? fn(build, budget) : null;
-}
-
 const ADMIN_PASS = "Admin2014"; // change this to your own secret
 const COADMIN_PASS = "Coadmin2014"; // co-admin password — limited access
 
@@ -4664,408 +4318,6 @@ function MoggerAchievements({ onBack }) {
   );
 }
 
-function CoinEloConverter({ balance, userElo, onConvert }) {
-  const [coins, setCoins] = useState(5);
-  const gain = Math.floor(coins / 5);
-  return (
-    <div className="pm-coin-converter">
-      <div className="pm-coin-converter-head">🪙 Convert coins → ELO <span className="pm-dim">(5:1)</span></div>
-      <div className="pm-coin-converter-row">
-        <input type="range" min={5} max={Math.min(balance, 500)} step={5} value={coins} onChange={e => setCoins(+e.target.value)} className="pm-range" />
-        <span>{coins} coins → <b>+{gain} elo</b></span>
-        <button className="pm-coin-convert-btn" onClick={() => onConvert(coins)} disabled={gain < 1}>Convert</button>
-      </div>
-    </div>
-  );
-}
-
-/* ======================================================================
-   BATCH 3 — Draft Mode, Betting, Rogue Run, Archaeology, Syndicate, Bans
-   ====================================================================== */
-
-/* ---- Feature 1: Draft Mode Duel ---- */
-const DRAFT_POOL_SIZE = 5;
-function aiDraftPick(cat, pool, ucKey) {
-  if (!pool || !pool.length) return null;
-  return [...pool].sort((a, b) => ucPerf(cat, b, ucKey) - ucPerf(cat, a, ucKey))[0];
-}
-function MoggerDraft({ onMenu }) {
-  const [phase, setPhase] = useState("setup");
-  const [ucKey, setUcKey] = useState("gaming");
-  const [budget, setBudget] = useState(1500);
-  const [ds, setDs] = useState(null);
-  const startDraft = () => {
-    const pools = {};
-    for (const c of CATEGORY_ORDER) pools[c] = moggerOptions(c).slice(0, DRAFT_POOL_SIZE);
-    setDs({ catIdx: 0, youFirst: true, subTurn: 0, youBuild: {}, aiBuild: {}, pools });
-    setPhase("pick");
-  };
-  function advance(prev, newYou, newAi, newPools) {
-    const nextSub = prev.subTurn + 1;
-    if (nextSub >= 2) {
-      const nextCat = prev.catIdx + 1;
-      if (nextCat >= CATEGORY_ORDER.length) return { ...prev, youBuild: newYou, aiBuild: newAi, pools: newPools, done: true };
-      return { ...prev, youBuild: newYou, aiBuild: newAi, pools: newPools, catIdx: nextCat, subTurn: 0, youFirst: !prev.youFirst };
-    }
-    return { ...prev, youBuild: newYou, aiBuild: newAi, pools: newPools, subTurn: nextSub };
-  }
-  useEffect(() => {
-    if (!ds || phase !== "pick" || ds.done) return;
-    const isYourTurn = ds.youFirst ? ds.subTurn === 0 : ds.subTurn === 1;
-    if (isYourTurn) return;
-    const t = setTimeout(() => {
-      setDs(prev => {
-        if (!prev) return prev;
-        const cat = CATEGORY_ORDER[prev.catIdx];
-        const part = aiDraftPick(cat, prev.pools[cat], ucKey);
-        if (!part) return prev;
-        return advance(prev, prev.youBuild, { ...prev.aiBuild, [cat]: part }, { ...prev.pools, [cat]: prev.pools[cat].filter(p => p !== part) });
-      });
-    }, 700);
-    return () => clearTimeout(t);
-  }, [ds, phase, ucKey]);
-  useEffect(() => { if (ds?.done) setPhase("done"); }, [ds]);
-  const playerPick = (part) => {
-    if (!ds) return;
-    setDs(prev => {
-      if (!prev) return prev;
-      const cat = CATEGORY_ORDER[prev.catIdx];
-      return advance(prev, { ...prev.youBuild, [cat]: part }, prev.aiBuild, { ...prev.pools, [cat]: prev.pools[cat].filter(p => p !== part) });
-    });
-  };
-  const cat = ds && !ds.done ? CATEGORY_ORDER[ds.catIdx] : null;
-  const isYourTurn = ds ? (ds.youFirst ? ds.subTurn === 0 : ds.subTurn === 1) : false;
-  const youScore = ds?.done ? moggerScore(ds.youBuild, ucKey, budget) : null;
-  const aiScore = ds?.done ? moggerScore(ds.aiBuild, ucKey, budget) : null;
-  const youWon = youScore && aiScore ? youScore.total >= aiScore.total : false;
-  if (phase === "setup") return (
-    <div className="pm-card pm-center rf-fade">
-      <h2 className="pm-h2">🃏 Draft Mode Duel</h2>
-      <p className="pm-p">Snake-draft parts from a shared pool. Deny your opponent the best components.</p>
-      <div className="pm-field"><span className="pm-field-l">Use Case</span>
-        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
-          {MOGGER_UCS.map(k => <button key={k} className={"pm-quick-btn" + (ucKey===k?" pm-seg-on":"")} onClick={() => setUcKey(k)}>{USE_CASES[k].label}</button>)}
-        </div>
-      </div>
-      <div className="pm-field"><span className="pm-field-l">Budget: ${budget}</span><input type="range" min={800} max={3500} step={100} value={budget} onChange={e => setBudget(+e.target.value)} className="pm-range" /></div>
-      <div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={onMenu}><ChevronLeft size={16}/> Back</button><button className="rf-btn" onClick={startDraft}>Start Draft <ChevronRight size={16}/></button></div>
-    </div>
-  );
-  if (phase === "pick" && ds && !ds.done) {
-    const pool = ds.pools[cat] || [];
-    return (
-      <div className="pm-card rf-fade">
-        <h2 className="pm-h2">🃏 Draft — {CAT_META[cat]?.label}</h2>
-        <div className="pm-draft-progress">{CATEGORY_ORDER.map((c,i) => <span key={c} className={"pm-draft-pip"+(i<ds.catIdx?" done":i===ds.catIdx?" active":"")} title={CAT_META[c].label}>{CAT_META[c].label.slice(0,3)}</span>)}</div>
-        <div className="pm-draft-arena">
-          <div className="pm-draft-col"><div className="pm-draft-col-head">YOU</div>{CATEGORY_ORDER.filter(c=>ds.youBuild[c]).map(c=><div key={c} className="pm-draft-item you">{CAT_META[c].label}: {ds.youBuild[c].name.split(" ").slice(0,4).join(" ")}</div>)}</div>
-          <div className="pm-draft-col"><div className="pm-draft-col-head ai">AI</div>{CATEGORY_ORDER.filter(c=>ds.aiBuild[c]).map(c=><div key={c} className="pm-draft-item ai">{CAT_META[c].label}: {ds.aiBuild[c].name.split(" ").slice(0,4).join(" ")}</div>)}</div>
-        </div>
-        {isYourTurn ? (<>
-          <p className="pm-draft-turn">Your pick — choose a <b>{CAT_META[cat]?.label}</b>:</p>
-          <div className="pm-draft-pool">{pool.map((p,i)=><button key={p.id||i} className="pm-draft-part" onClick={()=>playerPick(p)}><span className="pm-draft-part-name">{p.name.split(" ").slice(0,5).join(" ")}</span><div className="pm-draft-part-meta"><span className="pm-draft-part-price">${p.price}</span><span className="pm-draft-part-perf">{Math.round(ucPerf(cat,p,ucKey)*100)}pts</span></div></button>)}</div>
-        </>) : (<div className="pm-draft-ai-thinking">🤖 AI is picking {CAT_META[cat]?.label}…</div>)}
-      </div>
-    );
-  }
-  if (phase === "done" && ds) return (
-    <div className="pm-card rf-fade">
-      <h2 className="pm-h2" style={{textAlign:"center"}}>{youWon?"🏆 You Won the Draft!":"💀 AI Wins the Draft"}</h2>
-      <div className="pm-draft-result">
-        <div className={"pm-draft-result-col"+(youWon?" win":"")}><div className="pm-draft-result-head">YOU — {youScore?.total||0}</div>{CATEGORY_ORDER.filter(c=>ds.youBuild[c]).map(c=><div key={c} className="pm-draft-item you">{CAT_META[c].label}: {ds.youBuild[c].name.split(" ").slice(0,4).join(" ")} <span style={{opacity:0.55}}>${ds.youBuild[c].price}</span></div>)}</div>
-        <div className={"pm-draft-result-col"+(!youWon?" win":"")}><div className="pm-draft-result-head ai">AI — {aiScore?.total||0}</div>{CATEGORY_ORDER.filter(c=>ds.aiBuild[c]).map(c=><div key={c} className="pm-draft-item ai">{CAT_META[c].label}: {ds.aiBuild[c].name.split(" ").slice(0,4).join(" ")} <span style={{opacity:0.55}}>${ds.aiBuild[c].price}</span></div>)}</div>
-      </div>
-      <div className="pm-row pm-center-row" style={{marginTop:16}}><button className="rf-btn rf-ghost-btn" onClick={startDraft}>Redraft</button><button className="rf-btn" onClick={onMenu}>Menu</button></div>
-    </div>
-  );
-  return null;
-}
-
-/* ---- Feature 2: Spectator Betting Market ---- */
-function betOdds(myElo, oppElo) {
-  const winP = 1 / (1 + Math.pow(10, (oppElo - myElo) / 400));
-  return { you: Math.max(1.05, +(1/winP).toFixed(2)), ai: Math.max(1.05, +(1/Math.max(0.01,1-winP)).toFixed(2)), winP: Math.round(winP*100) };
-}
-function BettingPanel({ myElo, oppElo, balance, onBet, activeBet }) {
-  const [side, setSide] = useState("you");
-  const [stake, setStake] = useState(Math.min(100, balance || 0));
-  const odds = betOdds(myElo||1000, oppElo||1200);
-  const myOdds = side==="you" ? odds.you : odds.ai;
-  const potPayout = Math.round(stake*myOdds);
-  if (activeBet) return (
-    <div className="pm-bet-panel active">
-      <span>💰 Bet: <b>{activeBet.stake}</b> on <b>{activeBet.side==="you"?"yourself":"AI"}</b> ×{activeBet.odds}</span>
-      <span className="pm-bet-potential">→ <b>{Math.round(activeBet.stake*activeBet.odds)}</b> coins</span>
-    </div>
-  );
-  if (!balance || balance <= 0) return null;
-  return (
-    <div className="pm-bet-panel">
-      <div className="pm-bet-head">💰 Bet — Balance: <b>{balance}</b> coins</div>
-      <div className="pm-bet-sides">
-        <button className={"pm-bet-side"+(side==="you"?" on":"")} onClick={()=>setSide("you")}>You win ({odds.winP}%) × {odds.you}</button>
-        <button className={"pm-bet-side"+(side==="ai"?" on":"")} onClick={()=>setSide("ai")}>AI wins ({100-odds.winP}%) × {odds.ai}</button>
-      </div>
-      <div className="pm-bet-stake"><span>{stake} coins →</span><input type="range" min={10} max={Math.min(balance,500)} step={10} value={stake} onChange={e=>setStake(+e.target.value)} className="pm-range pm-bet-range"/><span className="pm-bet-potential"><b>{potPayout}</b></span></div>
-      <button className="rf-btn pm-bet-confirm" onClick={()=>onBet({side,stake,odds:myOdds})}>Place Bet</button>
-    </div>
-  );
-}
-
-/* ---- Feature 3: Rogue Run ---- */
-const ROGUE_STAGE_ELOS = [350,700,1150,1700,2400];
-const ROGUE_PERKS = [
-  {id:"budget_boost",label:"💰 Budget Boost",desc:"+20% budget on all stages",stage:0},
-  {id:"extra_cat",label:"⭐ Category Insight",desc:"Peek at AI's best pick for one category",stage:1},
-  {id:"score_mult",label:"🎯 Score Multiplier",desc:"+10% to your final score",stage:2},
-  {id:"fast_pick",label:"⚡ Extra Time",desc:"+30s on every clock",stage:3},
-  {id:"elo_shield",label:"🛡️ ELO Shield",desc:"No ELO loss if you fall at the final stage",stage:4},
-];
-function rogueModifiers(perks) {
-  return { budgetMult:perks.includes("budget_boost")?1.2:1, scoreMult:perks.includes("score_mult")?1.1:1, bonusSecs:perks.includes("fast_pick")?30:0 };
-}
-function MoggerRogueRun({ onMenu, user }) {
-  const currentMonth = new Date().toISOString().slice(0,7);
-  const [phase, setPhase] = useState("intro");
-  const [stageIdx, setStageIdx] = useState(0);
-  // Rewards are temporary: {id, label, matchesLeft} — reset each month
-  const [rewards, setRewards] = useState(()=>{
-    try {
-      const stored = JSON.parse(localStorage.getItem("mogger_rogue_rewards")||"null");
-      if(!stored || stored.month !== currentMonth) return {month:currentMonth,list:[],ran:false};
-      return stored;
-    } catch(e){return {month:currentMonth,list:[],ran:false};}
-  });
-  const [bestStage, setBestStage] = useState(()=>{try{return+(localStorage.getItem("mogger_rogue_best")||"0");}catch(e){return 0;}});
-  const [results, setResults] = useState([]);
-  const [aiOpponent, setAiOpponent] = useState(null);
-  const [unlocked, setUnlocked] = useState(null);
-  const saveRewards = (r) => { setRewards(r); try{localStorage.setItem("mogger_rogue_rewards",JSON.stringify(r));}catch(e){} };
-  const canRun = !rewards.ran;
-  const perks = rewards.list.map(r=>r.id);
-  const mods = rogueModifiers(perks);
-  const ucKey = MOGGER_UCS[stageIdx%MOGGER_UCS.length];
-  const budget = Math.round(MOGGER_BUDGETS[stageIdx%MOGGER_BUDGETS.length]*mods.budgetMult);
-  const secs = 90+mods.bonusSecs;
-  const currentElo = ROGUE_STAGE_ELOS[stageIdx];
-  const startStage = ()=>{ setAiOpponent(moggerAI(ucKey,budget,currentElo)); setPhase("stage"); };
-  const finishStage = (build)=>{
-    const aiB = aiOpponent||moggerAI(ucKey,budget,currentElo);
-    const myS = moggerScore(build,ucKey,budget), aiS = moggerScore(aiB,ucKey,budget);
-    const myTotal = Math.round(myS.total*mods.scoreMult);
-    const won = myTotal>=aiS.total;
-    const newR = [...results,{stage:stageIdx+1,elo:currentElo,won,myScore:myTotal,aiScore:aiS.total}];
-    setResults(newR);
-    if(won){
-      const perk=ROGUE_PERKS.find(p=>p.stage===stageIdx&&!perks.includes(p.id));
-      let newList=rewards.list;
-      if(perk){
-        const newReward={id:perk.id,label:perk.label,desc:perk.desc,matchesLeft:3};
-        newList=[...rewards.list,newReward];
-        setUnlocked(perk);
-      }
-      const next=stageIdx+1;
-      if(next>=ROGUE_STAGE_ELOS.length){
-        const nb=Math.max(bestStage,next);setBestStage(nb);try{localStorage.setItem("mogger_rogue_best",String(nb));}catch(e){}
-        const nr={...rewards,list:newList,ran:true};saveRewards(nr);
-        if(user?.id)netSaveRogueRun(user.id,next,true,newList.map(r=>r.id));setPhase("done");
-      } else {saveRewards({...rewards,list:newList});setStageIdx(next);setPhase("stage-win");}
-    } else {
-      const nb=Math.max(bestStage,stageIdx);setBestStage(nb);try{localStorage.setItem("mogger_rogue_best",String(nb));}catch(e){}
-      saveRewards({...rewards,ran:true});
-      if(user?.id)netSaveRogueRun(user.id,stageIdx,false,perks);setPhase("done");
-    }
-  };
-  if(phase==="intro")return(
-    <div className="pm-card pm-center rf-fade">
-      <h2 className="pm-h2">⚔️ Rogue Run</h2>
-      <p className="pm-p">Beat 5 escalating AI opponents. Each win grants a temporary reward active for <b>3 ranked matches</b>. One run per month.</p>
-      {!canRun&&<div className="pm-rogue-used">✅ Run complete for {currentMonth}. Resets next month.</div>}
-      <div className="pm-rogue-stages">{ROGUE_STAGE_ELOS.map((elo,i)=>{const perk=ROGUE_PERKS[i];const hasReward=rewards.list.find(r=>r.id===perk?.id);return(<div key={i} className={"pm-rogue-stage"+(i<bestStage?" cleared":"")}><span className="pm-rogue-stage-num">Stage {i+1}</span><span className="pm-rogue-elo">{elo} ELO</span>{perk&&<span className={"pm-rogue-perk-badge"+(hasReward?" owned":"")}>{perk.label}{hasReward?` (${hasReward.matchesLeft} left)`:""}</span>}</div>);})}</div>
-      {rewards.list.length>0&&<div className="pm-rogue-active-perks"><div className="pm-rogue-perks-label">This month's rewards:</div>{rewards.list.map(r=><div key={r.id} className="pm-rogue-perk-row">{r.label} — {r.matchesLeft} ranked matches left</div>)}</div>}
-      {bestStage>0&&<div className="pm-rogue-best">🏆 Best: Stage {bestStage}</div>}
-      <div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={onMenu}><ChevronLeft size={16}/> Back</button><button className="rf-btn" onClick={()=>{setStageIdx(0);setResults([]);setUnlocked(null);startStage();}} disabled={!canRun}>{canRun?"Start Run":"Done for this month"} <ChevronRight size={16}/></button></div>
-    </div>
-  );
-  if(phase==="stage"&&aiOpponent)return(
-    <div className="pm-card rf-fade pm-rogue-stage-wrap">
-      <div className="pm-rogue-stage-header"><h2 className="pm-h2">⚔️ Stage {stageIdx+1}/{ROGUE_STAGE_ELOS.length}</h2><div className="pm-rogue-stage-meta"><span className="pm-rogue-elo-badge">{currentElo} ELO</span><span>{USE_CASES[ucKey]?.label} · ${budget} · {secs}s</span></div>{perks.length>0&&<div className="pm-rogue-perks-chips">{perks.map(pid=>{const p=ROGUE_PERKS.find(x=>x.id===pid);return p?<span key={pid} className="pm-rogue-perk-chip">{p.label}</span>:null;})}</div>}</div>
-      <MoggerBuild round={{useCase:ucKey,budget,secs}} player="You" oppLabel={"AI — "+currentElo+" ELO"} oppBuild={aiOpponent} oppIsAI={true} oppLocked={false} onDone={finishStage}/>
-    </div>
-  );
-  if(phase==="stage-win"){const last=results[results.length-1];return(
-    <div className="pm-card pm-center rf-fade">
-      <h2 className="pm-h2" style={{color:"var(--c-good)"}}>✅ Stage {last?.stage} Cleared!</h2>
-      <div className="pm-rogue-score-row"><div>You: <b>{last?.myScore}</b></div><div className="pm-rogue-vs">VS</div><div>AI: <b>{last?.aiScore}</b></div></div>
-      {unlocked&&<div className="pm-rogue-perk-unlock">🎁 Perk Unlocked: <b>{unlocked.label}</b><br/><span className="pm-rogue-perk-desc">{unlocked.desc}</span></div>}
-      <div className="pm-rogue-next-preview">Next: Stage {stageIdx+1} · {ROGUE_STAGE_ELOS[stageIdx]} ELO</div>
-      <button className="rf-btn" onClick={()=>{setUnlocked(null);startStage();}}>Next Stage <ChevronRight size={16}/></button>
-    </div>
-  );}
-  if(phase==="done"){const cleared=results.length>=ROGUE_STAGE_ELOS.length&&results.every(r=>r.won);return(
-    <div className="pm-card rf-fade pm-center">
-      <h2 className="pm-h2">{cleared?"🏆 ROGUE CLEARED!":"💀 Run Over"}</h2>
-      {cleared?<p className="pm-p">All 5 stages defeated. You are unstoppable.</p>:<p className="pm-p">You reached Stage {results.length}.</p>}
-      <div className="pm-rogue-results">{results.map((r,i)=><div key={i} className={"pm-rogue-result-row"+(r.won?" won":" lost")}><span>Stage {r.stage}</span><span className="pm-rogue-result-elo">{r.elo}</span><span>{r.won?"✓":"✗"}</span><span>You {r.myScore} · AI {r.aiScore}</span></div>)}</div>
-      <div className="pm-row pm-center-row" style={{marginTop:16}}><button className="rf-btn rf-ghost-btn" onClick={()=>{setStageIdx(0);setResults([]);setUnlocked(null);setPhase("intro");}}>View Perks</button><button className="rf-btn" onClick={onMenu}>Menu</button></div>
-    </div>
-  );}
-  return null;
-}
-
-/* ---- Feature 4: Build Archaeology ---- */
-function MoggerArchaeology({ onMenu, onReplay }) {
-  const [builds, setBuilds] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
-  useEffect(()=>{ netListCommunity(100).then(res=>{ setLoading(false); if(Array.isArray(res))setBuilds(res); else setErr("Could not load community builds."); }); },[]);
-  const byMonth = useMemo(()=>{
-    const g={};
-    for(const b of builds){
-      const d=b.created_at?new Date(b.created_at):new Date();
-      const key=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
-      const label=d.toLocaleString("default",{month:"long",year:"numeric"});
-      if(!g[key])g[key]={label,builds:[]};
-      g[key].builds.push(b);
-    }
-    return Object.entries(g).sort((a,b)=>b[0].localeCompare(a[0]));
-  },[builds]);
-  return(
-    <div className="pm-card rf-fade pm-arch-wrap">
-      <div className="pm-arch-head"><h2 className="pm-h2">🏛️ Build Archaeology</h2><button className="rf-btn rf-ghost-btn" onClick={onMenu}><ChevronLeft size={15}/> Back</button></div>
-      <p className="pm-p pm-dim">Community builds by month. Replay any as a Ghost Duel.</p>
-      {loading&&<div className="pm-loading">Loading…</div>}
-      {err&&<div className="pm-err">{err}</div>}
-      {byMonth.map(([key,group])=>(
-        <div key={key} className="pm-arch-month">
-          <div className="pm-arch-month-head">{group.label}</div>
-          {group.builds.map((b,i)=>(
-            <div key={i} className="pm-arch-build">
-              <div className="pm-arch-build-info"><span className="pm-arch-build-name">{b.title||b.name||"Unnamed Build"}</span><span className="pm-arch-build-uc">{USE_CASES[b.use_case]?.label||b.use_case}</span><span className="pm-arch-build-budget">${b.budget}</span>{(b.total||b.score)!=null&&<span className="pm-arch-build-score">{b.total||b.score}</span>}</div>
-              {(b.parts||b.build)&&<button className="pm-arch-replay" onClick={()=>onReplay({id:"arch-"+Date.now()+i,label:(b.title||b.name||"Community Build")+" — "+(new Date(b.created_at||Date.now()).toLocaleDateString()),useCase:b.use_case,budget:b.budget,secs:90,build:b.parts||b.build,score:b.total||b.score,date:b.created_at?new Date(b.created_at).toLocaleDateString():"",})}>👻 Replay</button>}
-            </div>
-          ))}
-        </div>
-      ))}
-      {!loading&&!err&&builds.length===0&&<div className="pm-arch-empty">No community builds yet. Share your best build to contribute!</div>}
-    </div>
-  );
-}
-
-/* ---- Feature 5: Collaborative Syndicate Builds ---- */
-function MoggerSyndicate({ onMenu, user }) {
-  const [phase, setPhase] = useState("setup");
-  const [code, setCode] = useState("");
-  const [players, setPlayers] = useState([]);
-  const [claims, setClaims] = useState({});
-  const [picks, setPicks] = useState({});
-  const [myCat, setMyCat] = useState(null);
-  const [ucKey, setUcKey] = useState("gaming");
-  const [budget, setBudget] = useState(1500);
-  const [chat, setChat] = useState([]);
-  const [chatInput, setChatInput] = useState("");
-  const [channel, setChannel] = useState(null);
-  const chatRef = useRef(null);
-  const myId = user?.id ? String(user.id) : netId;
-  const myName = user?.name || ("Guest_"+netId.slice(0,4));
-  useEffect(()=>{ if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight; },[chat]);
-  useEffect(()=>{ return ()=>{ if(channel)netLeave(channel); }; },[channel]);
-  const joinRoom = (c) => {
-    if(channel)netLeave(channel);
-    const ch = netSupabase.channel("mogger-synd-"+c,{config:{broadcast:{self:true},presence:{key:myId}}});
-    ch.on("broadcast",{event:"claim"},({payload})=>setClaims(prev=>({...prev,[payload.cat]:{userId:payload.userId,name:payload.name}})));
-    ch.on("broadcast",{event:"pick"},({payload})=>setPicks(prev=>({...prev,[payload.cat]:payload.part})));
-    ch.on("broadcast",{event:"chat"},({payload})=>setChat(prev=>[...prev,payload]));
-    ch.on("broadcast",{event:"cfg"},({payload})=>{setUcKey(payload.ucKey);setBudget(payload.budget);});
-    ch.on("presence",{event:"sync"},()=>{ const state=ch.presenceState(); setPlayers(Object.values(state).flat().map(p=>({id:String(p.id),name:p.name}))); });
-    ch.subscribe(async(status)=>{ if(status==="SUBSCRIBED"){await ch.track({id:myId,name:myName});setPhase("lobby");} });
-    setChannel(ch); setCode(c);
-  };
-  const createRoom=()=>joinRoom(netCode(5));
-  const isHost=players.length>0&&players[0]?.id===myId;
-  const claimCat=(cat)=>{ if(claims[cat]||!channel)return; setMyCat(cat); channel.send({type:"broadcast",event:"claim",payload:{cat,userId:myId,name:myName}}); setClaims(prev=>({...prev,[cat]:{userId:myId,name:myName}})); };
-  const sendChat=()=>{ if(!chatInput.trim()||!channel)return; channel.send({type:"broadcast",event:"chat",payload:{name:myName,text:chatInput.trim()}}); setChatInput(""); };
-  const submitPick=(part)=>{ if(!channel||!myCat)return; channel.send({type:"broadcast",event:"pick",payload:{cat:myCat,part}}); setPicks(prev=>({...prev,[myCat]:part})); };
-  const updateCfg=(u,b)=>{ setUcKey(u);setBudget(b); channel?.send({type:"broadcast",event:"cfg",payload:{ucKey:u,budget:b}}); };
-  const aiOpp=useMemo(()=>phase==="result"?moggerAI(ucKey,budget,1200):null,[phase,ucKey,budget]);
-  const syndScore=phase==="result"?moggerScore(picks,ucKey,budget):null;
-  const aiScore=phase==="result"&&aiOpp?moggerScore(aiOpp,ucKey,budget):null;
-  if(phase==="setup")return(<div className="pm-card pm-center rf-fade"><h2 className="pm-h2">🤝 Syndicate Build</h2><p className="pm-p">3–5 players each own one PC category. Build together, face the AI.</p><div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={onMenu}><ChevronLeft size={16}/> Back</button><button className="rf-btn rf-ghost-btn" onClick={()=>setPhase("join")}>Join Room</button><button className="rf-btn" onClick={createRoom}>Create Room</button></div></div>);
-  if(phase==="join")return(<div className="pm-card pm-center rf-fade"><h2 className="pm-h2">🤝 Join Syndicate</h2><input className="rf-input" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="Enter room code…" maxLength={5} style={{marginBottom:12}}/><div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={()=>setPhase("setup")}><ChevronLeft size={16}/> Back</button><button className="rf-btn" onClick={()=>joinRoom(code)} disabled={!code.trim()}>Join</button></div></div>);
-  if(phase==="lobby")return(
-    <div className="pm-card rf-fade pm-synd-lobby">
-      <h2 className="pm-h2">🤝 Syndicate — <code className="pm-synd-code">{code}</code></h2>
-      <p className="pm-p pm-dim">Share this code. Each player claims one category to build.</p>
-      <div className="pm-synd-players">{players.map(p=><span key={p.id} className={"pm-synd-player"+(p.id===myId?" me":"")}>{p.name}</span>)}</div>
-      {isHost&&<div className="pm-synd-cfg">
-        <div className="pm-field" style={{marginBottom:6}}><span className="pm-field-l">Use Case</span><div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>{["gaming","content","ai","office"].map(k=><button key={k} className={"pm-quick-btn"+(ucKey===k?" pm-seg-on":"")} onClick={()=>updateCfg(k,budget)}>{USE_CASES[k].label}</button>)}</div></div>
-        <div className="pm-field"><span className="pm-field-l">Budget: ${budget}</span><input type="range" min={800} max={3500} step={100} value={budget} onChange={e=>updateCfg(ucKey,+e.target.value)} className="pm-range"/></div>
-      </div>}
-      <div className="pm-synd-cats">{CATEGORY_ORDER.map(cat=>{const clm=claims[cat];const isMine=clm?.userId===myId;return(<button key={cat} className={"pm-synd-cat"+(isMine?" mine":clm?" taken":"")} onClick={()=>!clm&&claimCat(cat)} disabled={!!clm&&!isMine}><span>{CAT_META[cat].label}</span>{clm&&<span className="pm-synd-cat-owner">{isMine?"You":clm.name}</span>}</button>);})}</div>
-      {myCat&&<div className="pm-synd-myclaim">✅ Your category: <b>{CAT_META[myCat]?.label}</b></div>}
-      <div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={()=>{netLeave(channel);setChannel(null);setPhase("setup");}}><ChevronLeft size={16}/> Leave</button>{myCat&&<button className="rf-btn" onClick={()=>setPhase("build")}>Build My Part <ChevronRight size={16}/></button>}</div>
-    </div>
-  );
-  if(phase==="build"){const pool=myCat?moggerOptions(myCat).slice(0,12):[];return(
-    <div className="pm-card rf-fade">
-      <h2 className="pm-h2">🤝 Pick — {CAT_META[myCat]?.label}</h2>
-      <p className="pm-p pm-dim">{USE_CASES[ucKey]?.label} · ${budget}</p>
-      <div className="pm-synd-status">{CATEGORY_ORDER.map(c=><span key={c} className={"pm-synd-status-cat"+(picks[c]?" done":claims[c]?" claimed":"")}>{CAT_META[c].label.slice(0,3)}{picks[c]?" ✓":""}</span>)}</div>
-      <div className="pm-draft-pool">{pool.map((p,i)=><button key={p.id||i} className={"pm-draft-part"+(picks[myCat]===p?" selected":"")} onClick={()=>submitPick(p)}><span className="pm-draft-part-name">{p.name.split(" ").slice(0,5).join(" ")}</span><div className="pm-draft-part-meta"><span className="pm-draft-part-price">${p.price}</span>{picks[myCat]===p&&<span style={{color:"var(--c-good)"}}>✓</span>}</div></button>)}</div>
-      <div className="pm-synd-chat-wrap" ref={chatRef}>
-        <div className="pm-synd-chat">{chat.map((m,i)=><div key={i} className="pm-synd-msg"><b>{m.name}:</b> {m.text}</div>)}</div>
-        <div className="pm-synd-chat-row"><input className="rf-input pm-synd-chat-input" value={chatInput} onChange={e=>setChatInput(e.target.value)} placeholder="Team chat…" onKeyDown={e=>e.key==="Enter"&&sendChat()}/><button className="pm-synd-send" onClick={sendChat}><Send size={14}/></button></div>
-      </div>
-      <div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={()=>setPhase("lobby")}><ChevronLeft size={16}/> Back</button>{isHost&&<button className="rf-btn" onClick={()=>setPhase("result")} disabled={Object.keys(picks).length<3}>Submit vs AI ({Object.keys(picks).length}/{CATEGORY_ORDER.length})</button>}{!isHost&&<span className="pm-dim" style={{fontSize:"0.78rem"}}>Host submits when ready</span>}</div>
-    </div>
-  );}
-  if(phase==="result"&&aiOpp){const won=(syndScore?.total||0)>=(aiScore?.total||0);return(
-    <div className="pm-card rf-fade">
-      <h2 className="pm-h2" style={{textAlign:"center"}}>{won?"🏆 Syndicate Wins!":"💀 AI Wins"}</h2>
-      <div className="pm-draft-result">
-        <div className={"pm-draft-result-col"+(won?" win":"")}><div className="pm-draft-result-head">SYNDICATE — {syndScore?.total||0}</div>{CATEGORY_ORDER.filter(c=>picks[c]).map(c=><div key={c} className="pm-draft-item you">{CAT_META[c].label}: {picks[c].name}</div>)}</div>
-        <div className={"pm-draft-result-col"+(!won?" win":"")}><div className="pm-draft-result-head ai">AI — {aiScore?.total||0}</div>{CATEGORY_ORDER.filter(c=>aiOpp[c]).map(c=><div key={c} className="pm-draft-item ai">{CAT_META[c].label}: {aiOpp[c].name}</div>)}</div>
-      </div>
-      <button className="rf-btn" onClick={onMenu} style={{display:"block",margin:"16px auto 0"}}>Menu</button>
-    </div>
-  );}
-  return null;
-}
-
-/* ---- Feature 6: Adversarial Component Bans ---- */
-function BanPhaseScreen({ round, myElo, aiElo, onDone, onBack }) {
-  const [myBans, setMyBans] = useState([]);
-  const aiBans = useMemo(()=>{
-    const out=[];
-    for(const cat of CATEGORY_ORDER){
-      const top=moggerOptions(cat).sort((a,b)=>ucPerf(cat,b,round.useCase)-ucPerf(cat,a,round.useCase))[0];
-      if(top){out.push({...top,cat});}
-      if(out.length>=2)break;
-    }
-    return out;
-  },[round.useCase]);
-  const banPool = useMemo(()=>{
-    const out=[];
-    for(const cat of CATEGORY_ORDER)moggerOptions(cat).sort((a,b)=>ucPerf(cat,b,round.useCase)-ucPerf(cat,a,round.useCase)).slice(0,3).forEach(p=>out.push({...p,cat}));
-    return out;
-  },[round.useCase]);
-  const toggleBan=(part)=>{
-    const key=part.cat+":"+part.name;
-    setMyBans(prev=>{ const has=prev.find(b=>b.cat+":"+b.name===key); if(has)return prev.filter(b=>b.cat+":"+b.name!==key); if(prev.length>=2)return prev; return[...prev,part]; });
-  };
-  return(
-    <div className="pm-card rf-fade">
-      <h2 className="pm-h2">🚫 Component Bans</h2>
-      <p className="pm-p">Ban 2 of the AI's top components from its pool. The AI also bans 2 of yours.</p>
-      <div className="pm-ban-ai"><div className="pm-ban-section-head">🤖 AI bans from your pool:</div>{aiBans.map(p=><div key={p.cat+p.name} className="pm-ban-item ai"><span className="pm-ban-cat">{CAT_META[p.cat]?.label}</span><span className="pm-ban-name">{p.name.split(" ").slice(0,4).join(" ")}</span><span className="pm-ban-badge">BANNED</span></div>)}</div>
-      <div className="pm-ban-yours"><div className="pm-ban-section-head">🚫 Ban from AI pool ({myBans.length}/2):</div>
-        <div className="pm-ban-pool">{banPool.map(p=>{const key=p.cat+":"+p.name;const banned=!!myBans.find(b=>b.cat+":"+b.name===key);const disabled=!banned&&myBans.length>=2;return(<button key={key} className={"pm-ban-part"+(banned?" banned":"")+(disabled?" dimmed":"")} onClick={()=>toggleBan(p)} disabled={disabled}><span className="pm-ban-cat">{CAT_META[p.cat]?.label}</span><span className="pm-ban-name">{p.name.split(" ").slice(0,4).join(" ")}</span><span className="pm-ban-price">${p.price}</span>{banned&&<span className="pm-ban-badge">✗</span>}</button>);})}</div>
-      </div>
-      <div className="pm-row pm-center-row"><button className="rf-btn rf-ghost-btn" onClick={onBack}><ChevronLeft size={16}/> Back</button><button className="rf-btn" onClick={()=>onDone(myBans,aiBans)} disabled={myBans.length<2}>Lock Bans ({myBans.length}/2) <ChevronRight size={16}/></button></div>
-    </div>
-  );
-}
-
 function MoggerGame({ onExit, onSaveBuild }) {
   const [screen, setScreen] = useState(() => { try { const p = window.location.pathname.replace(/\/+$/, "").split("/").pop(); if (p === "admin") return "admin"; if (p === "coadmin") return "coadmin"; } catch (e) {} return "menu"; });
   const [mode, setMode] = useState("ai");
@@ -5087,19 +4339,11 @@ function MoggerGame({ onExit, onSaveBuild }) {
   const historyAppliedRef = useRef(false);
   const [showMoreModes, setShowMoreModes] = useState(false);
   const [specialRanked, setSpecialRanked] = useState({});
-  // Batch 3 state
-  const [coinBalance, setCoinBalance] = useState(null);
-  const [activeBet, setActiveBet] = useState(null);
-  const [bannedMode, setBannedMode] = useState(false);
-  const [youBannedParts, setYouBannedParts] = useState([]);
-  const [aiBannedParts, setAiBannedParts] = useState([]);
-  const [factionWinner, setFactionWinner] = useState(null);
   // Best-of-3 series (vs AI): seriesPick is the pre-match toggle, series tracks an active series
   const [seriesPick, setSeriesPick] = useState(false);
   const [series, setSeries] = useState(null); // { wins:{you,opp}, game, done, winner }
   // A7: Pre-match taunt
   const [selectedTaunt, setSelectedTaunt] = useState(null);
-  const [activeRogueReward, setActiveRogueReward] = useState(null); // reward chosen for this match, or null
   // P3: hype countdown flag — shown once when entering taunt-pick
   const [hypeCountdownDone, setHypeCountdownDone] = useState(false);
   // B2: confetti on win
@@ -5139,7 +4383,6 @@ function MoggerGame({ onExit, onSaveBuild }) {
     const ucs = MOGGER_UCS; const buds = MOGGER_BUDGETS;
     return { useCase: ucs[seed % ucs.length], budget: buds[seed % buds.length], secs: 120 + (seed % 4) * 60, isDaily: true };
   }, []);
-  const dailyGauntletInfo = useMemo(() => dailyGauntlet(), []);
   // Daily Challenge streak — consecutive days played (Wordle-style)
   const dailyStreakInfo = useMemo(() => {
     try {
@@ -5176,8 +4419,6 @@ function MoggerGame({ onExit, onSaveBuild }) {
         hardestAI:   +(localStorage.getItem("mogger_hardest_ai") || 0),
         rivals:      JSON.parse(localStorage.getItem("mogger_rivals") || "{}"),
         dailyLog:    JSON.parse(localStorage.getItem("mogger_daily_log") || "[]"),
-        ghosts:      JSON.parse(localStorage.getItem("mogger_ghosts") || "[]"),
-        rogueRewards:JSON.parse(localStorage.getItem("mogger_rogue_rewards") || "null"),
       };
       netSaveProfile(uid, profile);
     } catch(e) {}
@@ -5199,89 +4440,28 @@ function MoggerGame({ onExit, onSaveBuild }) {
         if (profile.hardestAI) localStorage.setItem("mogger_hardest_ai", profile.hardestAI);
         if (profile.rivals) localStorage.setItem("mogger_rivals", JSON.stringify(profile.rivals));
         if (profile.dailyLog?.length) localStorage.setItem("mogger_daily_log", JSON.stringify(profile.dailyLog));
-        if (profile.ghosts?.length) {
-          const local = JSON.parse(localStorage.getItem("mogger_ghosts") || "[]");
-          if (profile.ghosts.length >= local.length) localStorage.setItem("mogger_ghosts", JSON.stringify(profile.ghosts));
-        }
-        if (profile.rogueRewards) localStorage.setItem("mogger_rogue_rewards", JSON.stringify(profile.rogueRewards));
       } catch(e) {}
     });
   }, [user?.id]);
-  useEffect(() => {
-    if (!user?.id) return;
-    netFetchBalance(user.id).then(b => { if (b != null) setCoinBalance(b); });
-    // Check if last week's faction war has a winner to display as banner
-    try {
-      const { weekKey } = currentFactionWar();
-      netSupabase.rpc("apply_faction_week_reward", { p_week_key: weekKey }).then(({ data }) => {
-        if (data && data[0]?.winner) {
-          const { war } = currentFactionWar();
-          const w = data[0].winner;
-          setFactionWinner({ faction: w, label: war ? (w === "a" ? war.teamA : war.teamB) : w });
-        }
-      });
-    } catch(e) {}
-  }, [user?.id]);
-
-  // Meta Shift Alerts — diff the catalog's top picks against last session's snapshot once on load
-  const [metaShifts, setMetaShifts] = useState([]);
-  useEffect(() => {
-    try {
-      const current = catalogTopPicks();
-      const prevRaw = localStorage.getItem("mogger_meta_snapshot");
-      if (prevRaw) {
-        const prev = JSON.parse(prevRaw);
-        const shifts = [];
-        for (const c of CATEGORY_ORDER) {
-          const p = prev[c], n = current[c];
-          if (!p || !n) continue;
-          if (p.bestPerfId !== n.bestPerfId) shifts.push({ cat: c, type: "performance", from: p.bestPerfName, to: n.bestPerfName });
-          if (p.bestValueId !== n.bestValueId) shifts.push({ cat: c, type: "value", from: p.bestValueName, to: n.bestValueName });
-        }
-        if (shifts.length) setMetaShifts(shifts);
-      }
-      localStorage.setItem("mogger_meta_snapshot", JSON.stringify(current));
-    } catch (e) {}
-  }, []);
-
   const chooseDiff = (d) => {
     if (d.k === "custom") { setAiElo(custom); setAiHidden(false); }
     else if (d.k === "random") { setAiElo(100 + Math.floor(Math.random() * 2900)); setAiHidden(true); }
     else { setAiElo(d.elo); setAiHidden(false); }
-    setHypeCountdownDone(false); setScreen(bannedMode ? "ban-phase" : "taunt-pick");
+    setHypeCountdownDone(false); setScreen("taunt-pick");
   };
   const start = (r) => {
     setRound(r); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null);
     if (mode === "ai") {
-      let aiB = moggerAI(r.useCase, r.budget, aiElo);
-      if (bannedMode && aiBannedParts.length > 0) {
-        for (const ban of aiBannedParts) {
-          if (aiB[ban.cat]?.name === ban.name) {
-            const fallback = moggerOptions(ban.cat).find(p => p.name !== ban.name);
-            if (fallback) aiB = { ...aiB, [ban.cat]: fallback };
-          }
-        }
-      }
+      const aiB = moggerAI(r.useCase, r.budget, aiElo);
       setOpp(aiB);
     }
     if (seriesPick && mode === "ai") { setSeries({ wins: { you: 0, opp: 0 }, game: 1, done: false, winner: null }); setSeriesPick(false); }
     else setSeries(null);
     setScreen("intro");
   };
-  const finishP1 = (b) => { setYou(b); if (mode === "ai" || mode === "ghost") setScreen("result"); else if (mode === "gauntlet") setScreen("gauntlet-result"); else setScreen("handoff"); };
+  const finishP1 = (b) => { setYou(b); if (mode === "ai") setScreen("result"); else setScreen("handoff"); };
   const finishP2 = (b) => { setOpp(b); setScreen("result"); };
-  const again = () => { setYou(null); setOpp(null); setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; setSeries(null); setScreen(mode === "ai" ? "diff" : mode === "ghost" ? "ghosts" : "lobby"); };
-  // Ghost Duel Replay — challenge a recorded build; the opponent column replays its real
-  // parts move-by-move instead of generating a fresh AI build.
-  const [activeGhost, setActiveGhost] = useState(null);
-  const challengeGhost = (ghost) => {
-    setMode("ghost"); setActiveGhost(ghost);
-    setRound({ useCase: ghost.useCase, budget: ghost.budget, secs: ghost.secs || 90 });
-    setYou(null); setOpp(ghost.build);
-    setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; historyAppliedRef.current = false; setSeries(null);
-    setScreen("intro");
-  };
-  const rematchGhost = () => { if (activeGhost) challengeGhost(activeGhost); };
+  const again = () => { setYou(null); setOpp(null); setEloMsg(null); setMirrored(false); eloAppliedRef.current = false; setSeries(null); setScreen(mode === "ai" ? "diff" : "lobby"); };
   // Rematch — exact same use case / budget / opponent elo, skip difficulty re-pick
   const rematch = () => {
     setYou(null); setOpp(null); setEloMsg(null); setMirrored(false);
@@ -5297,7 +4477,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
     if (mode === "ai") setOpp(moggerAI(round.useCase, round.budget, aiElo));
     setScreen("intro");
   };
-  const menu = () => { setYou(null); setOpp(null); setRound(null); setEloMsg(null); setMirrored(false); setSeries(null); setSeriesPick(false); setActiveGhost(null); setActiveBet(null); setBannedMode(false); setYouBannedParts([]); setAiBannedParts([]); setScreen("menu"); };
+  const menu = () => { setYou(null); setOpp(null); setRound(null); setEloMsg(null); setMirrored(false); setSeries(null); setSeriesPick(false); setActiveBet(null); setScreen("menu"); };
   // Avenge the Rival — fresh challenge, opponent re-rolled within the same rival elo tier
   const avengeRival = (tierName) => {
     const newAiElo = eloTierRandom(tierName);
@@ -5313,9 +4493,9 @@ function MoggerGame({ onExit, onSaveBuild }) {
     onExit();
   };
 
-  // save duel history + update streak after any result (ghost duels are practice replays — skip)
+  // save duel history + update streak after any result
   useEffect(() => {
-    if (screen !== "result" || !you || !opp || historyAppliedRef.current || mode === "ghost") return;
+    if (screen !== "result" || !you || !opp || historyAppliedRef.current) return;
     historyAppliedRef.current = true;
     const sy = moggerScore(you, round.useCase, round.budget).total;
     const so = moggerScore(opp, round.useCase, round.budget).total;
@@ -5330,15 +4510,6 @@ function MoggerGame({ onExit, onSaveBuild }) {
       if (hist.length > 10) hist.splice(0, hist.length - 10);
       localStorage.setItem("mogger_history", JSON.stringify(hist));
     } catch(e) {}
-    // Ghost Duel Replay: bank both builds from this match so they can be challenged later
-    try {
-      const ghosts = JSON.parse(localStorage.getItem("mogger_ghosts") || "[]");
-      const dateStr = new Date().toLocaleDateString();
-      ghosts.push({ id: "g" + Date.now() + "y", date: dateStr, useCase: round.useCase, budget: round.budget, secs: round.secs, build: entry.you, score: sy, label: "You — " + dateStr });
-      ghosts.push({ id: "g" + Date.now() + "o", date: dateStr, useCase: round.useCase, budget: round.budget, secs: round.secs, build: entry.opp, score: so, label: oName + " — " + dateStr });
-      if (ghosts.length > 30) ghosts.splice(0, ghosts.length - 30);
-      localStorage.setItem("mogger_ghosts", JSON.stringify(ghosts));
-    } catch (e) {}
     // Rival tracker
     if (mode === "ai") {
       try {
@@ -5400,22 +4571,6 @@ function MoggerGame({ onExit, onSaveBuild }) {
     persist({ ...user, elo: newElo });
     netSaveElo(user.id, newElo);
     setEloMsg({ delta, newElo, streak: newStreak, streakMult });
-    // Faction Wars: a ranked win earns points for your picked faction this week
-    // (+5 bonus if your build's relevant hardware actually matches your pick).
-    try {
-      if (sy > so) {
-        const { war, weekKey } = currentFactionWar();
-        const pick = JSON.parse(localStorage.getItem("mogger_faction_pick") || "null");
-        if (pick && pick.weekKey === weekKey && pick.warId === war.id) {
-          const pts = 10 + (buildFactionMatch(you, war.id, round.budget) === pick.faction ? 5 : 0);
-          const localKey = "mogger_faction_local_" + weekKey + "_" + war.id;
-          const local = JSON.parse(localStorage.getItem(localKey) || '{"a":0,"b":0}');
-          local[pick.faction] = (local[pick.faction] || 0) + pts;
-          localStorage.setItem(localKey, JSON.stringify(local));
-          netRecordFactionPoints(user.id, weekKey, war.id, pick.faction, pts);
-        }
-      }
-    } catch (e) {}
     // Track daily elo changes
     try {
       const today = new Date().toISOString().slice(0, 10);
@@ -5424,30 +4579,6 @@ function MoggerGame({ onExit, onSaveBuild }) {
       if (log.length > 200) log.splice(0, log.length - 200);
       localStorage.setItem("mogger_elo_log", JSON.stringify(log));
     } catch(e) {}
-    // Decrement only the reward the player chose to use this match
-    if (activeRogueReward) {
-      try {
-        const storedR = JSON.parse(localStorage.getItem("mogger_rogue_rewards")||"null");
-        if (storedR?.list?.length > 0) {
-          const updated = storedR.list.map(r =>
-            r.id === activeRogueReward.id ? {...r, matchesLeft: r.matchesLeft - 1} : r
-          ).filter(r => r.matchesLeft > 0);
-          localStorage.setItem("mogger_rogue_rewards", JSON.stringify({...storedR, list: updated}));
-        }
-      } catch(e) {}
-      setActiveRogueReward(null);
-    }
-    // Settle bet if one is active
-    if (activeBet && user?.id) {
-      const won = sy >= so ? activeBet.side === "you" : activeBet.side === "ai";
-      netSettleBet(activeBet.id, won).then(payout => {
-        if (payout != null) {
-          setCoinBalance(prev => (prev||0) + (won ? Math.round(activeBet.stake * activeBet.odds) : 0));
-          netFetchBalance(user.id).then(b => { if (b != null) setCoinBalance(b); });
-        }
-      });
-      setActiveBet(null);
-    }
     syncProfile(user?.id);
   }, [screen]);
 
@@ -5460,12 +4591,8 @@ function MoggerGame({ onExit, onSaveBuild }) {
           {/* Header */}
           <div className="pm-menu-header">
             <div className="pm-mtitle">PC <span className="rf-accent">DUELS</span></div>
-            <div className="pm-account">{user ? <><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo} elo</span>{todayEloChange !== 0 && <span className={"pm-daily-elo-inline " + (todayEloChange > 0 ? "up" : "down")}>{todayEloChange > 0 ? "+" : ""}{todayEloChange} this session</span>}{coinBalance != null && <span className="pm-coin-balance">🪙 {coinBalance}</span>}<button className="pm-acct-btn" onClick={() => persist(null)}>{user.name} ✕</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in</button>}</div>
+            <div className="pm-account">{user ? <><RankBadges elo={user.elo} custom={user.crank} /><span className="pm-acct-elo">{user.elo} elo</span>{todayEloChange !== 0 && <span className={"pm-daily-elo-inline " + (todayEloChange > 0 ? "up" : "down")}>{todayEloChange > 0 ? "+" : ""}{todayEloChange} this session</span>}<button className="pm-acct-btn" onClick={() => persist(null)}>{user.name} ✕</button></> : <button className="pm-acct-btn" onClick={() => setShowAuth(true)}>Log in</button>}</div>
           </div>
-
-          {/* Alerts */}
-          {metaShifts.length > 0 && <div className="pm-meta-banner"><div className="pm-meta-banner-head"><span>📊 Meta Shift</span><button className="pm-meta-dismiss" onClick={() => setMetaShifts([])}><X size={13} /></button></div>{metaShifts.slice(0,2).map((s,i) => <div key={i} className="pm-meta-shift-row"><b>{CAT_META[s.cat].label}</b> {s.type==="value"?"best value":"top pick"} → <b className="pm-meta-new">{s.to}</b></div>)}</div>}
-          {factionWinner && <div className="pm-faction-winner-banner">🏆 Faction winner: <b>{factionWinner.label||factionWinner.faction}</b></div>}
 
           {/* Stats bar */}
           {histStats.total > 0 && (
@@ -5508,11 +4635,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
           {/* Browse */}
           <div className="pm-quick-row pm-browse-row">
             <button className="pm-quick-btn" onClick={() => setScreen("history")}>📜 History</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("factions")}>⚔️ Factions</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("ghosts")}>👻 Ghosts</button>
-            <button className="pm-quick-btn" onClick={() => setScreen("archaeology")}>🏛️ Arch</button>
             <button className="pm-quick-btn" onClick={() => setScreen("achievements")}>🏅 Badges</button>
-            {user && coinBalance != null && <button className="pm-quick-btn pm-coin-wallet-btn" onClick={() => setScreen("wallet")}>🪙 Wallet</button>}
             <button className="pm-quick-btn" onClick={() => setFeedbackOpen(true)}>📩</button>
           </div>
 
@@ -5555,8 +4678,6 @@ function MoggerGame({ onExit, onSaveBuild }) {
             <button className="pm-mode" onClick={() => { const d = DIFFS[Math.floor(Math.random() * (DIFFS.length - 1))]; chooseDiff(d); }}><span className="pm-mode-icon">🎲</span><span className="pm-mode-name">Surprise Me</span><span className="pm-mode-sub">Random difficulty, let fate decide</span></button>
           </div>
           <div className="pm-field"><span className="pm-field-l">Custom elo: {custom}{user && <span className="pm-diff-winpct-inline"> · {Math.round(100 / (1 + Math.pow(10, (custom - user.elo) / 400)))}% win chance</span>}</span><input type="range" min="100" max="3000" step="50" value={custom} onChange={(e) => setCustom(+e.target.value)} className="pm-range" /></div>
-          <label className="pm-toggle pm-ban-toggle"><input type="checkbox" checked={bannedMode} onChange={(e) => setBannedMode(e.target.checked)} /><span>🚫 Adversarial Bans — ban 2 AI components before the duel</span></label>
-          {user && coinBalance != null && <BettingPanel myElo={user.elo} oppElo={aiElo} balance={coinBalance} activeBet={activeBet} onBet={async(bet) => { if (!user?.id) return; const row = await netPlaceBet(user.id, bet.side, bet.stake, bet.odds); if (row) { setActiveBet({...bet, id: row.id}); setCoinBalance(prev => (prev||0) - bet.stake); } }} />}
           <button className="rf-btn rf-ghost-btn" onClick={menu}><ChevronLeft size={16} /> Back</button>
         </div>
       )}
@@ -5565,13 +4686,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
           { id: "speed",     icon: "⚡", name: "Speed Duel",          desc: "60 seconds to build — fastest fingers win",            ranked: "both"     },
           { id: "daily",     icon: "📅", name: "Daily Challenge",      desc: "Same puzzle for every player today",                   ranked: "ranked"   },
           { id: "bo3",       icon: "🏆", name: "Best-of-3 Series",    desc: "Same AI, same budget — first to 2 wins",               ranked: "both"     },
-          { id: "gauntlet",  icon: "🎯", name: "Constraint Gauntlet", desc: "Build under random restrictions per category",         ranked: "both"     },
-          { id: "draft",     icon: "🃏", name: "Draft Mode",           desc: "Alternate picks with the AI — block their best parts", ranked: "both"     },
-          { id: "banphase",  icon: "🚫", name: "Ban Phase Duel",       desc: "Ban 2 opponent parts before the build starts",         ranked: "both"     },
-          { id: "rogue",     icon: "⚔️", name: "Rogue Run",            desc: "Monthly gauntlet — earn temporary ranked boosts",      ranked: "unranked" },
-          { id: "ghost",     icon: "👻", name: "Ghost Duel",           desc: "Challenge a recorded build from your history",         ranked: "unranked" },
           { id: "pp",        icon: "🎮", name: "Pass & Play",          desc: "Two players, one screen — local showdown",             ranked: "unranked" },
-          { id: "syndicate", icon: "🤝", name: "Syndicate",            desc: "Collaborative community build challenge",              ranked: "unranked" },
         ];
         const launch = (id) => {
           const isPrac = !(specialRanked[id] ?? true);
@@ -5579,13 +4694,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
           if (id === "speed")     { setMode("ai"); start({ useCase: mRand(MOGGER_UCS), budget: mRand(MOGGER_BUDGETS), secs: 60 }); }
           else if (id === "daily"){ setMode("ai"); setPractice(false); start(dailyChallenge); }
           else if (id === "bo3")  { setMode("ai"); setSeriesPick(true); setScreen("diff"); }
-          else if (id === "gauntlet") { setMode("gauntlet"); start(dailyGauntletInfo); }
-          else if (id === "draft")    { setScreen("draft"); }
-          else if (id === "banphase") { setMode("ai"); setBannedMode(true); setScreen("diff"); }
-          else if (id === "rogue")    { setScreen("rogue"); }
-          else if (id === "ghost")    { setScreen("ghosts"); }
           else if (id === "pp")       { setMode("local"); setScreen("lobby"); }
-          else if (id === "syndicate"){ setScreen("syndicate"); }
         };
         return (
           <div className="pm-card rf-fade pm-special-modes-screen">
@@ -5621,72 +4730,17 @@ function MoggerGame({ onExit, onSaveBuild }) {
           </div>
         );
       })()}
-      {screen === "wallet" && (
-        <div className="pm-card pm-center rf-fade">
-          <h2 className="pm-h2">🪙 Wallet</h2>
-          {user && coinBalance != null ? (
-            <>
-              <p className="pm-p">Balance: <b className="pm-coin-big">{coinBalance} coins</b></p>
-              {coinBalance >= 5 ? (
-                <CoinEloConverter balance={coinBalance} userElo={user.elo} onConvert={async(coins) => {
-                  const gain = Math.floor(coins/5);
-                  const newElo = user.elo + gain;
-                  const newBal = coinBalance - coins;
-                  persist({...user, elo: newElo});
-                  setCoinBalance(newBal);
-                  await netSaveElo(user.id, newElo);
-                  await netSupabase.from("mogger_currency").update({balance: newBal}).eq("user_id", user.id);
-                }} />
-              ) : (
-                <p className="pm-dim pm-p">Need at least 5 coins to convert. Win ranked AI matches to earn coins.</p>
-              )}
-            </>
-          ) : (
-            <p className="pm-dim pm-p">{user ? "Loading wallet…" : "Log in to access your wallet."}</p>
-          )}
-          <button className="rf-btn rf-ghost-btn" onClick={menu}><ChevronLeft size={16}/> Back</button>
-        </div>
-      )}
       {screen === "admin" && <MoggerAdmin onBack={exitToRoot} user={user} />}
       {screen === "coadmin" && <MoggerCoAdmin onBack={exitToRoot} />}
       {screen === "leaderboard" && <MoggerLeaderboard onBack={menu} meName={user ? user.name : null} />}
       {screen === "history" && <MoggerHistory onBack={menu} />}
       {screen === "achievements" && <MoggerAchievements onBack={menu} />}
-      {screen === "ghosts" && <MoggerGhosts onBack={menu} onChallenge={challengeGhost} />}
-      {screen === "factions" && <MoggerFactions onBack={menu} user={user} onUserUpdate={persist} />}
-      {/* A7: Taunt picker + rogue reward selector */}
+      {/* A7: Taunt picker */}
       {screen === "taunt-pick" && (() => {
-        const storedR = (() => { try { return JSON.parse(localStorage.getItem("mogger_rogue_rewards")||"null"); } catch(e){return null;} })();
-        const availableRewards = storedR?.list?.filter(r => r.matchesLeft > 0) || [];
         return (
           <div className="pm-card pm-center rf-fade">
             {/* P3: Hype countdown before taunt-pick content */}
             {!hypeCountdownDone && <HypeCountdown onDone={() => setHypeCountdownDone(true)} />}
-            {availableRewards.length > 0 && (
-              <div className="pm-rogue-reward-picker">
-                <div className="pm-rrp-head">⚔️ Rogue Reward — activate for this match?</div>
-                <div className="pm-rrp-list">
-                  <button
-                    className={"pm-rrp-btn pm-rrp-none" + (activeRogueReward === null ? " on" : "")}
-                    onClick={() => setActiveRogueReward(null)}
-                  >
-                    None
-                  </button>
-                  {availableRewards.map(r => (
-                    <button
-                      key={r.id}
-                      className={"pm-rrp-btn" + (activeRogueReward?.id === r.id ? " on" : "")}
-                      onClick={() => setActiveRogueReward(activeRogueReward?.id === r.id ? null : r)}
-                    >
-                      <span className="pm-rrp-label">{r.label}</span>
-                      <span className="pm-rrp-desc">{r.desc}</span>
-                      <span className="pm-rrp-left">{r.matchesLeft} match{r.matchesLeft !== 1 ? "es" : ""} left</span>
-                    </button>
-                  ))}
-                </div>
-                {activeRogueReward && <div className="pm-rrp-active-note">✅ <b>{activeRogueReward.label}</b> will be used this match</div>}
-              </div>
-            )}
             <h2 className="pm-h2">🗣️ Pick your pre-match taunt</h2>
             <p className="pm-p pm-dim">Choose a line to send to your opponent (or skip)</p>
             <div className="pm-taunt-grid">
@@ -5712,22 +4766,16 @@ function MoggerGame({ onExit, onSaveBuild }) {
       ))}
       {screen === "lobby" && <MoggerLobby mode={mode} onStart={start} onBack={menu} />}
       {screen === "intro" && round && <MoggerIntro round={round} player={mode === "local" ? "Player 1" : null} onGo={() => setScreen("p1")} />}
-      {screen === "p1" && round && <MoggerBuild round={round} player={mode === "local" ? "Player 1" : "You"} oppLabel={mode === "ai" ? "AI Opponent" : mode === "ghost" ? ("👻 " + (activeGhost ? activeGhost.label : "Ghost")) : "Player 2"} oppBuild={(mode === "ai" || mode === "ghost") ? opp : null} oppIsAI={mode === "ai"} ghostMode={mode === "ghost"} solo={mode === "gauntlet"} constraint={mode === "gauntlet" ? round.constraint : undefined} oppLocked={false} myElo={mode === "ai" && user ? user.elo : null} oppElo={mode === "ai" ? aiElo : null} bannedParts={mode === "ai" && bannedMode ? youBannedParts : null} onDone={finishP1} />}
-      {screen === "gauntlet-result" && round && you && <MoggerGauntletResult round={round} build={you} user={user} onMenu={menu} onPlayAgain={() => { setYou(null); setScreen("intro"); }} />}
+      {screen === "p1" && round && <MoggerBuild round={round} player={mode === "local" ? "Player 1" : "You"} oppLabel={mode === "ai" ? "AI Opponent" : "Player 2"} oppBuild={mode === "ai" ? opp : null} oppIsAI={mode === "ai"} oppLocked={false} myElo={mode === "ai" && user ? user.elo : null} oppElo={mode === "ai" ? aiElo : null} onDone={finishP1} />}
       {screen === "handoff" && <div className="pm-card pm-center rf-fade"><h2 className="pm-h2"><Repeat2 size={20} /> Pass the device</h2><p className="pm-p">Player 1 is locked in. Hand the device to <b>Player 2</b> — same challenge, same clock. No peeking.</p><button className="rf-btn" onClick={() => setScreen("intro2")}>I am Player 2 — start <ChevronRight size={16} /></button></div>}
       {screen === "intro2" && round && <MoggerIntro round={round} player="Player 2" onGo={() => setScreen("p2")} />}
       {screen === "p2" && round && <MoggerBuild round={round} player="Player 2" oppLabel="Player 1" oppBuild={you} oppIsAI={false} oppLocked={true} onDone={finishP2} />}
       {screen === "result" && round && you && opp && (() => {
-        const aiName = mode === "ai" ? aiPersona(aiElo).name : mode === "ghost" ? (activeGhost ? activeGhost.label : "Ghost") : "Player 2";
+        const aiName = mode === "ai" ? aiPersona(aiElo).name : "Player 2";
         const resultYouLabel = mirrored ? aiName : "You";
         const resultOppName  = mirrored ? "You" : aiName;
-        return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} practice={practice || mode === "ghost"} series={series} onAgain={again} onRematch={mode === "ai" ? rematch : mode === "ghost" ? rematchGhost : undefined} onNextGame={mode === "ai" ? nextSeriesGame : undefined} onAvenge={mode === "ai" ? avengeRival : undefined} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
+        return <MoggerResult round={round} you={you} opp={opp} youLabel={resultYouLabel} oppName={resultOppName} oppElo={mode === "ai" ? aiElo : null} oppTag={mode === "ai" ? aiPersona(aiElo).tag : null} oppPersona={mode === "ai" && !mirrored ? aiPersona(aiElo) : null} myElo={mode === "ai" && user ? user.elo : null} myCrank={user ? user.crank : null} eloMsg={eloMsg} practice={practice} series={series} onAgain={again} onRematch={mode === "ai" ? rematch : undefined} onNextGame={mode === "ai" ? nextSeriesGame : undefined} onAvenge={mode === "ai" ? avengeRival : undefined} onMenu={menu} onHistory={() => setScreen("history")} onSaveBuild={onSaveBuild} onMirror={() => { const tmp = you; setYou(opp); setOpp(tmp); setMirrored((m) => !m); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null); }} />;
       })()}
-      {screen === "ban-phase" && round && <BanPhaseScreen round={round} myElo={user?.elo||1000} aiElo={aiElo} onBack={() => setScreen("diff")} onDone={(myBans, aiBans) => { setYouBannedParts(myBans); setAiBannedParts(aiBans); setHypeCountdownDone(false); setScreen("taunt-pick"); }} />}
-      {screen === "draft" && <MoggerDraft onMenu={menu} />}
-      {screen === "rogue" && <MoggerRogueRun onMenu={menu} user={user} />}
-      {screen === "archaeology" && <MoggerArchaeology onMenu={menu} onReplay={challengeGhost} />}
-      {screen === "syndicate" && <MoggerSyndicate onMenu={menu} user={user} />}
     </div>
   );
 }
@@ -6375,54 +5423,7 @@ function CompareBuilds({ saved, onBack }) {
   );
 }
 
-/* ----------------------------- LAUNCH CALENDAR ----------------------------- */
-const LAUNCHES = [
-  { date: "2026-07", cat: "GPU",  name: "NVIDIA RTX 5090 Ti",         status: "rumored",   note: "Flagship Ada refresh" },
-  { date: "2026-Q3", cat: "GPU",  name: "AMD RX 9080 XT",             status: "rumored",   note: "RDNA 4 high-end" },
-  { date: "2026-08", cat: "CPU",  name: "AMD Ryzen 9000X3D series",   status: "confirmed", note: "3D V-Cache on Zen 5" },
-  { date: "2026-Q3", cat: "CPU",  name: "Intel Arrow Lake Refresh",   status: "rumored",   note: "Core Ultra 300 lineup" },
-  { date: "2026-09", cat: "GPU",  name: "NVIDIA RTX 5070 Super",      status: "rumored",   note: "Mid-range Blackwell" },
-  { date: "2026-Q4", cat: "GPU",  name: "AMD RX 9060 XT",            status: "rumored",   note: "Budget RDNA 4" },
-  { date: "2026-Q4", cat: "CPU",  name: "AMD Ryzen Threadripper 7000",status: "confirmed", note: "HEDT / workstation" },
-  { date: "2027-Q1", cat: "GPU",  name: "NVIDIA RTX 6000 series",    status: "rumored",   note: "Next-gen Rubin arch" },
-  { date: "2027-Q1", cat: "CPU",  name: "AMD Zen 6 (Medusa)",        status: "rumored",   note: "Next-gen consumer CPU" },
-  { date: "2027-Q2", cat: "CPU",  name: "Intel Nova Lake",            status: "rumored",   note: "Post-Arrow Lake desktop" },
-];
-
-function LaunchCalendar() {
-  const [filter, setFilter] = useState("All");
-  const shown = filter === "All" ? LAUNCHES : LAUNCHES.filter(l => l.cat === filter);
-  const statusColor = s => s === "confirmed" ? "var(--c-good)" : s === "rumored" ? "var(--c-warn)" : "var(--c-muted)";
-  return (
-    <div className="rf-fade rf-community">
-      <div className="rf-section-head" style={{marginBottom:"1rem"}}>
-        <div>
-          <h2 style={{margin:0}}>🗓 Upcoming Launches</h2>
-          <p className="rf-muted" style={{marginTop:"0.3rem",fontSize:"0.85rem"}}>Rumored and confirmed GPU / CPU release dates</p>
-        </div>
-      </div>
-      <div className="rf-community-filters" style={{marginBottom:"1rem"}}>
-        {["All","GPU","CPU"].map(f => <button key={f} className={"rf-pill"+(filter===f?" active":"")} onClick={()=>setFilter(f)}>{f}</button>)}
-      </div>
-      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-        {shown.map((l,i) => (
-          <div key={i} className="rf-pe-card" style={{flexDirection:"row",alignItems:"center",gap:"14px"}}>
-            <div style={{fontFamily:"'JetBrains Mono'",fontSize:"0.78rem",color:"var(--c-muted)",minWidth:"70px"}}>{l.date}</div>
-            <span className="rf-pill" style={{fontSize:"0.72rem",padding:"2px 8px",borderColor: l.cat==="GPU"?"var(--c-accent2)":"var(--c-accent)",color: l.cat==="GPU"?"var(--c-accent2)":"var(--c-accent)"}}>{l.cat}</span>
-            <div style={{flex:1}}>
-              <div style={{fontWeight:600,fontSize:"0.88rem"}}>{l.name}</div>
-              <div className="rf-muted" style={{fontSize:"0.76rem"}}>{l.note}</div>
-            </div>
-            <span style={{fontSize:"0.76rem",color:statusColor(l.status),textTransform:"capitalize"}}>{l.status}</span>
-          </div>
-        ))}
-      </div>
-      <p className="rf-muted" style={{fontSize:"0.75rem",marginTop:"1.5rem"}}>Dates are estimates based on public leaks and announcements. Subject to change.</p>
-    </div>
-  );
-}
-
-/* ----------------------------- TOOLS VIEW (Batches 3 & 4) ----------------------------- */
+/* ----------------------------- TOOLS VIEW ----------------------------- */
 const SALE_DATES = [
   { name: "Amazon Prime Day", date: "Mid-July 2026", tip: "Best time for RAM and SSDs." },
   { name: "Back to School", date: "Aug 2026", tip: "Monitors and budget CPUs often drop." },

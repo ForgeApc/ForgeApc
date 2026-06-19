@@ -240,59 +240,6 @@ export async function deleteFeedback(id) {
   } catch (e) { return { ok: false, error: "Could not delete." }; }
 }
 
-// ---- Faction Wars (weekly) ----
-// Tables: mogger_faction_points (ledger), mogger_faction_picks (who picked what),
-// mogger_faction_week_results (reward audit). View: mogger_faction_totals.
-// RPC: apply_faction_week_reward — settles last week's winner; each member's ELO bonus =
-// contribution% capped at 5%×(contributors/10). See migration 20260616030000_*.sql.
-export async function recordFactionPoints(userId, weekKey, warId, faction, points) {
-  try { await supabase.from("mogger_faction_points").insert({ user_id: userId || null, week_key: weekKey, war_id: warId, faction, points }); }
-  catch (e) { /* ignore */ }
-}
-export async function fetchFactionTotals(weekKey, warId) {
-  try {
-    const { data, error } = await supabase.from("mogger_faction_totals").select("faction,total").eq("week_key", weekKey).eq("war_id", warId);
-    if (error || !data) return null;
-    const out = { a: 0, b: 0 };
-    for (const row of data) if (row.faction === "a" || row.faction === "b") out[row.faction] = row.total;
-    return out;
-  } catch (e) { return null; }
-}
-export async function setFactionPick(userId, weekKey, warId, faction) {
-  try { await supabase.from("mogger_faction_picks").upsert({ user_id: userId, week_key: weekKey, war_id: warId, faction, updated_at: new Date().toISOString() }); }
-  catch (e) { /* ignore */ }
-}
-// Opportunistically settles a past week — safe to call from any client at any time, any
-// number of times; the DB function itself guards against double-paying.
-export async function applyFactionWeekReward(weekKey) {
-  try { const { data, error } = await supabase.rpc("apply_faction_week_reward", { p_week_key: weekKey }); if (error) return null; return (data && data[0]) || null; }
-  catch (e) { return null; }
-}
-
-// ---- Spectator Betting Market (tables: mogger_currency, mogger_bets; RPC: settle_bet) ----
-export async function fetchBalance(userId) {
-  try {
-    const { data } = await supabase.from("mogger_currency").select("balance").eq("user_id", userId).single();
-    if (data) return data.balance;
-    await supabase.from("mogger_currency").insert({ user_id: userId, balance: 100 });
-    return 100;
-  } catch (e) { return null; }
-}
-export async function placeBet(userId, side, stake, odds) {
-  try {
-    const bal = await fetchBalance(userId);
-    if (bal < stake) return { ok: false, error: "Not enough coins." };
-    await supabase.from("mogger_currency").update({ balance: bal - stake }).eq("user_id", userId);
-    const { data, error } = await supabase.from("mogger_bets").insert({ user_id: userId, side, stake, odds }).select().single();
-    if (error) return null;
-    return { id: data.id, stake, odds, side, newBalance: bal - stake };
-  } catch (e) { return { ok: false, error: "Could not place bet." }; }
-}
-export async function settleBet(betId, won) {
-  try { const { data, error } = await supabase.rpc("settle_bet", { p_bet_id: betId, p_won: won }); if (error) return null; return data; }
-  catch (e) { return null; }
-}
-
 // ---- User profile blob (column: mogger_users.profile) ----
 export async function fetchProfile(userId) {
   try {
@@ -304,40 +251,3 @@ export async function saveProfile(userId, profile) {
   try { await supabase.from("mogger_users").update({ profile }).eq("id", userId); } catch(e) {}
 }
 
-// ---- Rogue Run (tables: mogger_rogue_runs, mogger_rogue_perks) ----
-export async function fetchRoguePerks(userId) {
-  try {
-    const { data } = await supabase.from("mogger_rogue_perks").select("perks,best_stage").eq("user_id", userId).single();
-    return data || { perks: [], best_stage: 0 };
-  } catch (e) { return { perks: [], best_stage: 0 }; }
-}
-export async function saveRogueRun(userId, stageReached, cleared, perksUnlocked) {
-  try {
-    await supabase.from("mogger_rogue_runs").insert({ user_id: userId, stage_reached: stageReached, cleared, perks_unlocked: perksUnlocked });
-    const cur = await fetchRoguePerks(userId);
-    const merged = [...new Set([...(cur.perks || []), ...(perksUnlocked || [])])];
-    const best = Math.max(cur.best_stage || 0, stageReached);
-    await supabase.from("mogger_rogue_perks").upsert({ user_id: userId, perks: merged, best_stage: best });
-    return { perks: merged, best_stage: best };
-  } catch (e) { return null; }
-}
-
-// ---- Constraint Gauntlet (table: mogger_gauntlet_scores) ----
-// Same migration as Faction Wars above provisions this table.
-export async function recordGauntletScore(userId, userName, dayKey, constraintId, useCase, budget, score) {
-  try {
-    const { error } = await supabase.from("mogger_gauntlet_scores").insert({
-      user_id: userId || null, user_name: userName || "Anonymous", day_key: dayKey,
-      constraint_id: constraintId, use_case: useCase, budget, score,
-    });
-    if (error) return { ok: false, error: error.message };
-    return { ok: true };
-  } catch (e) { return { ok: false, error: "Could not record score." }; }
-}
-export async function gauntletLeaderboard(dayKey, limit = 20) {
-  try {
-    const { data, error } = await supabase.from("mogger_gauntlet_scores").select("user_name,score,constraint_id,use_case,budget,created_at").eq("day_key", dayKey).order("score", { ascending: false }).limit(limit);
-    if (error) return null;
-    return data || [];
-  } catch (e) { return null; }
-}
