@@ -1126,11 +1126,9 @@ export default function RigForge() {
     const updated = { ...currentUser, crank: merged };
     try { localStorage.setItem("mogger_user", JSON.stringify(updated)); } catch(e) {}
     setHdrUser(updated);
-    // Persist to Supabase so badge survives logout/login
+    // Persist to Supabase so badge survives logout/login on any device
     if (currentUser.id) {
-      import("./moggerNet.js").then(({ setCustomRank }) => {
-        setCustomRank(currentUser.id, merged);
-      }).catch(() => {});
+      netSetCustomRank(currentUser.id, merged);
     }
   }, []);
   const [lang, setLang] = useState("en");
