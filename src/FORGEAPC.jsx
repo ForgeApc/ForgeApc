@@ -1514,13 +1514,36 @@ export default function RigForge() {
 
   const flash = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
 
-  // AutoForge quota — keyed by "mogger_af_YYYY-MM" in localStorage
+  // AutoForge quota — synced to Supabase profile for logged-in users
   const AF_QUOTA = { free: 3, plus: 12, pro: 25, max: Infinity };
-  const afMonthKey = () => { const d = new Date(); return `mogger_af_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; };
-  const afUsed = () => { try { return Number(localStorage.getItem(afMonthKey()) || 0); } catch(e) { return 0; } };
+  const afMonthKey = () => { const d = new Date(); return `af_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,"0")}`; };
+  const [afUsedCount, setAfUsedCount] = useState(() => { try { return Number(localStorage.getItem("mogger_" + ((() => { const d = new Date(); return `af_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,"0")}`; })())) || 0); } catch(e) { return 0; } });
   const afLimit = AF_QUOTA[subTier] ?? 3;
-  const afRemaining = afLimit === Infinity ? Infinity : Math.max(0, afLimit - afUsed());
-  const incAfUsed = () => { try { localStorage.setItem(afMonthKey(), String(afUsed() + 1)); } catch(e) {} };
+  const afRemaining = afLimit === Infinity ? Infinity : Math.max(0, afLimit - afUsedCount);
+
+  // Sync af count from Supabase on login
+  useEffect(() => {
+    if (!hdrUser?.id) return;
+    netFetchProfile(hdrUser.id).then(profile => {
+      const remote = Number((profile?.af_uses || {})[afMonthKey()] || 0);
+      const local = Number((() => { try { return localStorage.getItem("mogger_" + afMonthKey()) || 0; } catch(e) { return 0; } })());
+      const synced = Math.max(remote, local);
+      setAfUsedCount(synced);
+      try { localStorage.setItem("mogger_" + afMonthKey(), String(synced)); } catch(e) {}
+    }).catch(() => {});
+  }, [hdrUser?.id]);
+
+  const incAfUsed = () => {
+    const next = afUsedCount + 1;
+    setAfUsedCount(next);
+    try { localStorage.setItem("mogger_" + afMonthKey(), String(next)); } catch(e) {}
+    if (hdrUser?.id) {
+      netFetchProfile(hdrUser.id).then(profile => {
+        const af_uses = { ...(profile?.af_uses || {}), [afMonthKey()]: next };
+        netSaveProfile(hdrUser.id, { ...profile, af_uses });
+      }).catch(() => {});
+    }
+  };
 
   const startSurvey = () => { setUseCase(null); setView("survey"); };
   const chooseUseCase = (sel) => { setUseCase(makeUseCase(Array.isArray(sel) ? sel : [sel])); setView("budget"); };
@@ -1724,10 +1747,10 @@ export default function RigForge() {
               </div>
               <div className="rf-plans-grid">
                 {[
-                  { key: "free", name: "Free", monthly: 0,  annual: 0,  lifetime: 0,  tag: "",        perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device"] },
-                  { key: "plus", name: "Plus", monthly: 2,  annual: 12, lifetime: 15, tag: "",        perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", '💜 "Supporter" rank badge'] },
-                  { key: "pro",  name: "Pro",  monthly: 5,  annual: 22, lifetime: 26, tag: "Popular", perks: ['Everything in Plus', '🔥 "Pro" rank badge', "Priority price updates", "Early access to features"] },
-                  { key: "max",  name: "Max",  monthly: 8,  annual: 55, lifetime: 66, tag: "",        perks: ['Everything in Pro', '👑 "MAX" gold rank badge', "Beta features first", "Support the developer"] },
+                  { key: "free", name: "Free", monthly: 0,  annual: 0,  lifetime: 0,  tag: "",        perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device", "⚡ 3 AutoForges / month"] },
+                  { key: "plus", name: "Plus", monthly: 2,  annual: 12, lifetime: 15, tag: "",        perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", '💜 "Supporter" rank badge', "⚡ 12 AutoForges / month"] },
+                  { key: "pro",  name: "Pro",  monthly: 5,  annual: 22, lifetime: 26, tag: "Popular", perks: ['Everything in Plus', '🔥 "Pro" rank badge', "Priority price updates", "Early access to features", "⚡ 25 AutoForges / month"] },
+                  { key: "max",  name: "Max",  monthly: 8,  annual: 55, lifetime: 66, tag: "",        perks: ['Everything in Pro', '👑 "MAX" gold rank badge', "Beta features first", "Support the developer", "⚡ Unlimited AutoForges"] },
                 ].map((p) => {
                   const isLifetime = plansAnnual === "lifetime";
                   const price = isLifetime ? p.lifetime : plansAnnual ? p.annual : p.monthly;
