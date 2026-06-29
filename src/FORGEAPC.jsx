@@ -2521,29 +2521,16 @@ const MOGGER_SORTS = [
   { k: "name-asc", label: "Name A–Z" },
 ];
 
-const AI_TAUNTS = [
-  "Already found the perfect combo for this budget.",
-  "You're still reading this? I'm halfway done.",
-  "Processing optimal build… done.",
-  "My cooler choice alone will decide this.",
-  "Budget efficiency: maximized.",
-  "Interesting GPU selection you're eyeing there.",
-  "I see your strategy. Countering it now.",
-  "Thinking… or panicking?",
-  "I don't make mistakes. Only optimal decisions.",
-  "Locked in. Waiting for you to catch up.",
-];
-
 // Human-feeling opponent personas keyed by elo tier.
 // Each has a name, a tagline shown on the result screen, and win/loss quips.
 const AI_PERSONAS = [
-  { minElo: 0,    name: "Budget Barry",  tag: "First PC build™",       taunts: ["wait what's a mobo", "lol whatever was cheapest"], wins: ["accidentally won i think??", "beginner's luck fr"], losses: ["yeah that tracks", "okay okay you got me"] },
-  { minElo: 450,  name: "Dave",          tag: "Learning the ropes",     taunts: ["I think this looks good?", "decent build tbh"], wins: ["not bad for a noob", "catching on quick"], losses: ["okay you know your stuff", "next time tho"] },
-  { minElo: 900,  name: "TechMike",      tag: "5 years on r/buildapc",  taunts: ["I read the reviews", "picked this for the value"], wins: ["that's what I said on reddit", "efficiency > flash"], losses: ["weird, the benchmarks said otherwise", "respectable"] },
-  { minElo: 1400, name: "CraftedRigs",   tag: "Builds PCs for friends", taunts: ["I've built 20 of these", "locked in under a minute"], wins: ["experience shows", "clean build wins clean"], losses: ["okay that use-case tripped me", "solid play"] },
-  { minElo: 1900, name: "BenchWarrior",  tag: "OC'ing since 2015",      taunts: ["Optimized every slot", "I don't leave budget on the table"], wins: ["margin of excellence", "the numbers don't lie"], losses: ["one category off — I'll remember that", "rare L"] },
-  { minElo: 2400, name: "Apex",          tag: "Pro system integrator",  taunts: ["Read the spec sheet", "I know where your budget leaks"], wins: ["efficient. balanced. dominant.", "as expected"], losses: ["exceptional build. noted.", "you forced a better outcome"] },
-  { minElo: 2800, name: "GOD_MODE",      tag: "~3% win chance — but legends have done it", taunts: ["MAXIMUM PERFORMANCE INCOMING", "every dollar is accounted for"], wins: ["PERFECTION ACHIEVED", "resistance is futile"], losses: ["...that's a first", "consider yourself elite"] },
+  { minElo: 0,    name: "Budget Barry",  tag: "First PC build™",       wins: ["accidentally won i think??", "beginner's luck fr"], losses: ["yeah that tracks", "okay okay you got me"] },
+  { minElo: 450,  name: "Dave",          tag: "Learning the ropes",     wins: ["not bad for a noob", "catching on quick"], losses: ["okay you know your stuff", "next time tho"] },
+  { minElo: 900,  name: "TechMike",      tag: "5 years on r/buildapc",  wins: ["that's what I said on reddit", "efficiency > flash"], losses: ["weird, the benchmarks said otherwise", "respectable"] },
+  { minElo: 1400, name: "CraftedRigs",   tag: "Builds PCs for friends", wins: ["experience shows", "clean build wins clean"], losses: ["okay that use-case tripped me", "solid play"] },
+  { minElo: 1900, name: "BenchWarrior",  tag: "OC'ing since 2015",      wins: ["margin of excellence", "the numbers don't lie"], losses: ["one category off — I'll remember that", "rare L"] },
+  { minElo: 2400, name: "Apex",          tag: "Pro system integrator",  wins: ["efficient. balanced. dominant.", "as expected"], losses: ["exceptional build. noted.", "you forced a better outcome"] },
+  { minElo: 2800, name: "GOD_MODE",      tag: "~3% win chance — but legends have done it", wins: ["PERFECTION ACHIEVED", "resistance is futile"], losses: ["...that's a first", "consider yourself elite"] },
 ];
 
 function aiPersona(elo) {
@@ -2749,19 +2736,11 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
   const [oppShown, setOppShown] = useState(oppFinal == null ? null : (oppLocked ? oppFinal : 0));
   const [oppDone, setOppDone] = useState(!!oppLocked);
   const ref = useRef(build); ref.current = build;
-  const [taunt, setTaunt] = useState("");
   const [tipIdx, setTipIdx] = useState(0);
   useEffect(() => {
     const iv = setInterval(() => setTipIdx((i) => (i + 1) % DUEL_TIPS.length), 8000);
     return () => clearInterval(iv);
   }, []);
-  useEffect(() => {
-    if (!oppIsAI) return;
-    const cycle = () => setTaunt(AI_TAUNTS[Math.floor(Math.random() * AI_TAUNTS.length)]);
-    cycle();
-    const iv = setInterval(cycle, 4500);
-    return () => clearInterval(iv);
-  }, [oppIsAI]);
   useEffect(() => {
     const t = setInterval(() => setLeft((l) => { if (l <= 1) { clearInterval(t); onDone(ref.current); return 0; } return l - 1; }), 1000);
     return () => clearInterval(t);
@@ -2837,7 +2816,6 @@ function MoggerBuild({ round, player, oppLabel, oppBuild, oppLocked, oppIsAI, li
             {oppElo != null && <div className="pm-board-elo">{oppElo === "?" ? "? elo" : oppElo + " elo"}</div>}
             <div className="pm-board-score opp">{shownOpp == null ? "—" : shownOpp}</div>
             <div className={"pm-board-sub" + (shownDone ? " locked" : "")}>{shownOpp == null ? "waiting" : shownDone ? "🔒 locked in — waiting for you" : "building…"}</div>
-            {oppIsAI && taunt && <div className="pm-taunt">💬 "{taunt}"</div>}
           </div>
         </div>
       )}
@@ -3100,56 +3078,6 @@ function EloSparkline() {
   );
 }
 
-// P3 — Pre-match hype countdown overlay (3-2-1)
-function HypeCountdown({ onDone }) {
-  const [num, setNum] = useState(3);
-  useEffect(() => {
-    if (num <= 0) { onDone(); return; }
-    const t = setTimeout(() => setNum(n => n - 1), 800);
-    return () => clearTimeout(t);
-  }, [num]);
-  if (num <= 0) return null;
-  return (
-    <div className="pm-hype-overlay">
-      <span key={num} className="pm-hype-num">{num}</span>
-    </div>
-  );
-}
-
-// P1 — Live match chat panel (quick-taunt buttons + scrollable log)
-const QUICK_TAUNTS = [
-  "Good build! 👏", "You sure about that GPU? 🤔", "Nice CPU pick!", "That RAM is weak 😬",
-  "Respect the budget 💸", "GG already 🏆", "Bold storage choice 👀", "You're going over budget 💀",
-];
-function MatchChat() {
-  const [open, setOpen] = useState(false);
-  const [log, setLog] = useState([]);
-  const logRef = useRef(null);
-  const send = (msg) => {
-    setLog(l => [...l, { msg, ts: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }]);
-    setTimeout(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, 50);
-  };
-  return (
-    <div className={"pm-chat-panel" + (open ? " open" : "")}>
-      <button className="pm-chat-toggle" onClick={() => setOpen(o => !o)}>
-        💬 Chat {open ? "▲" : "▼"}
-      </button>
-      {open && (
-        <div className="pm-chat-body">
-          <div className="pm-chat-log" ref={logRef}>
-            {log.length === 0 && <div className="pm-chat-empty">Send a taunt!</div>}
-            {log.map((e, i) => <div key={i} className="pm-chat-msg"><span className="pm-chat-time">{e.ts}</span> {e.msg}</div>)}
-          </div>
-          <div className="pm-chat-btns">
-            {QUICK_TAUNTS.map((t, i) => (
-              <button key={i} className="pm-chat-taunt-btn" onClick={() => send(t)}>{t}</button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // P4 — Match outcome share card modal
 function ShareCardModal({ you, opp, youLabel, oppName, round, youWin, onClose }) {
@@ -3251,8 +3179,6 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
   const [rateVal, setRateVal] = useState(null);
   // P4: share card modal
   const [showShareCard, setShowShareCard] = useState(false);
-  // P5: persona loss quote (last item in taunts array is the "loss quote")
-  const personaLossQuote = youWin && oppPersona ? oppPersona.taunts[oppPersona.taunts.length - 1] : null;
   // A5: budget efficiency
   const budgEff = sy.spend > 0 ? Math.round((sy.spend / round.budget) * 100) : 0;
   const oppBudgEff = so.spend > 0 ? Math.round((so.spend / round.budget) * 100) : 0;
@@ -3329,13 +3255,6 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
           <span className="pm-opp-persona-name">{oppName}</span>
           <span className="pm-opp-persona-tag">{oppTag}</span>
           {aiQuip && <span className="pm-opp-persona-quip">"{aiQuip}"</span>}
-        </div>
-      )}
-      {/* P5: Persona loss quote — speech bubble when you beat an AI */}
-      {personaLossQuote && (
-        <div className="pm-persona-loss-bubble">
-          <span className="pm-plb-name">{oppName} says:</span>
-          <span className="pm-plb-quote">"{personaLossQuote}"</span>
         </div>
       )}
       <div className="pm-verdict-box"><span className="pm-verdict-tag"><Sparkles size={12} /> AI JUDGE</span>{busy && !verdict ? <p className="pm-dim">Writing the verdict…</p> : <p>{verdict}</p>}</div>
@@ -4337,15 +4256,6 @@ function FeedbackModal({ user, onClose }) {
 }
 
 // B1: Achievements
-const PRETAUNTS = [
-  "I'll build circles around you 🔥",
-  "My build will make yours cry 😂",
-  "GG before it even starts 🏆",
-  "Your parts list is a wish list 💀",
-  "Budget? More like a donation to me 💸",
-  "I optimize while you agonize 🧠",
-];
-
 function getAchievements(hist) {
   const achs = [];
   const wins = hist.filter(h => h.won).length;
@@ -4419,10 +4329,6 @@ function MoggerGame({ onExit, onSaveBuild }) {
   // Best-of-3 series (vs AI): seriesPick is the pre-match toggle, series tracks an active series
   const [seriesPick, setSeriesPick] = useState(false);
   const [series, setSeries] = useState(null); // { wins:{you,opp}, game, done, winner }
-  // A7: Pre-match taunt
-  const [selectedTaunt, setSelectedTaunt] = useState(null);
-  // P3: hype countdown flag — shown once when entering taunt-pick
-  const [hypeCountdownDone, setHypeCountdownDone] = useState(false);
   // B2: confetti on win
   const [showConfetti, setShowConfetti] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -4524,7 +4430,7 @@ function MoggerGame({ onExit, onSaveBuild }) {
     if (d.k === "custom") { setAiElo(custom); setAiHidden(false); }
     else if (d.k === "random") { setAiElo(100 + Math.floor(Math.random() * 2900)); setAiHidden(true); }
     else { setAiElo(d.elo); setAiHidden(false); }
-    setHypeCountdownDone(false); setScreen("taunt-pick");
+    setScreen("lobby");
   };
   const start = (r) => {
     setRound(r); eloAppliedRef.current = false; historyAppliedRef.current = false; setEloMsg(null);
@@ -4812,28 +4718,6 @@ function MoggerGame({ onExit, onSaveBuild }) {
       {screen === "leaderboard" && <MoggerLeaderboard onBack={menu} meName={user ? user.name : null} />}
       {screen === "history" && <MoggerHistory onBack={menu} />}
       {screen === "achievements" && <MoggerAchievements onBack={menu} />}
-      {/* A7: Taunt picker */}
-      {screen === "taunt-pick" && (() => {
-        return (
-          <div className="pm-card pm-center rf-fade">
-            {/* P3: Hype countdown before taunt-pick content */}
-            {!hypeCountdownDone && <HypeCountdown onDone={() => setHypeCountdownDone(true)} />}
-            <h2 className="pm-h2">🗣️ Pick your pre-match taunt</h2>
-            <p className="pm-p pm-dim">Choose a line to send to your opponent (or skip)</p>
-            <div className="pm-taunt-grid">
-              {PRETAUNTS.map((t, i) => (
-                <button key={i} className={"pm-taunt-btn" + (selectedTaunt === t ? " on" : "")} onClick={() => setSelectedTaunt(t === selectedTaunt ? null : t)}>{t}</button>
-              ))}
-            </div>
-            <div className="pm-row pm-center-row">
-              <button className="rf-btn rf-ghost-btn" onClick={() => setScreen("diff")}><ChevronLeft size={16} /> Back</button>
-              <button className="rf-btn" onClick={() => setScreen("lobby")}>{selectedTaunt ? "Taunt sent! → Lobby" : "Skip → Lobby"} <ChevronRight size={16} /></button>
-            </div>
-            {/* P1: Live match chat panel */}
-            <MatchChat />
-          </div>
-        );
-      })()}
       {screen === "online" && (user ? <MoggerOnline onExit={menu} user={user} setUser={persist} onNeedAuth={() => setShowAuth(true)} onSaveBuild={onSaveBuild} /> : (
         <div className="pm-card pm-center rf-fade">
           <h2 className="pm-h2">🌐 Online Multiplayer</h2>
