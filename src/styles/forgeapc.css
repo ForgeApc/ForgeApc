@@ -4387,3 +4387,20 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   box-shadow: 0 16px 40px -8px rgba(25,232,219,0.6);
 }
 .rf-cart-btn:active { transform: translateY(0); }
+
+/* ---- Duel score detail toggle (collapses radar/bars/MVP clutter) ---- */
+.pm-score-detail-toggle {
+  display: block;
+  margin: 14px auto 4px;
+  background: none;
+  border: none;
+  color: var(--c-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: color .15s, opacity .15s;
+}
+.pm-score-detail-toggle:hover { color: var(--c-accent); opacity: 1; }
+.pm-score-detail { margin-top: 6px; }

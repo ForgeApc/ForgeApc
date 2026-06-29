@@ -3236,6 +3236,7 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
   }, [youWin, you, round.useCase, round.budget, soSD.total]);
   // Open breakdown automatically when you lose so the player sees why
   const [showBreakdown, setShowBreakdown] = useState(!youWin);
+  const [showScoreDetail, setShowScoreDetail] = useState(false); // radar + bars + MVP, hidden by default
   const [showOppBuild, setShowOppBuild] = useState(false); // P10
   // AI persona post-match quip
   const aiQuip = oppPersona ? (youWin ? pickRand(oppPersona.losses) : pickRand(oppPersona.wins)) : null;
@@ -3375,21 +3376,31 @@ function MoggerResult({ round, you, opp, youLabel = "You", oppName, oppElo, oppT
         <MoggerScoreCol title={youLabel} build={you} s={sySD} win={youWin} shown={ay} rank={myRank} useCase={round.useCase} budget={round.budget} />
         <MoggerScoreCol title={oppName} build={opp} s={soSD} win={!youWin} shown={ao} rank={oppRank} useCase={round.useCase} budget={round.budget} />
       </div>
-      <DuelRadarChart you={you} opp={opp} oppName={oppName} youLabel={youLabel} useCase={round.useCase} budget={round.budget} />
-      {/* A4: Score breakdown bar chart */}
-      {phase === "reveal" && <ScoreBarChart you={you} opp={opp} youLabel={youLabel} oppName={oppName} useCase={round.useCase} budget={round.budget} />}
-      {/* B4: efficiency medal */}
-      {effMedal && phase === "reveal" && <div className="pm-eff-medal">{effMedal} — Score {sy.total}/1000</div>}
-      {/* A5: Budget efficiency row */}
-      {phase === "reveal" && <div className="pm-budget-eff-row"><span>Budget used: <b style={{color: budgEff > 100 ? "var(--c-bad)" : budgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{budgEff}%</b> {youLabel} · <b style={{color: oppBudgEff > 100 ? "var(--c-bad)" : oppBudgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{oppBudgEff}%</b> {oppName}</span></div>}
-      {/* P6: Category MVP highlight */}
-      {mvpCat && (
-        <div className="pm-mvp-cat-card">
-          <div className="pm-mvp-cat-crown">👑 Category MVP</div>
-          <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? youLabel : oppName}</div>
+      {/* Score detail (radar + bars + MVP) — collapsed by default to reduce clutter */}
+      {phase === "reveal" && (
+        <button className="pm-score-detail-toggle" onClick={() => setShowScoreDetail((v) => !v)}>
+          {showScoreDetail ? "▲ Hide score details" : "▼ Click to reveal score details"}
+        </button>
+      )}
+      {phase === "reveal" && showScoreDetail && (
+        <div className="pm-score-detail rf-fade">
+          <DuelRadarChart you={you} opp={opp} oppName={oppName} youLabel={youLabel} useCase={round.useCase} budget={round.budget} />
+          {/* A4: Score breakdown bar chart */}
+          <ScoreBarChart you={you} opp={opp} youLabel={youLabel} oppName={oppName} useCase={round.useCase} budget={round.budget} />
+          {/* B4: efficiency medal */}
+          {effMedal && <div className="pm-eff-medal">{effMedal} — Score {sy.total}/1000</div>}
+          {/* A5: Budget efficiency row */}
+          <div className="pm-budget-eff-row"><span>Budget used: <b style={{color: budgEff > 100 ? "var(--c-bad)" : budgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{budgEff}%</b> {youLabel} · <b style={{color: oppBudgEff > 100 ? "var(--c-bad)" : oppBudgEff >= 90 ? "var(--c-good)" : "var(--c-warn)"}}>{oppBudgEff}%</b> {oppName}</span></div>
+          {/* P6: Category MVP highlight */}
+          {mvpCat && (
+            <div className="pm-mvp-cat-card">
+              <div className="pm-mvp-cat-crown">👑 Category MVP</div>
+              <div className="pm-mvp-banner">🏅 MVP Part: <b>{winnerBuild[mvpCat] ? (winnerBuild[mvpCat].model || winnerBuild[mvpCat].name) : "—"}</b> <span className="pm-mvp-cat">({CAT_META[mvpCat].label})</span> — biggest score driver for {youWin ? youLabel : oppName}</div>
+            </div>
+          )}
+          {weakCat && <div className="pm-weak-banner">📉 Costliest category: <b>{CAT_META[weakCat].label}</b> — {oppName}'s pick scored higher here, worth {USE_CASES[round.useCase].alloc[weakCat]}% of your total score.</div>}
         </div>
       )}
-      {weakCat && <div className="pm-weak-banner">📉 Costliest category: <b>{CAT_META[weakCat].label}</b> — {oppName}'s pick scored higher here, worth {USE_CASES[round.useCase].alloc[weakCat]}% of your total score.</div>}
       {rivalInfo && (
         <div className="pm-avenge-row">
           <span className="pm-avenge-label">⚔️ Rival alert — you're {rivalInfo.l}-{rivalInfo.w} down vs <b>{rivalInfo.tier}</b> tier opponents.</span>
