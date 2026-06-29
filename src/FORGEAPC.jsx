@@ -7183,21 +7183,19 @@ function Picker({ cat, current, useCase, budget, parts, onClose, onPick }) {
                   onClick={g.single ? undefined : () => setOpenModel(expanded ? null : g.model)}
                 >
                   <div className="rf-pick-score" style={{ borderColor: scoreColor(g.score), color: scoreColor(g.score) }}>{g.score}</div>
+                  {g.rep.img && (
+                    <a href={g.rep.url || "#"} target="_blank" rel="noopener noreferrer" style={{flexShrink:0,flexGrow:0,width:56,height:56,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={(e) => e.stopPropagation()} title="View product page">
+                      <img src={g.rep.img} alt={g.model} className="rf-pick-img" loading="lazy" />
+                    </a>
+                  )}
                   <div className="rf-pick-info">
-                    {g.rep.img && (
-                      <a href={g.rep.url || "#"} target="_blank" rel="noopener noreferrer" className="rf-pick-img-link" onClick={(e) => e.stopPropagation()} title="View product page">
-                        <img src={g.rep.img} alt={g.model} className="rf-pick-img" loading="lazy" />
-                      </a>
-                    )}
-                    <div className="rf-pick-info-text">
-                      <div className="rf-pick-name">
-                        {g.model}
-                        {!g.single && <span className="rf-variant-count">{g.variants.length} models</span>}
-                        {g.hasCurrent && <span className="rf-cur-tag">current</span>}
-                      </div>
-                      <div className="rf-pick-facts">{partFacts(cat, g.rep).slice(0, 3).join(" · ")}</div>
-                      {!g.compat && <div className="rf-pick-warn"><AlertTriangle size={12} /> {g.rep._issues[0]}</div>}
+                    <div className="rf-pick-name">
+                      {g.model}
+                      {!g.single && <span className="rf-variant-count">{g.variants.length} models</span>}
+                      {g.hasCurrent && <span className="rf-cur-tag">current</span>}
                     </div>
+                    <div className="rf-pick-facts">{partFacts(cat, g.rep).slice(0, 3).join(" · ")}</div>
+                    {!g.compat && <div className="rf-pick-warn"><AlertTriangle size={12} /> {g.rep._issues[0]}</div>}
                   </div>
                   <div className="rf-pick-right">
                     <div className={"rf-part-price " + (g.single ? g.rep._status : "")}>{priceLabel}</div>
@@ -7222,14 +7220,12 @@ function Picker({ cat, current, useCase, budget, parts, onClose, onPick }) {
                       <div key={v.id} className={"rf-variant" + (current && current.id === v.id ? " current" : "")}>
                         <div className="rf-variant-row">
                           <div className="rf-pick-score sm" style={{ borderColor: scoreColor(v._score), color: scoreColor(v._score) }}>{v._score}</div>
-                          <div className="rf-variant-name">
-                            {v.img && (
-                              <a href={v.url || "#"} target="_blank" rel="noopener noreferrer" className="rf-pick-img-link" onClick={(e) => e.stopPropagation()} title="View product page">
-                                <img src={v.img} alt={v.variantLabel || v.brand} className="rf-pick-img sm" loading="lazy" />
-                              </a>
-                            )}
-                            {v.variantLabel || v.brand}
-                          </div>
+                          {v.img && (
+                            <a href={v.url || "#"} target="_blank" rel="noopener noreferrer" style={{flexShrink:0,flexGrow:0,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={(e) => e.stopPropagation()} title="View product page">
+                              <img src={v.img} alt={v.variantLabel || v.brand} className="rf-pick-img sm" loading="lazy" />
+                            </a>
+                          )}
+                          <div className="rf-variant-name">{v.variantLabel || v.brand}</div>
                           <div className="rf-variant-right">
                             <span className={"rf-part-price " + v._status}>{partOOS(v) ? "—" : fmt(v.price)}</span>
                             {v._status === "over" && <span className="rf-flag over">OVER</span>}
