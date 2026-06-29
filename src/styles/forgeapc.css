@@ -298,8 +298,8 @@ background:var(--c-panel);border:1px solid var(--c-border);border-radius:20px;pa
 .rf-part-img-link{flex-shrink:0;display:block;}
 .rf-part-img{width:56px;height:56px;border-radius:12px;object-fit:contain;background:#fff;border:1px solid var(--c-border);padding:3px;cursor:pointer;transition:transform .15s ease;}
 .rf-part-img:hover{transform:scale(1.06);}
-.rf-pick-img-link{flex-shrink:0;display:block;width:52px;height:52px;}
-.rf-variant-row .rf-pick-img-link{width:38px;height:38px;}
+.rf-pick-img-link{flex:0 0 52px;display:flex;align-items:center;justify-content:center;width:52px;height:52px;overflow:hidden;}
+.rf-variant-row .rf-pick-img-link{flex:0 0 38px;width:38px;height:38px;}
 .rf-pick-img{width:52px;height:52px;border-radius:10px;object-fit:contain;background:#fff;border:1px solid var(--c-border);padding:3px;cursor:pointer;transition:transform .12s ease;}
 .rf-pick-img.sm{width:38px;height:38px;border-radius:8px;}
 .rf-pick-img:hover{transform:scale(1.04);}
@@ -409,13 +409,14 @@ padding:1px 7px;border-radius:20px;font-family:'JetBrains Mono';letter-spacing:0
 .rf-variant.current{border-color:rgba(25,232,219,0.5);background:rgba(25,232,219,0.06);}
 .rf-variant-row{display:flex;align-items:center;gap:11px;}
 .rf-pick-score.sm{width:32px;height:32px;border-radius:9px;font-size:13px;}
-.rf-variant-name{flex:1;font-family:'Chakra Petch';font-weight:600;font-size:13.5px;min-width:0;}
+.rf-variant-name{flex:1;font-family:'Chakra Petch';font-weight:600;font-size:13.5px;min-width:0;display:flex;align-items:center;gap:8px;}
 .rf-variant-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .rf-info.compact{padding:12px 2px 2px;}
 .rf-info.compact .rf-info-specs{margin-bottom:12px;}
 .rf-info.compact .rf-pc-grid{grid-template-columns:1fr;gap:14px;}
 .rf-pick-score{width:38px;height:38px;border-radius:10px;border:2px solid;display:grid;place-items:center;font-family:'JetBrains Mono';font-weight:700;font-size:15px;flex-shrink:0;}
-.rf-pick-info{flex:1;min-width:0;}
+.rf-pick-info{flex:1;min-width:0;display:flex;align-items:center;gap:10px;}
+.rf-pick-info-text{flex:1;min-width:0;}
 .rf-pick-name{font-family:'Chakra Petch';font-weight:600;font-size:14.5px;color:var(--c-text);}
 .rf-cur-tag{font-size:9px;background:rgba(25,232,219,0.15);color:var(--c-accent);padding:1px 6px;border-radius:10px;font-family:'JetBrains Mono';margin-left:6px;}
 .rf-pick-facts{font-size:11.5px;color:var(--c-muted);font-family:'JetBrains Mono';margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
