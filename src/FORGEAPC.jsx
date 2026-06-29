@@ -3,7 +3,7 @@ import {
   Cpu, CircuitBoard, MemoryStick, HardDrive, Power, Box, Fan, MonitorPlay,
   Gamepad2, Clapperboard, Radio, Boxes, BrainCircuit, Briefcase,
   Sparkles, Save, Plus, Trash2, Check, X, AlertTriangle, ChevronRight,
-  ChevronLeft, Zap, DollarSign, RotateCcw, ShieldCheck, ShieldAlert, Repeat2, Wrench, Send, Bot, MessageCircle, Maximize, Minimize, Settings, Sun, Moon, Search, Users, Upload, Globe, Columns2, PackageSearch, LayoutGrid
+  ChevronLeft, Zap, DollarSign, RotateCcw, ShieldCheck, ShieldAlert, Repeat2, Wrench, Send, Bot, MessageCircle, Maximize, Minimize, Settings, Sun, Moon, Search, Users, Upload, Globe, Columns2, PackageSearch, LayoutGrid, ShoppingCart
 } from "lucide-react";
 import { MEDIA, MEDIA_NE } from "../data/part-media.js";
 import { myId as netId, makeCode as netCode, roomChannel as netRoom, lobbyChannel as netLobby, leave as netLeave, signUp as netSignUp, logIn as netLogIn, fetchElo as netFetchElo, fetchUser as netFetchUser, saveElo as netSaveElo, eloGain as netEloGain, leaderboard as netLeaderboard, listBuilds as netListBuilds, syncBuild as netSyncBuild, deleteBuildCloud as netDeleteBuild, allUsers as netAllUsers, deleteUser as netDeleteUser, setElo as netSetElo, resetPassword as netResetPassword, setCustomRank as netSetCustomRank, listCommunityBuilds as netListCommunity, postCommunityBuild as netPostCommunity, deleteCommunityBuild as netDeleteCommunity, countCommunityBuilds as netCountCommunity, submitFeedback as netSubmitFeedback, listFeedback as netListFeedback, deleteFeedback as netDeleteFeedback, supabase as netSupabase, fetchProfile as netFetchProfile, saveProfile as netSaveProfile } from "./moggerNet.js";
@@ -145,6 +145,34 @@ let PRICE_LIVE = false; // set true once live pricing has loaded
 const partOOS = (p) => PRICE_LIVE && p && p._live === false; // out of stock = no live price
 const fmt = (n) => "$" + (Number.isInteger(Number(n)) ? Number(n).toLocaleString() : Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+// Scraper sanity guard. A single wrong listing sometimes matches many unrelated
+// parts via fuzzy title matching, leaking the SAME bogus price (e.g. $154) across
+// the whole catalog. Flag any price value that is proposed for 3+ parts whose
+// curated baselines span widely (max >= 1.6x min) — a real listing never legitimately
+// applies one price to a $150 part and a $600 part at once.
+function poisonedLivePrices(pricesById) {
+  if (!pricesById) return new Set();
+  const byVal = {}; // numeric price -> list of curated baselines it was proposed for
+  for (const c of CATEGORY_ORDER) {
+    for (const part of CATALOG[c]) {
+      const entry = pricesById[part.id];
+      if (!entry) continue;
+      for (const v of Object.values(entry)) {
+        if (typeof v !== "number" || v <= 0) continue;
+        (byVal[v] = byVal[v] || []).push(part.price || 0);
+      }
+    }
+  }
+  const bad = new Set();
+  for (const [v, bases] of Object.entries(byVal)) {
+    const bs = bases.filter((b) => b > 0);
+    if (bs.length < 3) continue;
+    const min = Math.min(...bs), max = Math.max(...bs);
+    if (max >= min * 1.6) bad.add(Number(v));
+  }
+  return bad;
+}
 
 /* ----------------------------- SCORING ----------------------------- */
 // Use-case-aware performance: the same part is worth more or less depending on
@@ -1180,6 +1208,7 @@ export default function RigForge() {
         const data = await res.json();
         if (cancelled || !data || !data.prices) return;
         let n = 0;
+        const poisoned = poisonedLivePrices(data.prices);
         for (const c of CATEGORY_ORDER) {
           for (const part of CATALOG[c]) {
             const entry = data.prices[part.id];
@@ -1187,9 +1216,10 @@ export default function RigForge() {
             // Guard: ignore any scraped price wildly off the catalog baseline — that
             // means a wrong product got matched to this part (e.g. a $160 hit on a ~$400 GPU).
             const baseline = part.price;
-            // Only guard the LOW side: reject prices well below baseline (a wrong, cheaper product
-            // matched to this part). No upper cap — prices can legitimately spike (e.g. RAM shortage).
-            const plausible = (v) => typeof v === "number" && v > 0 && (!baseline || v >= baseline * 0.5);
+            // Guard the LOW side (reject prices well below baseline — a wrong, cheaper product
+            // matched to this part) and any "poisoned" value (one bogus listing leaking across
+            // many unrelated parts). No upper cap — prices can legitimately spike (e.g. RAM shortage).
+            const plausible = (v) => typeof v === "number" && v > 0 && !poisoned.has(v) && (!baseline || v >= baseline * 0.5);
             let best = null, bestSrc = null;
             if (entry) {
               for (const [src, v] of Object.entries(entry)) {
@@ -1236,11 +1266,12 @@ export default function RigForge() {
             const data = JSON.parse(raw);
             if (data && data.prices) {
               let n = 0;
+              const poisoned = poisonedLivePrices(data.prices);
               for (const c of CATEGORY_ORDER) {
                 for (const part of CATALOG[c]) {
                   const entry = data.prices[part.id];
                   const baseline = part.price;
-                  const plausible = (v) => typeof v === "number" && v > 0 && (!baseline || v >= baseline * 0.5);
+                  const plausible = (v) => typeof v === "number" && v > 0 && !poisoned.has(v) && (!baseline || v >= baseline * 0.5);
                   let best = null, bestSrc = null;
                   if (entry) { for (const [src, v] of Object.entries(entry)) { if (plausible(v) && (best == null || v < best)) { best = v; bestSrc = src; } } }
                   if (best != null) { part.price = best; part._live = true; part._source = bestSrc; n++; }
@@ -6647,6 +6678,13 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
     navigator.clipboard.writeText(lines.join("\n")).then(() => { setTextCopied(true); setTimeout(() => setTextCopied(false), 2500); });
   };
 
+  // Open the buy link for every part in the build, each in its own tab.
+  const cartUrls = CATEGORY_ORDER.map((c) => parts[c]).filter((p) => p && p.url).map((p) => p.url);
+  const addAllToCart = () => {
+    if (!cartUrls.length) return;
+    cartUrls.forEach((u, i) => setTimeout(() => window.open(u, "_blank", "noopener,noreferrer"), i * 120));
+  };
+
   const doShare = async () => {
     if (!shareTitle.trim()) return;
     setShareStatus("posting");
@@ -6869,6 +6907,13 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
         });
         })()}
       </div>
+
+      {/* Add all parts to cart — opens each part's store page in a new tab */}
+      {cartUrls.length > 0 && (
+        <button className="rf-cart-btn" onClick={addAllToCart}>
+          <ShoppingCart size={18} /> Add all to cart ({cartUrls.length} {cartUrls.length === 1 ? "item" : "items"})
+        </button>
+      )}
     </div>
   );
 }

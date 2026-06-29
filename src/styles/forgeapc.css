@@ -4359,3 +4359,31 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   opacity: 0.45 !important;
   cursor: not-allowed !important;
 }
+
+/* ---- Add all to cart button ---- */
+.rf-cart-btn {
+  width: 100%;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px 20px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1ff5e6, #6a4cf0);
+  color: #04110f;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform .14s var(--ease), box-shadow .14s var(--ease), filter .14s var(--ease);
+  box-shadow: 0 10px 30px -8px rgba(25,232,219,0.5);
+}
+.rf-cart-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: 0 16px 40px -8px rgba(25,232,219,0.6);
+}
+.rf-cart-btn:active { transform: translateY(0); }
