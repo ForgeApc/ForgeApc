@@ -1551,6 +1551,13 @@ export default function RigForge() {
   const aiMonthKey = () => { const d = new Date(); return `ai_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,"0")}`; };
   const [aiUsedCredits, setAiUsedCredits] = useState(() => { try { return Number(localStorage.getItem("mogger_" + ((() => { const d = new Date(); return `ai_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,"0")}`; })())) || 0); } catch(e) { return 0; } });
   const aiCreditLimit = AI_CREDITS[subTier] ?? AI_CREDITS.free;
+
+  // Saved-build limit per tier (free 5, plus/"lite" 80, pro 100, max unlimited).
+  const BUILD_LIMITS = { free: 5, plus: 80, pro: 100, max: Infinity };
+  const buildLimit = BUILD_LIMITS[subTier] ?? BUILD_LIMITS.free;
+  // Community upload limit per tier (free can post just 1; paid tiers unlimited).
+  const COMMUNITY_LIMITS = { free: 1, plus: Infinity, pro: Infinity, max: Infinity };
+  const communityLimit = COMMUNITY_LIMITS[subTier] ?? 1;
   const aiCreditsRemaining = Math.max(0, aiCreditLimit - aiUsedCredits);
 
   // Sync credits from Supabase on login (take the max so it can't be reset locally)
@@ -1602,6 +1609,11 @@ export default function RigForge() {
   const removePart = (cat) => { setAutoGen(false); setParts((p) => { const n = { ...p }; delete n[cat]; return n; }); };
 
   const saveBuild = async () => {
+    if (saved.length >= buildLimit) {
+      flash(`Your plan saves up to ${buildLimit} build${buildLimit === 1 ? "" : "s"} — upgrade for more, or delete one.`);
+      setSavingOpen(false);
+      return;
+    }
     const a = analyzeBuild(parts, useCase, budget);
     const build = {
       id: "b" + Date.now(),
@@ -1623,6 +1635,10 @@ export default function RigForge() {
   const deleteBuild = async (id) => { await sDel("build:" + id); const u = acct(); if (u && u.id) await netDeleteBuild(u.id, id); await refreshSaved(); };
   // Save a build that came from somewhere else (e.g. a PC Mogger match) into My Rigs.
   const saveExternalBuild = async (partsMap, ucKey, bud, name) => {
+    if (saved.length >= buildLimit) {
+      flash(`Your plan saves up to ${buildLimit} build${buildLimit === 1 ? "" : "s"} — upgrade for more, or delete one.`);
+      return false;
+    }
     const uc = ensureUseCase(ucKey);
     const a = analyzeBuild(partsMap, uc, bud);
     const build = {
@@ -1780,10 +1796,10 @@ export default function RigForge() {
               </div>
               <div className="rf-plans-grid">
                 {[
-                  { key: "free", name: "Free", monthly: 0,  annual: 0,  lifetime: 0,  tag: "",        perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device", "⚡ 100 AI credits / month"] },
-                  { key: "plus", name: "Plus", monthly: 2,  annual: 12, lifetime: 15, tag: "",        perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", '💜 "Supporter" rank badge', "⚡ 200 AI credits / month"] },
-                  { key: "pro",  name: "Pro",  monthly: 5,  annual: 22, lifetime: 26, tag: "Popular", perks: ['Everything in Plus', '🔥 "Pro" rank badge', "Priority price updates", "Early access to features", "⚡ 450 AI credits / month"] },
-                  { key: "max",  name: "Max",  monthly: 8,  annual: 55, lifetime: 66, tag: "",        perks: ['Everything in Pro', '👑 "MAX" gold rank badge', "Beta features first", "Support the developer", "⚡ 2,200 AI credits / month"] },
+                  { key: "free", name: "Free", monthly: 0,  annual: 0,  lifetime: 0,  tag: "",        perks: ["Full PC Duels access", "💾 Save up to 5 builds", "📤 1 community upload", "⚡ 100 AI credits / month"] },
+                  { key: "plus", name: "Plus", monthly: 2,  annual: 12, lifetime: 15, tag: "",        perks: ["Everything in Free", "💾 Save up to 80 builds", "Unlimited community uploads", '💜 "Supporter" rank badge', "⚡ 200 AI credits / month"] },
+                  { key: "pro",  name: "Pro",  monthly: 5,  annual: 22, lifetime: 26, tag: "Popular", perks: ['Everything in Plus', "💾 Save up to 100 builds", '🔥 "Pro" rank badge', "Priority price updates", "⚡ 450 AI credits / month"] },
+                  { key: "max",  name: "Max",  monthly: 8,  annual: 55, lifetime: 66, tag: "",        perks: ['Everything in Pro', "💾 Unlimited saved builds", '👑 "MAX" gold rank badge', "Beta features first", "⚡ 2,200 AI credits / month"] },
                 ].map((p) => {
                   const isLifetime = plansAnnual === "lifetime";
                   const price = isLifetime ? p.lifetime : plansAnnual ? p.annual : p.monthly;
@@ -1879,6 +1895,11 @@ export default function RigForge() {
             onSwap={(c) => setPicker(c)} onRemove={removePart}
             onRegen={generateAuto} aiRemaining={aiCreditsRemaining} aiLimit={aiCreditLimit} aiCost={AI_COST} onSave={() => setSavingOpen(true)}
             onShare={hdrUser ? async (title) => {
+              const posted = await netCountCommunity(hdrUser.id).catch(() => 0);
+              if (posted >= communityLimit) {
+                flash(`Free plans can upload ${communityLimit} build to the community — upgrade to share more.`);
+                return "limit";
+              }
               const a = analysis;
               await netPostCommunity(hdrUser.id, hdrUser.name, { title, useCase, budget, total: a.spend, perfScore: a.perf, parts });
             } : null}
@@ -4999,12 +5020,17 @@ function CommunityBuilds({ user, onLogin, onBack }) {
     setMyBuildsLoading(false);
   };
 
-  const FREE_TIER_LIMIT = 5;
+  // Community upload cap per tier: free posts 1, paid tiers unlimited.
+  const uploadLimit = (() => {
+    let tier = "free";
+    try { tier = localStorage.getItem("mogger_sub_tier") || "free"; } catch (e) {}
+    return { free: 1, plus: Infinity, pro: Infinity, max: Infinity }[tier] ?? 1;
+  })();
   const doPost = async () => {
     if (!pickedBuild || !shareTitle.trim()) return;
     setShareStatus("posting");
     const existing = await netCountCommunity(user.id);
-    if (existing >= FREE_TIER_LIMIT) { setShareStatus("limit"); return; }
+    if (existing >= uploadLimit) { setShareStatus("limit"); return; }
     const b = pickedBuild;
     const analysis = moggerScore(b.parts || {}, b.useCase, b.budget);
     const res = await netPostCommunity(user.id, user.name, {
@@ -5148,7 +5174,7 @@ function CommunityBuilds({ user, onLogin, onBack }) {
                 <input className="rf-input" placeholder="e.g. Budget Gaming Beast $1500" value={shareTitle} onChange={e => setShareTitle(e.target.value)} maxLength={80} onKeyDown={e => e.key === "Enter" && doPost()} autoFocus />
                 {shareStatus === "done" && <p style={{color:"var(--c-accent)",marginTop:"0.4rem",fontSize:"0.85rem"}}>Posted!</p>}
                 {shareStatus && shareStatus.startsWith("error") && <p style={{color:"var(--c-bad)",marginTop:"0.4rem",fontSize:"0.85rem"}}>Error — {shareStatus.replace("error:","")}</p>}
-                {shareStatus === "limit" && <p style={{color:"var(--c-warn)",marginTop:"0.4rem",fontSize:"0.85rem"}}>Free tier limit: max 5 posts. Delete one to share another.</p>}
+                {shareStatus === "limit" && <p style={{color:"var(--c-warn)",marginTop:"0.4rem",fontSize:"0.85rem"}}>Free plans can upload 1 build to the community. Upgrade to share more, or delete your existing one.</p>}
               </>
             )}
 
@@ -6586,6 +6612,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
     if (!shareTitle.trim()) return;
     setShareStatus("posting");
     const res = await onShare(shareTitle.trim());
+    if (res === "limit") { setShareStatus(null); setShareOpen(false); return; } // over community upload limit — flash already shown
     setShareStatus(res === undefined ? "done" : "error");
     if (res === undefined) setTimeout(() => setShareOpen(false), 1500);
   };
@@ -6640,7 +6667,7 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
             <input className="rf-input" placeholder="e.g. Budget 4K Gaming Beast" value={shareTitle} onChange={e => setShareTitle(e.target.value)} maxLength={80} onKeyDown={e => e.key === "Enter" && doShare()} autoFocus />
             {shareStatus === "done" && <p style={{color:"var(--c-accent)",marginTop:"0.5rem"}}>Posted to Community!</p>}
             {shareStatus === "error" && <p style={{color:"var(--c-bad)",marginTop:"0.5rem"}}>Something went wrong — try again.</p>}
-            {shareStatus === "limit" && <p style={{color:"var(--c-warn)",marginTop:"0.5rem"}}>Free tier limit: max 5 community builds. Delete one to post another.</p>}
+            {shareStatus === "limit" && <p style={{color:"var(--c-warn)",marginTop:"0.5rem"}}>Free plans can upload 1 build to the community. Upgrade to share more.</p>}
             <div className="rf-modal-row">
               <button className="rf-ghost" onClick={() => setShareOpen(false)}>Cancel</button>
               <button className="rf-btn" onClick={doShare} disabled={shareStatus === "posting" || shareStatus === "done"}><Upload size={15} /> {shareStatus === "posting" ? "Posting…" : "Post"}</button>
