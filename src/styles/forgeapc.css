@@ -4421,7 +4421,7 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
   --c-muted:#a3adc2 !important;
   --c-accent:#25f4e4 !important;
   --c-accent2:#b78bff !important;
-  --c-good:#3cf0a0 !important;
+  --c-good:#4dffb0 !important;
   --c-warn:#ffd15c !important;
   --c-bad:#ff6b83 !important;
   --c-track:rgba(255,255,255,0.11) !important;
@@ -4470,6 +4470,9 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 .rf-part::after, .rf-pick::after, .rf-saved-card::after, .rf-uc-card::after, .pm-diff::after,
 .pm-quick-btn::after, .pm-special-mode-card::after, .pm-rrp-btn::after, .rf-preset::after,
 .rf-chip-btn::after { display:none !important; }
+/* the looping white glare that slides across budget / allocation bars + rank badges */
+.rf-alloc-fill::after, .rf-budget-fill::after, .pm-rank-col::after { display:none !important; animation:none !important; }
+.pm-rank-col { animation:none !important; }
 /* Hero + section titles: bright gamery Chakra Petch, static (no shimmer/glow animation) */
 .rf-hero-title, .rf-hero-grad, .rf-step-head h2, .rf-results-head h2, .pm-mtitle, .pm-mtitle .rf-accent {
   -webkit-text-fill-color:initial !important;
