@@ -1545,33 +1545,35 @@ export default function RigForge() {
 
   const flash = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
 
-  // AutoForge quota — synced to Supabase profile for logged-in users
-  const AF_QUOTA = { free: 3, plus: 12, pro: 25, max: Infinity };
-  const afMonthKey = () => { const d = new Date(); return `af_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,"0")}`; };
-  const [afUsedCount, setAfUsedCount] = useState(() => { try { return Number(localStorage.getItem("mogger_" + ((() => { const d = new Date(); return `af_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,"0")}`; })())) || 0); } catch(e) { return 0; } });
-  const afLimit = AF_QUOTA[subTier] ?? 3;
-  const afRemaining = afLimit === Infinity ? Infinity : Math.max(0, afLimit - afUsedCount);
+  // AI credits — monthly allowance per tier, 5 credits per AI action. Synced to Supabase.
+  const AI_CREDITS = { free: 100, plus: 200, pro: 450, max: 2200 };
+  const AI_COST = 5; // credits per AI generation (AutoForge / re-forge)
+  const aiMonthKey = () => { const d = new Date(); return `ai_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,"0")}`; };
+  const [aiUsedCredits, setAiUsedCredits] = useState(() => { try { return Number(localStorage.getItem("mogger_" + ((() => { const d = new Date(); return `ai_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,"0")}`; })())) || 0); } catch(e) { return 0; } });
+  const aiCreditLimit = AI_CREDITS[subTier] ?? AI_CREDITS.free;
+  const aiCreditsRemaining = Math.max(0, aiCreditLimit - aiUsedCredits);
 
-  // Sync af count from Supabase on login
+  // Sync credits from Supabase on login (take the max so it can't be reset locally)
   useEffect(() => {
     if (!hdrUser?.id) return;
     netFetchProfile(hdrUser.id).then(profile => {
-      const remote = Number((profile?.af_uses || {})[afMonthKey()] || 0);
-      const local = Number((() => { try { return localStorage.getItem("mogger_" + afMonthKey()) || 0; } catch(e) { return 0; } })());
+      const remote = Number((profile?.ai_credits || {})[aiMonthKey()] || 0);
+      const local = Number((() => { try { return localStorage.getItem("mogger_" + aiMonthKey()) || 0; } catch(e) { return 0; } })());
       const synced = Math.max(remote, local);
-      setAfUsedCount(synced);
-      try { localStorage.setItem("mogger_" + afMonthKey(), String(synced)); } catch(e) {}
+      setAiUsedCredits(synced);
+      try { localStorage.setItem("mogger_" + aiMonthKey(), String(synced)); } catch(e) {}
     }).catch(() => {});
   }, [hdrUser?.id]);
 
-  const incAfUsed = () => {
-    const next = afUsedCount + 1;
-    setAfUsedCount(next);
-    try { localStorage.setItem("mogger_" + afMonthKey(), String(next)); } catch(e) {}
+  // Spend `cost` credits on an AI action; persists to localStorage + Supabase profile.
+  const spendCredits = (cost = AI_COST) => {
+    const next = aiUsedCredits + cost;
+    setAiUsedCredits(next);
+    try { localStorage.setItem("mogger_" + aiMonthKey(), String(next)); } catch(e) {}
     if (hdrUser?.id) {
       netFetchProfile(hdrUser.id).then(profile => {
-        const af_uses = { ...(profile?.af_uses || {}), [afMonthKey()]: next };
-        netSaveProfile(hdrUser.id, { ...profile, af_uses });
+        const ai_credits = { ...(profile?.ai_credits || {}), [aiMonthKey()]: next };
+        netSaveProfile(hdrUser.id, { ...profile, ai_credits });
       }).catch(() => {});
     }
   };
@@ -1579,8 +1581,8 @@ export default function RigForge() {
   const startSurvey = () => { setUseCase(null); setView("survey"); };
   const chooseUseCase = (sel) => { setUseCase(makeUseCase(Array.isArray(sel) ? sel : [sel])); setView("budget"); };
   const generateAuto = () => {
-    if (afRemaining <= 0) { flash(`You've used all ${afLimit} AutoForges this month — upgrade your plan for more.`); return; }
-    incAfUsed();
+    if (aiCreditsRemaining < AI_COST) { flash(`Out of AI credits this month (${aiCreditLimit}/mo) — upgrade your plan for more.`); return; }
+    spendCredits(AI_COST);
     setAutoGen(true); setParts(assembleBuild(useCase, budget)); setExpanded({}); setView("results");
   };
   const startManual = () => { setAutoGen(false); setParts({}); setExpanded({}); setView("results"); };
@@ -1778,10 +1780,10 @@ export default function RigForge() {
               </div>
               <div className="rf-plans-grid">
                 {[
-                  { key: "free", name: "Free", monthly: 0,  annual: 0,  lifetime: 0,  tag: "",        perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device", "⚡ 3 AutoForges / month"] },
-                  { key: "plus", name: "Plus", monthly: 2,  annual: 12, lifetime: 15, tag: "",        perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", '💜 "Supporter" rank badge', "⚡ 12 AutoForges / month"] },
-                  { key: "pro",  name: "Pro",  monthly: 5,  annual: 22, lifetime: 26, tag: "Popular", perks: ['Everything in Plus', '🔥 "Pro" rank badge', "Priority price updates", "Early access to features", "⚡ 25 AutoForges / month"] },
-                  { key: "max",  name: "Max",  monthly: 8,  annual: 55, lifetime: 66, tag: "",        perks: ['Everything in Pro', '👑 "MAX" gold rank badge', "Beta features first", "Support the developer", "⚡ Unlimited AutoForges"] },
+                  { key: "free", name: "Free", monthly: 0,  annual: 0,  lifetime: 0,  tag: "",        perks: ["Unlimited PC builds", "Full PC Duels access", "Save rigs to this device", "⚡ 100 AI credits / month"] },
+                  { key: "plus", name: "Plus", monthly: 2,  annual: 12, lifetime: 15, tag: "",        perks: ["Everything in Free", "Ad-free experience", "Cloud-synced saves", '💜 "Supporter" rank badge', "⚡ 200 AI credits / month"] },
+                  { key: "pro",  name: "Pro",  monthly: 5,  annual: 22, lifetime: 26, tag: "Popular", perks: ['Everything in Plus', '🔥 "Pro" rank badge', "Priority price updates", "Early access to features", "⚡ 450 AI credits / month"] },
+                  { key: "max",  name: "Max",  monthly: 8,  annual: 55, lifetime: 66, tag: "",        perks: ['Everything in Pro', '👑 "MAX" gold rank badge', "Beta features first", "Support the developer", "⚡ 2,200 AI credits / month"] },
                 ].map((p) => {
                   const isLifetime = plansAnnual === "lifetime";
                   const price = isLifetime ? p.lifetime : plansAnnual ? p.annual : p.monthly;
@@ -1868,14 +1870,14 @@ export default function RigForge() {
         {view === "mogger-coadmin" && <MoggerCoAdmin onBack={() => setView("home")} bypass={true} />}
         {view === "survey" && <Survey onPick={chooseUseCase} />}
         {view === "budget" && (
-          <BudgetStep useCase={useCase} budget={budget} setBudget={setBudget} onBack={() => setView("survey")} onAuto={generateAuto} onManual={startManual} afRemaining={afRemaining} afLimit={afLimit} />
+          <BudgetStep useCase={useCase} budget={budget} setBudget={setBudget} onBack={() => setView("survey")} onAuto={generateAuto} onManual={startManual} aiRemaining={aiCreditsRemaining} aiLimit={aiCreditLimit} aiCost={AI_COST} />
         )}
         {view === "results" && parts && analysis && (
           <Results
             useCase={useCase} budget={budget} parts={parts} analysis={analysis} verdict={aiVerdict} aiBusy={aiBusy} onGenerate={runVerdict} isOnline={isOnline}
             expanded={expanded} setExpanded={setExpanded}
             onSwap={(c) => setPicker(c)} onRemove={removePart}
-            onRegen={generateAuto} afRemaining={afRemaining} afLimit={afLimit} onSave={() => setSavingOpen(true)}
+            onRegen={generateAuto} aiRemaining={aiCreditsRemaining} aiLimit={aiCreditLimit} aiCost={AI_COST} onSave={() => setSavingOpen(true)}
             onShare={hdrUser ? async (title) => {
               const a = analysis;
               await netPostCommunity(hdrUser.id, hdrUser.name, { title, useCase, budget, total: a.spend, perfScore: a.perf, parts });
@@ -6493,7 +6495,7 @@ function Survey({ onPick }) {
 }
 
 /* ----------------------------- BUDGET ----------------------------- */
-function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual, afRemaining, afLimit }) {
+function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual, aiRemaining, aiLimit, aiCost }) {
   const UC = USE_CASES[useCase];
   const MIN = 500, MAX = 4000;
   const pct = ((budget - MIN) / (MAX - MIN)) * 100;
@@ -6539,9 +6541,9 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual, afRe
       </div>
 
       <div className="rf-forge-btns">
-        <button type="button" className={"rf-forge-btn primary" + (afRemaining <= 0 ? " disabled" : "")} onClick={onAuto} disabled={afRemaining <= 0}>
+        <button type="button" className={"rf-forge-btn primary" + (aiRemaining < aiCost ? " disabled" : "")} onClick={onAuto} disabled={aiRemaining < aiCost}>
           <Sparkles size={15} /> {t("autoForge")}
-          {afLimit !== Infinity && <span className="rf-af-quota">{afRemaining <= 0 ? "0 left" : `${afRemaining} left`}</span>}
+          <span className="rf-af-quota">{aiRemaining} credits</span>
         </button>
         <button type="button" className="rf-forge-btn outline" onClick={onManual}>
           <Wrench size={15} /> {t("buildYourself")}
@@ -6556,7 +6558,7 @@ function BudgetStep({ useCase, budget, setBudget, onBack, onAuto, onManual, afRe
 }
 
 /* ----------------------------- RESULTS ----------------------------- */
-function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, afRemaining, afLimit, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline, onAnalyze, onTools, onNavigate }) {
+function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate, expanded, setExpanded, onSwap, onRemove, onRegen, aiRemaining, aiLimit, aiCost, onSave, onShare, onShareLogin, on3D, onPower, onShareLink, shareCopied, isOnline, onAnalyze, onTools, onNavigate }) {
   const UC = USE_CASES[useCase];
   const a = analysis;
   const [shareOpen, setShareOpen] = useState(false);
@@ -6596,8 +6598,8 @@ function Results({ useCase, budget, parts, analysis, verdict, aiBusy, onGenerate
           <h2>{t("yourBuild")}</h2>
         </div>
         <div className="rf-results-actions">
-          <button className="rf-ghost" onClick={onRegen} disabled={afRemaining <= 0} title={afRemaining <= 0 ? "No AutoForges left this month" : undefined}>
-            <Sparkles size={15} /> Auto-forge{afLimit !== Infinity && <span className="rf-af-quota-sm">{afRemaining <= 0 ? " (0 left)" : ` (${afRemaining} left)`}</span>}
+          <button className="rf-ghost" onClick={onRegen} disabled={aiRemaining < aiCost} title={aiRemaining < aiCost ? "Out of AI credits this month" : undefined}>
+            <Sparkles size={15} /> Auto-forge<span className="rf-af-quota-sm">{` (${aiRemaining} credits)`}</span>
           </button>
           <button className="rf-ghost" onClick={on3D}><LayoutGrid size={15} /> 3D View</button>
           <div style={{position:"relative"}}>
