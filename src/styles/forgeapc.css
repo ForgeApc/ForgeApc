@@ -4404,3 +4404,136 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 }
 .pm-score-detail-toggle:hover { color: var(--c-accent); opacity: 1; }
 .pm-score-detail { margin-top: 6px; }
+
+/* ================================================================
+   APPLE REFRESH — final authority. Calm, minimal, system-font look.
+   Supersedes all earlier glass/neon overhauls via the !important
+   cascade (this block is last in source order).
+   ================================================================ */
+
+/* 1. Refined dark-neutral palette — one restrained accent, hairline borders */
+.rf-root, .rf-root.rf-light {
+  --c-bg:#0b0b0d !important;
+  --c-panel:#161618 !important;
+  --c-panel-2:#212124 !important;
+  --c-border:rgba(255,255,255,0.10) !important;
+  --c-text:#f5f5f7 !important;
+  --c-muted:#98989f !important;
+  --c-accent:#2de0d2 !important;
+  --c-accent2:#a99bff !important;
+  --c-good:#34d399 !important;
+  --c-warn:#f5c451 !important;
+  --c-bad:#f87171 !important;
+  --c-track:rgba(255,255,255,0.09) !important;
+  --c-hover:rgba(255,255,255,0.14) !important;
+  --radius-card:16px !important;
+  --radius-btn:12px !important;
+  --radius-sm:10px !important;
+  background:var(--c-bg) !important;
+}
+
+/* 2. One typeface everywhere — the SF/system stack. Tabular numerals. */
+.rf-root, .rf-root *, .rf-root input, .rf-root button, .rf-root textarea, .rf-root select {
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter",system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif !important;
+  letter-spacing:normal !important;
+}
+.rf-root { font-variant-numeric:tabular-nums; }
+.rf-root h1, .rf-root h2, .rf-root h3 { font-weight:600 !important; letter-spacing:-0.01em !important; }
+
+/* 3. Kill decorative motion, glow, gradient-text and atmospheric blobs */
+.rf-bg { animation:none !important; opacity:0.35 !important; }
+.rf-logo { animation:none !important; box-shadow:none !important; background:var(--c-accent) !important; }
+.rf-btn::after { display:none !important; }
+.rf-hero-grad, .rf-step-head h2, .rf-results-head h2, .pm-mtitle, .pm-mtitle .rf-accent {
+  -webkit-text-fill-color:var(--c-text) !important;
+  color:var(--c-text) !important;
+  background:none !important;
+  animation:none !important;
+  filter:none !important;
+}
+.rf-hero-flash::before, .rf-step::before, .pm-menu::before, .rf-results-head::before { display:none !important; }
+.rf-cta-card:first-child { animation:none !important; }
+
+/* 4. Surfaces — flat, solid, hairline border, one soft shadow, no glass blur */
+.rf-pick, .rf-part, .rf-uc-card, .rf-saved-card, .rf-cta-card, .rf-scorecard,
+.pm-card, .rf-compat, .rf-alloc, .rf-info, .pm-scorecol, .pm-verdict-box,
+.rf-modal, .rf-plans, .rf-confirm, .rf-community-pick-row, .rf-community-card,
+.pm-mode, .pm-diff, .rf-settings-menu, .rf-assistant, .rf-drawer, .pm-drawer {
+  background:var(--c-panel) !important;
+  border:1px solid var(--c-border) !important;
+  box-shadow:0 1px 2px rgba(0,0,0,0.30) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+.rf-pick, .rf-part, .rf-uc-card, .rf-saved-card, .rf-cta-card, .pm-mode, .pm-diff {
+  border-radius:var(--radius-card) !important;
+}
+
+/* 5. No hover lift / glow flash — just a calm tint + hairline highlight */
+.rf-pick:hover, .rf-part:hover, .rf-uc-card:hover, .rf-saved-card:hover,
+.rf-cta-card:hover, .pm-mode:hover, .pm-diff:hover, .rf-community-pick-row:hover {
+  transform:none !important;
+  box-shadow:0 1px 3px rgba(0,0,0,0.35) !important;
+  border-color:rgba(255,255,255,0.20) !important;
+  background:var(--c-panel-2) !important;
+}
+
+/* 6. Buttons — solid accent primary, subtle-fill secondary, no gradient/pulse */
+.rf-btn, .rf-forge-btn.primary, .rf-cart-btn {
+  background:var(--c-accent) !important;
+  background-image:none !important;
+  color:#04211e !important;
+  border:none !important;
+  box-shadow:none !important;
+  border-radius:var(--radius-btn) !important;
+  font-weight:600 !important;
+  animation:none !important;
+}
+.rf-btn:hover, .rf-forge-btn.primary:hover, .rf-cart-btn:hover {
+  filter:brightness(1.08) !important;
+  transform:none !important;
+  box-shadow:none !important;
+}
+.rf-ghost, .rf-ghost-btn, .rf-chip-btn, .rf-forge-btn.outline, .rf-preset, .pm-mode, .rf-pill {
+  background:rgba(255,255,255,0.06) !important;
+  border:1px solid var(--c-border) !important;
+  color:var(--c-text) !important;
+  box-shadow:none !important;
+  background-image:none !important;
+  border-radius:var(--radius-btn) !important;
+}
+.rf-ghost:hover, .rf-ghost-btn:hover, .rf-chip-btn:hover, .rf-preset:hover, .rf-pill:hover {
+  background:rgba(255,255,255,0.11) !important;
+  transform:none !important;
+}
+.rf-chip-btn.primary { background:var(--c-accent) !important; color:#04211e !important; border:none !important; }
+.rf-preset.active, .rf-pill.active { background:rgba(45,224,210,0.16) !important; border-color:var(--c-accent) !important; color:var(--c-accent) !important; }
+
+/* 7. Badges & chips — flat, quiet, no glow/shadow */
+.rf-badge, .rf-pp-badge, .rf-sale-badge, .rf-best-val, .rf-flag, .rf-variant-count,
+.rf-cur-tag, .rf-af-quota, .pm-badge, .rf-hybrid {
+  box-shadow:none !important;
+  text-shadow:none !important;
+  font-weight:600 !important;
+  letter-spacing:normal !important;
+}
+
+/* 8. Inputs — clean fields */
+.rf-input, .rf-drawer-search input, .pm-search input, .rf-slider {
+  background:rgba(255,255,255,0.05) !important;
+  border:1px solid var(--c-border) !important;
+  box-shadow:none !important;
+  border-radius:var(--radius-sm) !important;
+}
+.rf-input:focus, .rf-drawer-search:focus-within { border-color:var(--c-accent) !important; box-shadow:none !important; }
+
+/* 9. Header — quiet sticky bar */
+.rf-header { background:rgba(11,11,13,0.80) !important; border-bottom:1px solid var(--c-border) !important; box-shadow:none !important; backdrop-filter:saturate(1.2) blur(12px) !important; -webkit-backdrop-filter:saturate(1.2) blur(12px) !important; }
+
+/* 10. Ask-AI FAB — solid accent, no purple glow */
+.rf-fab { background:var(--c-accent) !important; background-image:none !important; color:#04211e !important; box-shadow:0 6px 20px -6px rgba(0,0,0,0.5) !important; }
+.rf-fab:hover { transform:none !important; filter:brightness(1.08) !important; box-shadow:0 8px 24px -6px rgba(0,0,0,0.55) !important; }
+
+/* 11. Toggle segments / seg controls — calm */
+.rf-seg, .rf-billing-toggle { background:rgba(255,255,255,0.05) !important; border:1px solid var(--c-border) !important; }
+.rf-seg .active, .rf-billing-opt.active { background:var(--c-accent) !important; color:#04211e !important; }
