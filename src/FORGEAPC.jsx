@@ -1477,15 +1477,15 @@ export default function RigForge() {
       if (e.key === "c") setView("community");
       if (e.key === "p") setView("parts");
       if (e.key === "x") setView("compare");
-      if (e.key === "m") setView("mogger");
-      if (e.key === "d") setView("mogger");
+      if (e.key === "m") openDuels();
+      if (e.key === "d") openDuels();
       if (e.key === "s" && view === "results") setSavingOpen(true);
       if (e.key === "a" && view === "results") generateAuto();
       if (e.key === "Escape") { setSavingOpen(false); setPowerOpen(false); setView3D(false); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [view]);
+  }, [view, hdrUser]);
 
   const analysis = useMemo(
     () => (parts && useCase ? analyzeBuild(parts, useCase, budget) : null),
@@ -1547,10 +1547,12 @@ export default function RigForge() {
 
   // AI credits — monthly allowance per tier, 5 credits per AI action. Synced to Supabase.
   const AI_CREDITS = { free: 100, plus: 200, pro: 450, max: 2200 };
+  const GUEST_CREDITS = 50; // trial allowance before making an account (resets on sign-up)
   const AI_COST = 5; // credits per AI generation (AutoForge / re-forge)
   const aiMonthKey = () => { const d = new Date(); return `ai_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,"0")}`; };
   const [aiUsedCredits, setAiUsedCredits] = useState(() => { try { return Number(localStorage.getItem("mogger_" + ((() => { const d = new Date(); return `ai_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,"0")}`; })())) || 0); } catch(e) { return 0; } });
-  const aiCreditLimit = AI_CREDITS[subTier] ?? AI_CREDITS.free;
+  // Guests get a small trial pool; logged-in users get their tier's monthly allowance.
+  const aiCreditLimit = !hdrUser ? GUEST_CREDITS : (AI_CREDITS[subTier] ?? AI_CREDITS.free);
 
   // Saved-build limit per tier (free 5, plus/"lite" 80, pro 100, max unlimited).
   const BUILD_LIMITS = { free: 5, plus: 80, pro: 100, max: Infinity };
@@ -1560,15 +1562,14 @@ export default function RigForge() {
   const communityLimit = COMMUNITY_LIMITS[subTier] ?? 1;
   const aiCreditsRemaining = Math.max(0, aiCreditLimit - aiUsedCredits);
 
-  // Sync credits from Supabase on login (take the max so it can't be reset locally)
+  // On login the account's stored balance is authoritative — this discards any
+  // credits the guest session used and loads the user's real monthly usage.
   useEffect(() => {
     if (!hdrUser?.id) return;
     netFetchProfile(hdrUser.id).then(profile => {
       const remote = Number((profile?.ai_credits || {})[aiMonthKey()] || 0);
-      const local = Number((() => { try { return localStorage.getItem("mogger_" + aiMonthKey()) || 0; } catch(e) { return 0; } })());
-      const synced = Math.max(remote, local);
-      setAiUsedCredits(synced);
-      try { localStorage.setItem("mogger_" + aiMonthKey(), String(synced)); } catch(e) {}
+      setAiUsedCredits(remote);
+      try { localStorage.setItem("mogger_" + aiMonthKey(), String(remote)); } catch(e) {}
     }).catch(() => {});
   }, [hdrUser?.id]);
 
@@ -1587,8 +1588,17 @@ export default function RigForge() {
 
   const startSurvey = () => { setUseCase(null); setView("survey"); };
   const chooseUseCase = (sel) => { setUseCase(makeUseCase(Array.isArray(sel) ? sel : [sel])); setView("budget"); };
+  // PC Duels requires an account.
+  const openDuels = () => {
+    if (!hdrUser) { flash("Make a free account to play PC Duels."); setHdrAuth(true); return; }
+    setView("mogger");
+  };
   const generateAuto = () => {
-    if (aiCreditsRemaining < AI_COST) { flash(`Out of AI credits this month (${aiCreditLimit}/mo) — upgrade your plan for more.`); return; }
+    if (aiCreditsRemaining < AI_COST) {
+      flash(hdrUser ? `Out of AI credits this month (${aiCreditLimit}/mo) — upgrade your plan for more.` : "Trial used up — make a free account for more AI credits.");
+      if (!hdrUser) setHdrAuth(true);
+      return;
+    }
     spendCredits(AI_COST);
     setAutoGen(true); setParts(assembleBuild(useCase, budget)); setExpanded({}); setView("results");
   };
@@ -1752,7 +1762,16 @@ export default function RigForge() {
         </div>
       </header>
 
-      {hdrAuth && <MoggerAuth onClose={() => setHdrAuth(false)} onAuth={(u) => { try { localStorage.setItem("mogger_user", JSON.stringify(u)); } catch (e) {} setHdrUser(u); setHdrAuth(false); }} />}
+      {hdrAuth && <MoggerAuth onClose={() => setHdrAuth(false)} onAuth={(u, isSignup) => {
+        try { localStorage.setItem("mogger_user", JSON.stringify(u)); } catch (e) {}
+        if (isSignup) {
+          // fresh account starts with a full credit allotment
+          setAiUsedCredits(0);
+          try { localStorage.setItem("mogger_" + aiMonthKey(), "0"); } catch (e) {}
+          if (u.id) netFetchProfile(u.id).then(p => netSaveProfile(u.id, { ...(p || {}), ai_credits: { ...((p && p.ai_credits) || {}), [aiMonthKey()]: 0 } })).catch(() => {});
+        }
+        setHdrUser(u); setHdrAuth(false);
+      }} />}
       {payBanner && (
         <div className="rf-pay-banner" style={payBanner.ok ? {} : { background: "linear-gradient(135deg,#ff8a5c,#e23a52)", color: "#fff" }}>
           {payBanner.ok ? <Check size={18} /> : <AlertTriangle size={18} />} {payBanner.text}
@@ -1863,7 +1882,7 @@ export default function RigForge() {
 
       <main className={"rf-main rf-view-fade" + (viewVisible ? " rf-view-visible" : "")}>
         {view === "home" && (
-          <Home saved={saved} loading={loadingSaved} onNew={startSurvey} onOpen={openSaved} onDelete={deleteBuild} priceInfo={priceInfo} onMogger={() => setView("mogger")}
+          <Home saved={saved} loading={loadingSaved} onNew={startSurvey} onOpen={openSaved} onDelete={deleteBuild} priceInfo={priceInfo} onMogger={openDuels}
             onClone={async (b) => {
               const clone = { ...b, id: "b" + Date.now(), name: b.name + " (Copy)", savedAt: Date.now() };
               await sSet("build:" + clone.id, clone);
@@ -3942,7 +3961,7 @@ function MoggerAuth({ onClose, onAuth }) {
     try {
       const res = await (tab === "login" ? netLogIn : netSignUp)(name, pw);
       if (res && res.error) { setErr(res.error); setBusy(false); return; }
-      if (res && res.user) { onAuth(res.user); return; }
+      if (res && res.user) { onAuth(res.user, tab === "signup"); return; }
       setErr("Something went wrong — try again.");
     } catch (e) { setErr("Error: " + (e && e.message ? e.message : "try again")); }
     setBusy(false);
@@ -5213,6 +5232,7 @@ function PartsExplorer({ onBack }) {
 
   return (
     <div className="rf-fade rf-parts-explorer">
+      <button className="rf-ghost" style={{marginBottom:"0.9rem"}} onClick={onBack}><ChevronLeft size={15}/> Back</button>
       <div className="rf-section-head" style={{marginBottom:"1rem"}}>
         <div>
           <h2 style={{margin:0}}><PackageSearch size={18} style={{verticalAlign:"middle",marginRight:"6px"}} />Parts Explorer</h2>
@@ -5324,6 +5344,7 @@ function CompareBuilds({ saved, onBack }) {
 
   return (
     <div className="rf-fade rf-compare">
+      <button className="rf-ghost" style={{marginBottom:"0.9rem"}} onClick={onBack}><ChevronLeft size={15}/> Back</button>
       <div className="rf-section-head" style={{marginBottom:"1.25rem"}}>
         <div>
           <h2 style={{margin:0}}><Columns2 size={18} style={{verticalAlign:"middle",marginRight:"6px"}} />Compare Builds</h2>

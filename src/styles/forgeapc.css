@@ -4537,3 +4537,31 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 /* 11. Toggle segments / seg controls — calm */
 .rf-seg, .rf-billing-toggle { background:rgba(255,255,255,0.05) !important; border:1px solid var(--c-border) !important; }
 .rf-seg .active, .rf-billing-opt.active { background:var(--c-accent) !important; color:#04211e !important; }
+
+/* 12. Smooth, consistent motion — one gentle easing for every interactive surface */
+.rf-root .rf-btn, .rf-root .rf-ghost, .rf-root .rf-ghost-btn, .rf-root .rf-chip-btn,
+.rf-root .rf-pick, .rf-root .rf-part, .rf-root .rf-uc-card, .rf-root .rf-saved-card,
+.rf-root .rf-cta-card, .rf-root .pm-mode, .rf-root .pm-diff, .rf-root .rf-preset,
+.rf-root .rf-pill, .rf-root .rf-fab, .rf-root .rf-cart-btn, .rf-root input,
+.rf-root .rf-badge, .rf-root .rf-forge-btn, .rf-root .rf-community-pick-row {
+  transition: background-color .22s cubic-bezier(.4,0,.2,1), border-color .22s cubic-bezier(.4,0,.2,1),
+              color .22s cubic-bezier(.4,0,.2,1), transform .18s cubic-bezier(.34,1.2,.64,1),
+              opacity .22s cubic-bezier(.4,0,.2,1), box-shadow .22s cubic-bezier(.4,0,.2,1),
+              filter .18s cubic-bezier(.4,0,.2,1) !important;
+}
+/* Gentle press feedback */
+.rf-root .rf-btn:active, .rf-root .rf-chip-btn:active, .rf-root .pm-mode:active,
+.rf-root .pm-diff:active, .rf-root .rf-cta-card:active, .rf-root .rf-forge-btn:active,
+.rf-root .rf-preset:active, .rf-root .rf-fab:active { transform: scale(0.97) !important; }
+
+/* Refined entrance — soft fade-up, no spring overshoot. Redefining these keyframes
+   (last in source) retunes every .rf-fade / .rf-pop surface app-wide. */
+.rf-fade { animation: rfFade .36s cubic-bezier(.32,0,.18,1) both !important; }
+.rf-pop  { animation: rfFade .40s cubic-bezier(.32,0,.18,1) both !important; }
+.rf-modal, .rf-plans, .rf-confirm { animation: rfFade .30s cubic-bezier(.32,0,.18,1) both !important; }
+@keyframes rfFade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+@keyframes rfUp   { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@keyframes rfPop  { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+/* Smooth view cross-fade + guarantee the view is always clickable at rest */
+.rf-view-fade { transition:opacity .24s cubic-bezier(.32,0,.18,1), transform .24s cubic-bezier(.32,0,.18,1) !important; }
+.rf-view-fade.rf-view-visible { pointer-events:auto !important; }
