@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@600;700;800;900&display=swap');
 
 .rf-root{--c-bg:#0b0d18;--c-panel:rgba(28,24,52,0.78);--c-panel-2:rgba(36,30,64,0.85);
 --c-border:rgba(255,255,255,0.11);--c-text:#edf2ff;--c-muted:#7c87a0;
@@ -4411,45 +4411,76 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
    cascade (this block is last in source order).
    ================================================================ */
 
-/* 1. Refined dark-neutral palette — one restrained accent, hairline borders */
+/* 1. Brighter, more vivid dark palette — electric accents, clean surfaces */
 .rf-root, .rf-root.rf-light {
-  --c-bg:#0b0b0d !important;
-  --c-panel:#161618 !important;
-  --c-panel-2:#212124 !important;
-  --c-border:rgba(255,255,255,0.10) !important;
-  --c-text:#f5f5f7 !important;
-  --c-muted:#98989f !important;
-  --c-accent:#2de0d2 !important;
-  --c-accent2:#a99bff !important;
-  --c-good:#34d399 !important;
-  --c-warn:#f5c451 !important;
-  --c-bad:#f87171 !important;
-  --c-track:rgba(255,255,255,0.09) !important;
-  --c-hover:rgba(255,255,255,0.14) !important;
+  --c-bg:#0c0d14 !important;
+  --c-panel:#181a24 !important;
+  --c-panel-2:#232635 !important;
+  --c-border:rgba(255,255,255,0.13) !important;
+  --c-text:#f7f9ff !important;
+  --c-muted:#a3adc2 !important;
+  --c-accent:#25f4e4 !important;
+  --c-accent2:#b78bff !important;
+  --c-good:#3cf0a0 !important;
+  --c-warn:#ffd15c !important;
+  --c-bad:#ff6b83 !important;
+  --c-track:rgba(255,255,255,0.11) !important;
+  --c-hover:rgba(255,255,255,0.18) !important;
   --radius-card:16px !important;
   --radius-btn:12px !important;
   --radius-sm:10px !important;
   background:var(--c-bg) !important;
 }
 
-/* 2. One typeface everywhere — the SF/system stack. Tabular numerals. */
+/* 2. Typography — clean body (Sora), gamery display (Chakra Petch) for
+   headings, and a techy display face (Orbitron) for scores. */
 .rf-root, .rf-root *, .rf-root input, .rf-root button, .rf-root textarea, .rf-root select {
-  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter",system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif !important;
+  font-family:'Sora',-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",Roboto,sans-serif !important;
   letter-spacing:normal !important;
 }
 .rf-root { font-variant-numeric:tabular-nums; }
-.rf-root h1, .rf-root h2, .rf-root h3 { font-weight:600 !important; letter-spacing:-0.01em !important; }
+/* Gamery-but-clean headings + brand */
+.rf-root h1, .rf-root h2, .rf-root h3, .rf-root .rf-hero-title, .rf-root .rf-hero-grad,
+.rf-root .pm-h2, .rf-root .pm-mtitle, .rf-root .rf-step-head h2, .rf-root .rf-results-head h2,
+.rf-root .pm-verdict-title, .rf-root .rf-eyebrow, .rf-root .rf-logo, .rf-root .rf-brand,
+.rf-root .pm-intro-uc, .rf-root .pm-mode-name, .rf-root .rf-plan-name {
+  font-family:'Chakra Petch',-apple-system,system-ui,sans-serif !important;
+  font-weight:700 !important;
+  letter-spacing:-0.005em !important;
+}
+/* Techy score numerals */
+.rf-root .pm-bigscore, .rf-root .rf-part-score, .rf-root .rf-pick-score, .rf-root .pm-board-score,
+.rf-root .rf-gauge-val, .rf-root .pm-intro-count, .rf-root .pm-verdict-title,
+.rf-root .rf-score-num, .rf-root .pm-elo-num {
+  font-family:'Orbitron','Chakra Petch',sans-serif !important;
+  letter-spacing:0.01em !important;
+}
+/* Keep tabular monospace for prices / plain numbers — it reads clean here */
+.rf-root .rf-part-price, .rf-root .pm-opt-price, .rf-root .rf-total, .rf-root .rf-budget-display,
+.rf-root .rf-part-price-col, .rf-root .pm-price, .rf-root .rf-pick-price, .rf-root .rf-af-quota {
+  font-family:'JetBrains Mono',ui-monospace,monospace !important;
+}
 
-/* 3. Kill decorative motion, glow, gradient-text and atmospheric blobs */
-.rf-bg { animation:none !important; opacity:0.35 !important; }
-.rf-logo { animation:none !important; box-shadow:none !important; background:var(--c-accent) !important; }
+/* 3. Kill the reflective slide + decorative motion; keep a tasteful gamery hero */
+.rf-bg { animation:none !important; opacity:0.5 !important; }
+.rf-logo { animation:none !important; box-shadow:0 0 16px -4px var(--c-accent) !important; background:var(--c-accent) !important; }
 .rf-btn::after { display:none !important; }
-.rf-hero-grad, .rf-step-head h2, .rf-results-head h2, .pm-mtitle, .pm-mtitle .rf-accent {
-  -webkit-text-fill-color:var(--c-text) !important;
+/* the "reflective sliding" glare sweep on hover — gone */
+.pm-card::after, .rf-scorecard::after, .pm-mode::after, .pm-hero-4 .pm-mode-hero::after,
+.rf-part::after, .rf-pick::after, .rf-saved-card::after, .rf-uc-card::after, .pm-diff::after,
+.pm-quick-btn::after, .pm-special-mode-card::after, .pm-rrp-btn::after, .rf-preset::after,
+.rf-chip-btn::after { display:none !important; }
+/* Hero + section titles: bright gamery Chakra Petch, static (no shimmer/glow animation) */
+.rf-hero-title, .rf-hero-grad, .rf-step-head h2, .rf-results-head h2, .pm-mtitle, .pm-mtitle .rf-accent {
+  -webkit-text-fill-color:initial !important;
   color:var(--c-text) !important;
   background:none !important;
   animation:none !important;
   filter:none !important;
+}
+.rf-hero-grad, .pm-mtitle .rf-accent {
+  color:var(--c-accent) !important;
+  text-shadow:0 0 22px rgba(37,244,228,0.35) !important;
 }
 .rf-hero-flash::before, .rf-step::before, .pm-menu::before, .rf-results-head::before { display:none !important; }
 .rf-cta-card:first-child { animation:none !important; }
@@ -4565,3 +4596,21 @@ background:var(--c-accent2);vertical-align:text-bottom;animation:rfCursor 1s ste
 /* Smooth view cross-fade + guarantee the view is always clickable at rest */
 .rf-view-fade { transition:opacity .24s cubic-bezier(.32,0,.18,1), transform .24s cubic-bezier(.32,0,.18,1) !important; }
 .rf-view-fade.rf-view-visible { pointer-events:auto !important; }
+
+/* 13. Gamery accent touches — bright score numerals + a soft static glow on
+   primary actions. Static (no motion) so it reads energetic, not busy. */
+.rf-root .pm-bigscore, .rf-root .pm-board-score, .rf-root .pm-intro-count, .rf-root .rf-gauge-val {
+  color:var(--c-accent) !important;
+  text-shadow:0 0 18px rgba(37,244,228,0.35) !important;
+}
+.rf-root .rf-btn, .rf-root .rf-forge-btn.primary, .rf-root .rf-cart-btn, .rf-root .rf-fab {
+  box-shadow:0 4px 18px -6px rgba(37,244,228,0.55) !important;
+}
+.rf-root .rf-btn:hover, .rf-root .rf-forge-btn.primary:hover, .rf-root .rf-cart-btn:hover, .rf-root .rf-fab:hover {
+  box-shadow:0 6px 24px -6px rgba(37,244,228,0.75) !important;
+}
+/* Selected / active states pop a little brighter */
+.rf-root .rf-uc-card.sel, .rf-root .pm-diff.sel, .rf-root .rf-pick.current {
+  border-color:var(--c-accent) !important;
+  box-shadow:0 0 0 1px rgba(37,244,228,0.4), 0 2px 14px -4px rgba(37,244,228,0.4) !important;
+}

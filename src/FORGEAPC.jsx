@@ -1557,8 +1557,8 @@ export default function RigForge() {
   // Saved-build limit per tier (free 5, plus/"lite" 80, pro 100, max unlimited).
   const BUILD_LIMITS = { free: 5, plus: 80, pro: 100, max: Infinity };
   const buildLimit = BUILD_LIMITS[subTier] ?? BUILD_LIMITS.free;
-  // Community upload limit per tier (free can post just 1; paid tiers unlimited).
-  const COMMUNITY_LIMITS = { free: 1, plus: Infinity, pro: Infinity, max: Infinity };
+  // Community upload limit per tier.
+  const COMMUNITY_LIMITS = { free: 1, plus: 10, pro: 25, max: 750 };
   const communityLimit = COMMUNITY_LIMITS[subTier] ?? 1;
   const aiCreditsRemaining = Math.max(0, aiCreditLimit - aiUsedCredits);
 
@@ -1816,9 +1816,9 @@ export default function RigForge() {
               <div className="rf-plans-grid">
                 {[
                   { key: "free", name: "Free", monthly: 0,  annual: 0,  lifetime: 0,  tag: "",        perks: ["Full PC Duels access", "💾 Save up to 5 builds", "📤 1 community upload", "⚡ 100 AI credits / month"] },
-                  { key: "plus", name: "Plus", monthly: 2,  annual: 12, lifetime: 15, tag: "",        perks: ["Everything in Free", "💾 Save up to 80 builds", "Unlimited community uploads", '💜 "Supporter" rank badge', "⚡ 200 AI credits / month"] },
-                  { key: "pro",  name: "Pro",  monthly: 5,  annual: 22, lifetime: 26, tag: "Popular", perks: ['Everything in Plus', "💾 Save up to 100 builds", '🔥 "Pro" rank badge', "Priority price updates", "⚡ 450 AI credits / month"] },
-                  { key: "max",  name: "Max",  monthly: 8,  annual: 55, lifetime: 66, tag: "",        perks: ['Everything in Pro', "💾 Unlimited saved builds", '👑 "MAX" gold rank badge', "Beta features first", "⚡ 2,200 AI credits / month"] },
+                  { key: "plus", name: "Plus", monthly: 2,  annual: 12, lifetime: 15, tag: "",        perks: ["Everything in Free", "💾 Save up to 80 builds", "📤 10 community uploads", '💜 "Supporter" rank badge', "⚡ 200 AI credits / month"] },
+                  { key: "pro",  name: "Pro",  monthly: 5,  annual: 22, lifetime: 26, tag: "Popular", perks: ['Everything in Plus', "💾 Save up to 100 builds", "📤 25 community uploads", '🔥 "Pro" rank badge', "⚡ 450 AI credits / month"] },
+                  { key: "max",  name: "Max",  monthly: 8,  annual: 55, lifetime: 66, tag: "",        perks: ['Everything in Pro', "💾 Unlimited saved builds", "📤 750 community uploads", '👑 "MAX" gold rank badge', "⚡ 2,200 AI credits / month"] },
                 ].map((p) => {
                   const isLifetime = plansAnnual === "lifetime";
                   const price = isLifetime ? p.lifetime : plansAnnual ? p.annual : p.monthly;
@@ -5043,7 +5043,7 @@ function CommunityBuilds({ user, onLogin, onBack }) {
   const uploadLimit = (() => {
     let tier = "free";
     try { tier = localStorage.getItem("mogger_sub_tier") || "free"; } catch (e) {}
-    return { free: 1, plus: Infinity, pro: Infinity, max: Infinity }[tier] ?? 1;
+    return { free: 1, plus: 10, pro: 25, max: 750 }[tier] ?? 1;
   })();
   const doPost = async () => {
     if (!pickedBuild || !shareTitle.trim()) return;
