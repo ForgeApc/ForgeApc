@@ -1106,7 +1106,7 @@ export default function RigForge() {
   const [viewVisible, setViewVisible] = useState(true);
   const setViewAnimated = useCallback((nextView) => {
     setViewVisible(false);
-    setTimeout(() => { setView(nextView); setViewVisible(true); }, 180);
+    setTimeout(() => { setView(nextView); setViewVisible(true); try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {} }, 180);
   }, [setView]);
   const [priceInfo, setPriceInfo] = useState(null);
   const [isOnline, setIsOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
@@ -1871,7 +1871,8 @@ export default function RigForge() {
         </div>
       )}
 
-      <main className={"rf-main rf-view-fade" + (viewVisible ? " rf-view-visible" : "")}>
+      <QuickNav go={(v) => v === "mogger" ? openDuels() : v === "survey" ? startSurvey() : setViewAnimated(v)} />
+      <main key={view} className={"rf-main rf-view-fade rf-page-in" + (viewVisible ? " rf-view-visible" : "")}>
         {view === "home" && (
           <Home saved={saved} loading={loadingSaved} onNew={startSurvey} onOpen={openSaved} onDelete={deleteBuild} priceInfo={priceInfo} onMogger={openDuels}
             onClone={async (b) => {
@@ -4857,6 +4858,58 @@ function ForgeArt() {
         </g>
       </svg>
     </div>
+  );
+}
+const QUICK_NAV = [
+  ["home", "Home", "My rigs and dashboard"], ["survey", "New build", "Start a fresh build"], ["mogger", "PC Duels", "Play head-to-head"],
+  ["community", "Community", "Builds shared by others"], ["parts", "Parts explorer", "Browse every part"], ["compare", "Compare builds", "Side by side"],
+  ["analyze", "Analyze build", "Bottlenecks and balance"], ["tools", "Cost tools", "Power cost and value"], ["fps-games", "FPS & games", "Expected frame rates"],
+  ["build-stats", "Build stats", "Scores and tiers"], ["power-peripherals", "Power & peripherals", "PSU and extras"], ["export-more", "Export", "Copy, share, download"],
+];
+function QuickNav({ go }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [sel, setSel] = useState(0);
+  const [showTop, setShowTop] = useState(false);
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setOpen(o => !o); setQ(""); setSel(0); }
+      else if (e.key === "Escape") setOpen(false);
+    };
+    const onScroll = () => setShowTop(window.scrollY > 600);
+    window.addEventListener("keydown", onKey); window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("scroll", onScroll); };
+  }, []);
+  const items = QUICK_NAV.filter(([, l, d]) => (l + " " + d).toLowerCase().includes(q.toLowerCase()));
+  const pick = (v) => { setOpen(false); go(v); };
+  return (
+    <>
+      <button className="rf-qn-hint" onClick={() => { setOpen(true); setQ(""); setSel(0); }} title="Quick jump (Ctrl+K)"><Search size={13} /> Jump to… <kbd>Ctrl K</kbd></button>
+      <button className={"rf-totop" + (showTop ? " show" : "")} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} title="Back to top"><ChevronLeft size={18} style={{ transform: "rotate(90deg)" }} /></button>
+      {open && (
+        <div className="rf-qn-overlay" onClick={() => setOpen(false)}>
+          <div className="rf-qn" onClick={(e) => e.stopPropagation()}>
+            <div className="rf-qn-input"><Search size={16} />
+              <input autoFocus placeholder="Where to?" value={q} onChange={(e) => { setQ(e.target.value); setSel(0); }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") { e.preventDefault(); setSel(i => Math.min(i + 1, items.length - 1)); }
+                  if (e.key === "ArrowUp") { e.preventDefault(); setSel(i => Math.max(i - 1, 0)); }
+                  if (e.key === "Enter" && items[sel]) pick(items[sel][0]);
+                }} />
+              <kbd>Esc</kbd>
+            </div>
+            <div className="rf-qn-list">
+              {items.length === 0 && <div className="rf-qn-empty">No matches</div>}
+              {items.map(([v, l, d], i) => (
+                <button key={v} className={"rf-qn-item" + (i === sel ? " sel" : "")} onMouseEnter={() => setSel(i)} onClick={() => pick(v)}>
+                  <span>{l}</span><small>{d}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 function CompletenessRing({ parts, useCase }) {
