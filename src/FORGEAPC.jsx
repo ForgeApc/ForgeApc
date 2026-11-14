@@ -4780,20 +4780,20 @@ function ForgeArt() {
       <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="faGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#f0765a" stopOpacity="0.5" />
-            <stop offset="55%" stopColor="#9dc48a" stopOpacity="0.12" />
-            <stop offset="100%" stopColor="#9dc48a" stopOpacity="0" />
+            <stop offset="0%" stopColor="#ff8a1f" stopOpacity="0.5" />
+            <stop offset="55%" stopColor="#ffd23f" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#ffd23f" stopOpacity="0" />
           </radialGradient>
           <linearGradient id="faEdge" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#f0765a" /><stop offset="100%" stopColor="#9dc48a" />
+            <stop offset="0%" stopColor="#ff8a1f" /><stop offset="100%" stopColor="#ffd23f" />
           </linearGradient>
           <linearGradient id="faRGB" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f0765a" /><stop offset="50%" stopColor="#9dc48a" /><stop offset="100%" stopColor="#e9b86a" />
+            <stop offset="0%" stopColor="#ff8a1f" /><stop offset="50%" stopColor="#ffd23f" /><stop offset="100%" stopColor="#ffb627" />
           </linearGradient>
         </defs>
         <circle className="fa-coreglow" cx="200" cy="200" r="155" fill="url(#faGlow)" />
-        <g className="fa-ring"><circle cx="200" cy="200" r="128" fill="none" stroke="#f0765a" strokeOpacity="0.25" strokeWidth="1.2" strokeDasharray="5 12" /></g>
-        <g className="fa-ring2"><circle cx="200" cy="200" r="152" fill="none" stroke="#9dc48a" strokeOpacity="0.2" strokeWidth="1" strokeDasharray="2 16" /></g>
+        <g className="fa-ring"><circle cx="200" cy="200" r="128" fill="none" stroke="#ff8a1f" strokeOpacity="0.25" strokeWidth="1.2" strokeDasharray="5 12" /></g>
+        <g className="fa-ring2"><circle cx="200" cy="200" r="152" fill="none" stroke="#ffd23f" strokeOpacity="0.2" strokeWidth="1" strokeDasharray="2 16" /></g>
         {/* glowing ingot on the anvil, waiting to be forged */}
         <g className="fa-ingot">
           <ellipse cx="200" cy="214" rx="40" ry="9" fill="#000" fillOpacity="0.4" />
@@ -4803,33 +4803,33 @@ function ForgeArt() {
 
         {/* ===== assembled FISH-TANK gaming PC (wide glass box) ===== */}
         <g className="fa-pc">
-          <rect x="120" y="128" width="160" height="148" rx="14" fill="none" stroke="#f0765a" strokeOpacity="0.3" strokeWidth="8" className="fa-caseglow" />
+          <rect x="120" y="128" width="160" height="148" rx="14" fill="none" stroke="#ff8a1f" strokeOpacity="0.3" strokeWidth="8" className="fa-caseglow" />
           <rect x="120" y="128" width="160" height="148" rx="14" fill="#0b1018" stroke="url(#faEdge)" strokeWidth="2.5" />
           {/* glass front panel */}
-          <rect x="128" y="136" width="144" height="132" rx="9" fill="#0e1626" stroke="#9dc48a" strokeOpacity="0.3" strokeWidth="1" />
-          <rect x="128" y="136" width="60" height="132" rx="9" fill="#f0765a" fillOpacity="0.04" />
+          <rect x="128" y="136" width="144" height="132" rx="9" fill="#0e1626" stroke="#ffd23f" strokeOpacity="0.3" strokeWidth="1" />
+          <rect x="128" y="136" width="60" height="132" rx="9" fill="#ff8a1f" fillOpacity="0.04" />
           {/* top-mounted RGB radiator fans */}
-          <g className="fa-fan"><circle cx="155" cy="152" r="13" fill="none" stroke="#f0765a" strokeWidth="1.4" /><g className="fa-blades"><path d="M155 152 L155 142 M155 152 L163 158 M155 152 L147 158" stroke="#f0765a" strokeWidth="1.3" /></g><circle cx="155" cy="152" r="1.8" fill="#f0765a" /></g>
-          <g className="fa-fan2"><circle cx="186" cy="152" r="13" fill="none" stroke="#9dc48a" strokeWidth="1.4" /><g className="fa-blades"><path d="M186 152 L186 142 M186 152 L194 158 M186 152 L178 158" stroke="#9dc48a" strokeWidth="1.3" /></g><circle cx="186" cy="152" r="1.8" fill="#9dc48a" /></g>
-          <g className="fa-fan3"><circle cx="217" cy="152" r="13" fill="none" stroke="#e9b86a" strokeWidth="1.4" /><g className="fa-blades"><path d="M217 152 L217 142 M217 152 L225 158 M217 152 L209 158" stroke="#e9b86a" strokeWidth="1.3" /></g><circle cx="217" cy="152" r="1.8" fill="#e9b86a" /></g>
+          <g className="fa-fan"><circle cx="155" cy="152" r="13" fill="none" stroke="#ff8a1f" strokeWidth="1.4" /><g className="fa-blades"><path d="M155 152 L155 142 M155 152 L163 158 M155 152 L147 158" stroke="#ff8a1f" strokeWidth="1.3" /></g><circle cx="155" cy="152" r="1.8" fill="#ff8a1f" /></g>
+          <g className="fa-fan2"><circle cx="186" cy="152" r="13" fill="none" stroke="#ffd23f" strokeWidth="1.4" /><g className="fa-blades"><path d="M186 152 L186 142 M186 152 L194 158 M186 152 L178 158" stroke="#ffd23f" strokeWidth="1.3" /></g><circle cx="186" cy="152" r="1.8" fill="#ffd23f" /></g>
+          <g className="fa-fan3"><circle cx="217" cy="152" r="13" fill="none" stroke="#ffb627" strokeWidth="1.4" /><g className="fa-blades"><path d="M217 152 L217 142 M217 152 L225 158 M217 152 L209 158" stroke="#ffb627" strokeWidth="1.3" /></g><circle cx="217" cy="152" r="1.8" fill="#ffb627" /></g>
           {/* vertical GPU showcased behind the glass, twin RGB fans facing out */}
-          <rect x="140" y="180" width="32" height="80" rx="5" fill="#121a2b" stroke="#f0765a" strokeOpacity="0.7" strokeWidth="1.5" />
-          <g className="fa-fan2"><circle cx="156" cy="200" r="11" fill="none" stroke="#f0765a" strokeWidth="1.4" /><g className="fa-blades"><path d="M156 200 L156 191 M156 200 L164 205 M156 200 L148 205" stroke="#f0765a" strokeWidth="1.3" /></g><circle cx="156" cy="200" r="1.8" fill="#f0765a" /></g>
-          <g className="fa-fan"><circle cx="156" cy="232" r="11" fill="none" stroke="#9dc48a" strokeWidth="1.4" /><g className="fa-blades"><path d="M156 232 L156 223 M156 232 L164 237 M156 232 L148 237" stroke="#9dc48a" strokeWidth="1.3" /></g><circle cx="156" cy="232" r="1.8" fill="#9dc48a" /></g>
+          <rect x="140" y="180" width="32" height="80" rx="5" fill="#121a2b" stroke="#ff8a1f" strokeOpacity="0.7" strokeWidth="1.5" />
+          <g className="fa-fan2"><circle cx="156" cy="200" r="11" fill="none" stroke="#ff8a1f" strokeWidth="1.4" /><g className="fa-blades"><path d="M156 200 L156 191 M156 200 L164 205 M156 200 L148 205" stroke="#ff8a1f" strokeWidth="1.3" /></g><circle cx="156" cy="200" r="1.8" fill="#ff8a1f" /></g>
+          <g className="fa-fan"><circle cx="156" cy="232" r="11" fill="none" stroke="#ffd23f" strokeWidth="1.4" /><g className="fa-blades"><path d="M156 232 L156 223 M156 232 L164 237 M156 232 L148 237" stroke="#ffd23f" strokeWidth="1.3" /></g><circle cx="156" cy="232" r="1.8" fill="#ffd23f" /></g>
           {/* RAM sticks with RGB tops */}
-          <rect x="196" y="180" width="5" height="34" rx="1.5" fill="#121a2b" stroke="#9dc48a" strokeOpacity="0.7" />
-          <rect x="204" y="180" width="5" height="34" rx="1.5" fill="#121a2b" stroke="#9dc48a" strokeOpacity="0.7" />
-          <rect x="195" y="177" width="15" height="4" rx="2" fill="#e9b86a" className="fa-rgb" />
+          <rect x="196" y="180" width="5" height="34" rx="1.5" fill="#121a2b" stroke="#ffd23f" strokeOpacity="0.7" />
+          <rect x="204" y="180" width="5" height="34" rx="1.5" fill="#121a2b" stroke="#ffd23f" strokeOpacity="0.7" />
+          <rect x="195" y="177" width="15" height="4" rx="2" fill="#ffb627" className="fa-rgb" />
           {/* water-cooling reservoir tube with rising bubbles */}
-          <rect x="224" y="178" width="12" height="80" rx="6" fill="#0c1320" stroke="#f0765a" strokeOpacity="0.5" />
+          <rect x="224" y="178" width="12" height="80" rx="6" fill="#0c1320" stroke="#ff8a1f" strokeOpacity="0.5" />
           <rect x="226" y="180" width="8" height="76" rx="4" fill="url(#faRGB)" fillOpacity="0.4" className="fa-rgb" />
           <circle className="fa-bubble fa-b1" cx="230" cy="248" r="1.6" fill="#9be0ff" />
           <circle className="fa-bubble fa-b2" cx="231" cy="252" r="1.2" fill="#9be0ff" />
           <circle className="fa-bubble fa-b3" cx="229" cy="244" r="1.3" fill="#9be0ff" />
           {/* PSU / bottom shroud + RGB strip */}
-          <rect x="132" y="252" width="136" height="14" rx="4" fill="#0c1320" stroke="#f0765a" strokeOpacity="0.3" />
+          <rect x="132" y="252" width="136" height="14" rx="4" fill="#0c1320" stroke="#ff8a1f" strokeOpacity="0.3" />
           <rect x="252" y="178" width="12" height="68" rx="4" fill="url(#faRGB)" className="fa-rgb" />
-          <circle cx="260" cy="142" r="2.2" fill="#9dc48a" className="fa-rgb" />
+          <circle cx="260" cy="142" r="2.2" fill="#ffd23f" className="fa-rgb" />
         </g>
 
         {/* flash when it snaps together */}
@@ -4851,7 +4851,7 @@ function ForgeArt() {
         <g className="fa-pick">
           <line x1="252" y1="96" x2="194" y2="152" stroke="#c98a4b" strokeWidth="6.5" strokeLinecap="round" />
           <line x1="252" y1="96" x2="194" y2="152" stroke="#8a5a2b" strokeWidth="2.6" strokeLinecap="round" />
-          <path d="M166 152 Q194 130 222 152 Q210 158 194 153 Q178 158 166 152 Z" fill="#cdd7e6" stroke="#f0765a" strokeWidth="1.8" />
+          <path d="M166 152 Q194 130 222 152 Q210 158 194 153 Q178 158 166 152 Z" fill="#cdd7e6" stroke="#ff8a1f" strokeWidth="1.8" />
           <path d="M166 152 Q194 137 222 152" fill="none" stroke="#9fb0c4" strokeWidth="1" />
           <circle cx="194" cy="152" r="3" fill="#8a5a2b" />
         </g>
@@ -4885,16 +4885,25 @@ function Home({ saved, loading, onNew, onOpen, onDelete, priceInfo, onMogger, on
   const sorted = [...filtered].sort((a, b2) => { const ap = pins.includes(a.id) ? 1 : 0; const bp = pins.includes(b2.id) ? 1 : 0; return bp - ap; });
   return (
     <div className="rf-fade">
+      <section className="rf-hero2">
+        <div className="rf-hero2-text">
+          <div className="rf-hero2-eyebrow"><span className="rf-live-dot" /> {CATALOG_COUNT} parts · live prices</div>
+          <h1 className="rf-hero2-title">Forge your<br /><span className="rf-hero2-grad">own rig.</span></h1>
+          <p className="rf-hero2-sub">Pick a use case and budget. We score every part, auto-build a balanced, compatible PC and grade it out of 100.</p>
+          <div className="rf-dash-actions">
+            <button className="rf-act rf-act-primary rf-act-glow" onClick={onNew}><Plus size={15} /> {t("startBuild")}</button>
+            {onMogger && <button className="rf-act" onClick={onMogger}><Gamepad2 size={15} /> PC Duels</button>}
+          </div>
+        </div>
+        <div className="rf-hero2-art"><ForgeArt /></div>
+      </section>
+
       <section className="rf-dash">
         <div className="rf-dash-top">
           <div>
             <div className="rf-dash-label">Your garage <span className="rf-tag">{CATALOG_COUNT} parts</span></div>
             <div className="rf-dash-value">{saved.length ? fmt(saved.reduce((m, b) => Math.max(m, b.total || 0), 0)) : "$0"}</div>
             <div className="rf-dash-sub">{saved.length ? <><span className="rf-pos">{saved.length} {t("savedWord")}</span> · top build value</> : "Build a rig to get started"}</div>
-          </div>
-          <div className="rf-dash-actions">
-            <button className="rf-act rf-act-primary" onClick={onNew}><Plus size={15} /> {t("startBuild")}</button>
-            {onMogger && <button className="rf-act" onClick={onMogger}><Gamepad2 size={15} /> PC Duels</button>}
           </div>
         </div>
         <div className="rf-dash-stats">
