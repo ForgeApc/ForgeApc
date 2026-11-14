@@ -289,11 +289,11 @@ function detectBottleneck(parts) {
 function noiseRating(parts) {
   if (!parts.cooler) return { label: "Unknown", color: "#7c8798" };
   const t = (parts.cooler.type || "").toLowerCase();
-  if (t === "aio" || /aio|liquid|water/i.test(parts.cooler.name || "")) return { label: "Quiet", color: "#46e0a0" };
+  if (t === "aio" || /aio|liquid|water/i.test(parts.cooler.name || "")) return { label: "Quiet", color: "#9dc48a" };
   if (t === "air" || /air/i.test(parts.cooler.name || "")) {
     const tdp = parts.cooler.tdpRating || 0;
     if (tdp >= 280) return { label: "Moderate", color: "#ffc24b" };
-    return { label: "Quiet", color: "#46e0a0" };
+    return { label: "Quiet", color: "#9dc48a" };
   }
   return { label: "Moderate", color: "#ffc24b" };
 }
@@ -303,14 +303,14 @@ function buildBadges(parts, analysis, useCase) {
   const badges = [];
   const perf = analysis.score || 0, pp = analysis.ppScore || 0;
   const total = analysis.total || 0;
-  if (perf > 900) badges.push({ label: "Overkill", icon: "💀", color: "#ff5c72" });
+  if (perf > 900) badges.push({ label: "Overkill", icon: "💀", color: "#e5735f" });
   if (pp > 80 && total < 1200) badges.push({ label: "Budget King", icon: "👑", color: "#ffc24b" });
-  if (pp > 85) badges.push({ label: "Value Champ", icon: "💰", color: "#46e0a0" });
-  if (perf > 750 && noiseRating(parts).label === "Quiet") badges.push({ label: "Silent Beast", icon: "🤫", color: "#7c5cff" });
-  if (useCase === "gaming" && perf > 800) badges.push({ label: "Frame Monster", icon: "🎮", color: "#19e8db" });
-  if (useCase === "ai" && (parts.gpu?.vram || 0) >= 24) badges.push({ label: "AI Ready", icon: "🧠", color: "#7c5cff" });
-  if (useCase === "workstation" && perf > 700) badges.push({ label: "Pro Rig", icon: "🏆", color: "#19e8db" });
-  if (analysis.compat && !analysis.compat.pass) badges.push({ label: "Needs Fixes", icon: "⚠️", color: "#ff5c72" });
+  if (pp > 85) badges.push({ label: "Value Champ", icon: "💰", color: "#9dc48a" });
+  if (perf > 750 && noiseRating(parts).label === "Quiet") badges.push({ label: "Silent Beast", icon: "🤫", color: "#9dc48a" });
+  if (useCase === "gaming" && perf > 800) badges.push({ label: "Frame Monster", icon: "🎮", color: "#f0765a" });
+  if (useCase === "ai" && (parts.gpu?.vram || 0) >= 24) badges.push({ label: "AI Ready", icon: "🧠", color: "#9dc48a" });
+  if (useCase === "workstation" && perf > 700) badges.push({ label: "Pro Rig", icon: "🏆", color: "#f0765a" });
+  if (analysis.compat && !analysis.compat.pass) badges.push({ label: "Needs Fixes", icon: "⚠️", color: "#e5735f" });
   return badges;
 }
 
@@ -1137,8 +1137,8 @@ export default function RigForge() {
 
   // Perk definitions — what each tier automatically grants
   const SUB_CRANKS = {
-    plus: JSON.stringify([{ name: "Supporter", color: "#a07aff", icon: "💜" }]),
-    pro:  JSON.stringify([{ name: "Pro", color: "#1ff5e6", icon: "🔥" }]),
+    plus: JSON.stringify([{ name: "Supporter", color: "#9dc48a", icon: "💜" }]),
+    pro:  JSON.stringify([{ name: "Pro", color: "#f0765a", icon: "🔥" }]),
     max:  JSON.stringify([{ name: "MAX", color: "#ffd700", icon: "👑" }]),
   };
 
@@ -1338,20 +1338,20 @@ export default function RigForge() {
         const appearance = {
           theme: "night",
           variables: {
-            colorPrimary: "#19e8db",
+            colorPrimary: "#f0765a",
             colorBackground: "#0c1119",
             colorText: "#e2eaf4",
             colorTextSecondary: "#8aa0b4",
-            colorDanger: "#ff5c72",
-            fontFamily: "'Chakra Petch', sans-serif",
+            colorDanger: "#e5735f",
+            fontFamily: "'Inter', sans-serif",
             borderRadius: "10px",
             spacingUnit: "4px",
           },
           rules: {
             ".Input": { border: "1px solid #1e2a3a", backgroundColor: "#070a0f" },
-            ".Input:focus": { border: "1px solid #19e8db", boxShadow: "0 0 0 3px rgba(25,232,219,0.15)" },
+            ".Input:focus": { border: "1px solid #f0765a", boxShadow: "0 0 0 3px rgba(240,118,90,0.15)" },
             ".Label": { color: "#8aa0b4", fontSize: "12px", fontWeight: "600", letterSpacing: "0.06em", textTransform: "uppercase" },
-            ".Error": { color: "#ff5c72" },
+            ".Error": { color: "#e5735f" },
           },
         };
         const fonts = [{ cssSrc: "https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" }];
@@ -2085,7 +2085,7 @@ function ConfettiBurst({ active }) {
     const ctx = canvas.getContext("2d");
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    const COLORS = ["#1ff5e6","#a07aff","#ffd700","#ff6b6b","#7fff7f","#fff"];
+    const COLORS = ["#f0765a","#9dc48a","#ffd700","#ff6b6b","#7fff7f","#fff"];
     const particles = Array.from({ length: 120 }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height * 0.4 - 50,
@@ -2445,7 +2445,7 @@ function parseCrankOne(s) {
     if (s.charCodeAt(0) === 123) {
       try {
         const o = JSON.parse(s);
-        if (o && typeof o === 'object' && o.name) return { name: String(o.name), color: o.color || '#ff7ae0', icon: o.icon || '⭐' };
+        if (o && typeof o === 'object' && o.name) return { name: String(o.name), color: o.color || '#e9b86a', icon: o.icon || '⭐' };
         if (typeof o === 'string') { s = o.trim(); continue; }
       } catch (e) {}
     }
@@ -2453,16 +2453,16 @@ function parseCrankOne(s) {
   }
   if (s.indexOf(Q + 'name' + Q) >= 0) {
     const grab = (key) => { const t = s.indexOf(Q + key + Q); if (t < 0) return null; const colon = s.indexOf(':', t); if (colon < 0) return null; const q1 = s.indexOf(Q, colon + 1); if (q1 < 0) return null; const q2 = s.indexOf(Q, q1 + 1); if (q2 < 0) return null; return s.slice(q1 + 1, q2); };
-    const nm = grab('name'); if (nm) return { name: nm, color: grab('color') || '#ff7ae0', icon: grab('icon') || '⭐' };
+    const nm = grab('name'); if (nm) return { name: nm, color: grab('color') || '#e9b86a', icon: grab('icon') || '⭐' };
   }
   if (s.charCodeAt(0) === 123) return null;
-  return { name: s, color: '#ff7ae0', icon: '⭐' };
+  return { name: s, color: '#e9b86a', icon: '⭐' };
 }
 function parseCrank(c) {
   if (!c) return [];
   let s = String(c).trim(); if (!s) return [];
   if (s.charCodeAt(0) === 91) {
-    try { const arr = JSON.parse(s); if (Array.isArray(arr)) return arr.filter((o) => o && o.name).map((o) => ({ name: String(o.name), color: o.color || '#ff7ae0', icon: o.icon || '⭐' })); } catch (e) {}
+    try { const arr = JSON.parse(s); if (Array.isArray(arr)) return arr.filter((o) => o && o.name).map((o) => ({ name: String(o.name), color: o.color || '#e9b86a', icon: o.icon || '⭐' })); } catch (e) {}
   }
   const one = parseCrankOne(s);
   return one ? [one] : [];
@@ -2470,16 +2470,16 @@ function parseCrank(c) {
 function hexToRgba(hex, a) {
   let h = String(hex || "").replace("#", "");
   if (h.length === 3) h = h.split("").map((x) => x + x).join("");
-  const n = parseInt(h, 16); if (isNaN(n) || h.length !== 6) return "rgba(255,122,224," + a + ")";
+  const n = parseInt(h, 16); if (isNaN(n) || h.length !== 6) return "rgba(233,184,106," + a + ")";
   return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
 }
 function eloRank(elo) {
   const e = typeof elo === "number" && isFinite(elo) ? elo : 0;
   if (e >= 2500) return { name: "God Tier", cls: "god", icon: "👑", color: "#ffc24b" };
-  if (e >= 1500) return { name: "Elite Tier", cls: "elite", icon: "💎", color: "#7c5cff" };
+  if (e >= 1500) return { name: "Elite Tier", cls: "elite", icon: "💎", color: "#9dc48a" };
   if (e >= 1300) return { name: "Slightly High Tier", cls: "shigh", icon: "🔷", color: "#5ec8ff" };
-  if (e >= 950) return { name: "High Tier", cls: "high", icon: "⚡", color: "#19e8db" };
-  if (e >= 650) return { name: "Mid Tier", cls: "mid", icon: "🔧", color: "#46e0a0" };
+  if (e >= 950) return { name: "High Tier", cls: "high", icon: "⚡", color: "#f0765a" };
+  if (e >= 650) return { name: "Mid Tier", cls: "mid", icon: "🔧", color: "#9dc48a" };
   return { name: "Low Tier", cls: "low", icon: "🔩", color: "#8aa0b4" };
 }
 // Returns array of ranks — custom badges if any, else [eloRank]
@@ -4023,7 +4023,7 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
   const [eloDraft, setEloDraft] = useState("");
   const [pwDraft, setPwDraft] = useState("");
   const [rankDraft, setRankDraft] = useState("");
-  const [colorDraft, setColorDraft] = useState("#ff7ae0");
+  const [colorDraft, setColorDraft] = useState("#e9b86a");
   const [iconDraft, setIconDraft] = useState("⭐");
   const [ranksDraft, setRanksDraft] = useState([]);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -4044,7 +4044,7 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
     if (!r.ok) { setErr(r.error || "Delete failed — did you run the delete-permission SQL?"); return; }
     setRows((prev) => (prev || []).filter((u) => u.id !== id));
   };
-  const openRow = (u) => { if (expanded === u.id) { setExpanded(null); return; } setExpanded(u.id); setEloDraft(String(u.elo)); setPwDraft(""); const cr = parseCrank(u.crank); setRanksDraft(cr); setRankDraft(""); setColorDraft("#ff7ae0"); setIconDraft("⭐"); setEmojiOpen(false); setMsg(""); setErr(""); };
+  const openRow = (u) => { if (expanded === u.id) { setExpanded(null); return; } setExpanded(u.id); setEloDraft(String(u.elo)); setPwDraft(""); const cr = parseCrank(u.crank); setRanksDraft(cr); setRankDraft(""); setColorDraft("#e9b86a"); setIconDraft("⭐"); setEmojiOpen(false); setMsg(""); setErr(""); };
   const saveElo = async (u) => {
     const v = parseInt(eloDraft, 10);
     if (isNaN(v) || v < 0 || v > 100000) { setErr("Enter a whole number between 0 and 100000."); return; }
@@ -4064,7 +4064,7 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
     const nm = rankDraft.trim().slice(0, 24);
     if (!nm) { setErr(["Enter a rank name first."].join("")); return; }
     setRanksDraft((prev) => [...prev, { name: nm, color: colorDraft, icon: iconDraft || "⭐" }]);
-    setRankDraft(""); setColorDraft("#ff7ae0"); setIconDraft("⭐"); setErr("");
+    setRankDraft(""); setColorDraft("#e9b86a"); setIconDraft("⭐"); setErr("");
   };
   const removeRank = (i) => setRanksDraft((prev) => prev.filter((_, idx) => idx !== i));
   const saveRank = async (u) => {
@@ -4139,7 +4139,7 @@ function MoggerAdmin({ onBack, user, isCoadmin }) {
                 <div key={f.id} className="pm-admin-item" style={{padding:"12px 14px",borderRadius:"12px",border:"1px solid var(--c-border)",background:"var(--c-panel)"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px",marginBottom:"6px"}}>
                     <div>
-                      <span style={{fontFamily:"'Chakra Petch',sans-serif",fontWeight:700,fontSize:"0.88rem",color:"var(--c-accent2)"}}>{f.user_name || "Anonymous"}</span>
+                      <span style={{fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:"0.88rem",color:"var(--c-accent2)"}}>{f.user_name || "Anonymous"}</span>
                       <span className="rf-muted" style={{fontSize:"0.72rem",marginLeft:"8px",fontFamily:"'JetBrains Mono',monospace"}}>{f.created_at ? new Date(f.created_at).toLocaleString() : ""}</span>
                     </div>
                     {fbDelId === f.id
@@ -4195,7 +4195,7 @@ function Confetti() {
     const pieces = Array.from({length:120}, () => ({
       x: Math.random() * el.width, y: Math.random() * -el.height,
       r: 6 + Math.random() * 8, vx: (Math.random()-0.5)*4, vy: 2+Math.random()*4,
-      color: ["#19e8db","#7c5cff","#ffd24a","#ff7ae0","#46e0a0"][Math.floor(Math.random()*5)],
+      color: ["#f0765a","#9dc48a","#ffd24a","#e9b86a","#9dc48a"][Math.floor(Math.random()*5)],
       angle: Math.random()*360, spin: (Math.random()-0.5)*8,
     }));
     let raf;
@@ -4264,7 +4264,7 @@ function FeedbackModal({ user, onClose }) {
         {done ? (
           <div style={{textAlign:"center",padding:"24px 0"}}>
             <div style={{fontSize:"2.5rem",marginBottom:"12px"}}>✅</div>
-            <p className="pm-p" style={{fontFamily:"'Chakra Petch',sans-serif",fontWeight:600}}>Feedback sent!</p>
+            <p className="pm-p" style={{fontFamily:"'Inter',sans-serif",fontWeight:600}}>Feedback sent!</p>
             <p className="rf-muted" style={{fontSize:"0.85rem"}}>Thanks — we'll review it shortly.</p>
             <button className="rf-btn" style={{marginTop:"16px"}} onClick={onClose}>Close</button>
           </div>
@@ -4276,7 +4276,7 @@ function FeedbackModal({ user, onClose }) {
             placeholder="Your feedback…"
             value={msg}
             onChange={(e) => setMsg(e.target.value)}
-            style={{width:"100%",resize:"vertical",fontFamily:"'Sora',sans-serif",fontSize:"0.88rem"}}
+            style={{width:"100%",resize:"vertical",fontFamily:"'Inter',sans-serif",fontSize:"0.88rem"}}
           />
           <div style={{marginTop:"10px",display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
             <label className="rf-btn rf-ghost-btn" style={{cursor:"pointer",fontSize:"0.82rem"}}>
@@ -4789,20 +4789,20 @@ function ForgeArt() {
       <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="faGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#19e8db" stopOpacity="0.5" />
-            <stop offset="55%" stopColor="#7c5cff" stopOpacity="0.12" />
-            <stop offset="100%" stopColor="#7c5cff" stopOpacity="0" />
+            <stop offset="0%" stopColor="#f0765a" stopOpacity="0.5" />
+            <stop offset="55%" stopColor="#9dc48a" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#9dc48a" stopOpacity="0" />
           </radialGradient>
           <linearGradient id="faEdge" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#19e8db" /><stop offset="100%" stopColor="#7c5cff" />
+            <stop offset="0%" stopColor="#f0765a" /><stop offset="100%" stopColor="#9dc48a" />
           </linearGradient>
           <linearGradient id="faRGB" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#19e8db" /><stop offset="50%" stopColor="#7c5cff" /><stop offset="100%" stopColor="#ff7ae0" />
+            <stop offset="0%" stopColor="#f0765a" /><stop offset="50%" stopColor="#9dc48a" /><stop offset="100%" stopColor="#e9b86a" />
           </linearGradient>
         </defs>
         <circle className="fa-coreglow" cx="200" cy="200" r="155" fill="url(#faGlow)" />
-        <g className="fa-ring"><circle cx="200" cy="200" r="128" fill="none" stroke="#19e8db" strokeOpacity="0.25" strokeWidth="1.2" strokeDasharray="5 12" /></g>
-        <g className="fa-ring2"><circle cx="200" cy="200" r="152" fill="none" stroke="#7c5cff" strokeOpacity="0.2" strokeWidth="1" strokeDasharray="2 16" /></g>
+        <g className="fa-ring"><circle cx="200" cy="200" r="128" fill="none" stroke="#f0765a" strokeOpacity="0.25" strokeWidth="1.2" strokeDasharray="5 12" /></g>
+        <g className="fa-ring2"><circle cx="200" cy="200" r="152" fill="none" stroke="#9dc48a" strokeOpacity="0.2" strokeWidth="1" strokeDasharray="2 16" /></g>
         {/* glowing ingot on the anvil, waiting to be forged */}
         <g className="fa-ingot">
           <ellipse cx="200" cy="214" rx="40" ry="9" fill="#000" fillOpacity="0.4" />
@@ -4812,33 +4812,33 @@ function ForgeArt() {
 
         {/* ===== assembled FISH-TANK gaming PC (wide glass box) ===== */}
         <g className="fa-pc">
-          <rect x="120" y="128" width="160" height="148" rx="14" fill="none" stroke="#19e8db" strokeOpacity="0.3" strokeWidth="8" className="fa-caseglow" />
+          <rect x="120" y="128" width="160" height="148" rx="14" fill="none" stroke="#f0765a" strokeOpacity="0.3" strokeWidth="8" className="fa-caseglow" />
           <rect x="120" y="128" width="160" height="148" rx="14" fill="#0b1018" stroke="url(#faEdge)" strokeWidth="2.5" />
           {/* glass front panel */}
-          <rect x="128" y="136" width="144" height="132" rx="9" fill="#0e1626" stroke="#7c5cff" strokeOpacity="0.3" strokeWidth="1" />
-          <rect x="128" y="136" width="60" height="132" rx="9" fill="#19e8db" fillOpacity="0.04" />
+          <rect x="128" y="136" width="144" height="132" rx="9" fill="#0e1626" stroke="#9dc48a" strokeOpacity="0.3" strokeWidth="1" />
+          <rect x="128" y="136" width="60" height="132" rx="9" fill="#f0765a" fillOpacity="0.04" />
           {/* top-mounted RGB radiator fans */}
-          <g className="fa-fan"><circle cx="155" cy="152" r="13" fill="none" stroke="#19e8db" strokeWidth="1.4" /><g className="fa-blades"><path d="M155 152 L155 142 M155 152 L163 158 M155 152 L147 158" stroke="#19e8db" strokeWidth="1.3" /></g><circle cx="155" cy="152" r="1.8" fill="#19e8db" /></g>
-          <g className="fa-fan2"><circle cx="186" cy="152" r="13" fill="none" stroke="#7c5cff" strokeWidth="1.4" /><g className="fa-blades"><path d="M186 152 L186 142 M186 152 L194 158 M186 152 L178 158" stroke="#7c5cff" strokeWidth="1.3" /></g><circle cx="186" cy="152" r="1.8" fill="#7c5cff" /></g>
-          <g className="fa-fan3"><circle cx="217" cy="152" r="13" fill="none" stroke="#ff7ae0" strokeWidth="1.4" /><g className="fa-blades"><path d="M217 152 L217 142 M217 152 L225 158 M217 152 L209 158" stroke="#ff7ae0" strokeWidth="1.3" /></g><circle cx="217" cy="152" r="1.8" fill="#ff7ae0" /></g>
+          <g className="fa-fan"><circle cx="155" cy="152" r="13" fill="none" stroke="#f0765a" strokeWidth="1.4" /><g className="fa-blades"><path d="M155 152 L155 142 M155 152 L163 158 M155 152 L147 158" stroke="#f0765a" strokeWidth="1.3" /></g><circle cx="155" cy="152" r="1.8" fill="#f0765a" /></g>
+          <g className="fa-fan2"><circle cx="186" cy="152" r="13" fill="none" stroke="#9dc48a" strokeWidth="1.4" /><g className="fa-blades"><path d="M186 152 L186 142 M186 152 L194 158 M186 152 L178 158" stroke="#9dc48a" strokeWidth="1.3" /></g><circle cx="186" cy="152" r="1.8" fill="#9dc48a" /></g>
+          <g className="fa-fan3"><circle cx="217" cy="152" r="13" fill="none" stroke="#e9b86a" strokeWidth="1.4" /><g className="fa-blades"><path d="M217 152 L217 142 M217 152 L225 158 M217 152 L209 158" stroke="#e9b86a" strokeWidth="1.3" /></g><circle cx="217" cy="152" r="1.8" fill="#e9b86a" /></g>
           {/* vertical GPU showcased behind the glass, twin RGB fans facing out */}
-          <rect x="140" y="180" width="32" height="80" rx="5" fill="#121a2b" stroke="#19e8db" strokeOpacity="0.7" strokeWidth="1.5" />
-          <g className="fa-fan2"><circle cx="156" cy="200" r="11" fill="none" stroke="#19e8db" strokeWidth="1.4" /><g className="fa-blades"><path d="M156 200 L156 191 M156 200 L164 205 M156 200 L148 205" stroke="#19e8db" strokeWidth="1.3" /></g><circle cx="156" cy="200" r="1.8" fill="#19e8db" /></g>
-          <g className="fa-fan"><circle cx="156" cy="232" r="11" fill="none" stroke="#7c5cff" strokeWidth="1.4" /><g className="fa-blades"><path d="M156 232 L156 223 M156 232 L164 237 M156 232 L148 237" stroke="#7c5cff" strokeWidth="1.3" /></g><circle cx="156" cy="232" r="1.8" fill="#7c5cff" /></g>
+          <rect x="140" y="180" width="32" height="80" rx="5" fill="#121a2b" stroke="#f0765a" strokeOpacity="0.7" strokeWidth="1.5" />
+          <g className="fa-fan2"><circle cx="156" cy="200" r="11" fill="none" stroke="#f0765a" strokeWidth="1.4" /><g className="fa-blades"><path d="M156 200 L156 191 M156 200 L164 205 M156 200 L148 205" stroke="#f0765a" strokeWidth="1.3" /></g><circle cx="156" cy="200" r="1.8" fill="#f0765a" /></g>
+          <g className="fa-fan"><circle cx="156" cy="232" r="11" fill="none" stroke="#9dc48a" strokeWidth="1.4" /><g className="fa-blades"><path d="M156 232 L156 223 M156 232 L164 237 M156 232 L148 237" stroke="#9dc48a" strokeWidth="1.3" /></g><circle cx="156" cy="232" r="1.8" fill="#9dc48a" /></g>
           {/* RAM sticks with RGB tops */}
-          <rect x="196" y="180" width="5" height="34" rx="1.5" fill="#121a2b" stroke="#7c5cff" strokeOpacity="0.7" />
-          <rect x="204" y="180" width="5" height="34" rx="1.5" fill="#121a2b" stroke="#7c5cff" strokeOpacity="0.7" />
-          <rect x="195" y="177" width="15" height="4" rx="2" fill="#ff7ae0" className="fa-rgb" />
+          <rect x="196" y="180" width="5" height="34" rx="1.5" fill="#121a2b" stroke="#9dc48a" strokeOpacity="0.7" />
+          <rect x="204" y="180" width="5" height="34" rx="1.5" fill="#121a2b" stroke="#9dc48a" strokeOpacity="0.7" />
+          <rect x="195" y="177" width="15" height="4" rx="2" fill="#e9b86a" className="fa-rgb" />
           {/* water-cooling reservoir tube with rising bubbles */}
-          <rect x="224" y="178" width="12" height="80" rx="6" fill="#0c1320" stroke="#19e8db" strokeOpacity="0.5" />
+          <rect x="224" y="178" width="12" height="80" rx="6" fill="#0c1320" stroke="#f0765a" strokeOpacity="0.5" />
           <rect x="226" y="180" width="8" height="76" rx="4" fill="url(#faRGB)" fillOpacity="0.4" className="fa-rgb" />
           <circle className="fa-bubble fa-b1" cx="230" cy="248" r="1.6" fill="#9be0ff" />
           <circle className="fa-bubble fa-b2" cx="231" cy="252" r="1.2" fill="#9be0ff" />
           <circle className="fa-bubble fa-b3" cx="229" cy="244" r="1.3" fill="#9be0ff" />
           {/* PSU / bottom shroud + RGB strip */}
-          <rect x="132" y="252" width="136" height="14" rx="4" fill="#0c1320" stroke="#19e8db" strokeOpacity="0.3" />
+          <rect x="132" y="252" width="136" height="14" rx="4" fill="#0c1320" stroke="#f0765a" strokeOpacity="0.3" />
           <rect x="252" y="178" width="12" height="68" rx="4" fill="url(#faRGB)" className="fa-rgb" />
-          <circle cx="260" cy="142" r="2.2" fill="#46e0a0" className="fa-rgb" />
+          <circle cx="260" cy="142" r="2.2" fill="#9dc48a" className="fa-rgb" />
         </g>
 
         {/* flash when it snaps together */}
@@ -4860,7 +4860,7 @@ function ForgeArt() {
         <g className="fa-pick">
           <line x1="252" y1="96" x2="194" y2="152" stroke="#c98a4b" strokeWidth="6.5" strokeLinecap="round" />
           <line x1="252" y1="96" x2="194" y2="152" stroke="#8a5a2b" strokeWidth="2.6" strokeLinecap="round" />
-          <path d="M166 152 Q194 130 222 152 Q210 158 194 153 Q178 158 166 152 Z" fill="#cdd7e6" stroke="#19e8db" strokeWidth="1.8" />
+          <path d="M166 152 Q194 130 222 152 Q210 158 194 153 Q178 158 166 152 Z" fill="#cdd7e6" stroke="#f0765a" strokeWidth="1.8" />
           <path d="M166 152 Q194 137 222 152" fill="none" stroke="#9fb0c4" strokeWidth="1" />
           <circle cx="194" cy="152" r="3" fill="#8a5a2b" />
         </g>
@@ -5642,7 +5642,7 @@ function ToolsView({ parts: propParts, analysis: propAnalysis, useCase: propUseC
                 <div style={{fontSize:"0.75rem",color:"var(--c-muted)",marginBottom:"4px"}}>New build</div>
                 <div style={{fontSize:"1.3rem",fontWeight:700}}>${total}</div>
               </div>
-              <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(70,224,160,0.08)",border:"1px solid rgba(70,224,160,0.2)",textAlign:"center"}}>
+              <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(157,196,138,0.08)",border:"1px solid rgba(157,196,138,0.2)",textAlign:"center"}}>
                 <div style={{fontSize:"0.75rem",color:"var(--c-muted)",marginBottom:"4px"}}>Used estimate</div>
                 <div style={{fontSize:"1.3rem",fontWeight:700,color:"var(--c-good)"}}>${total - usedSavings}</div>
               </div>
@@ -5677,7 +5677,7 @@ function ToolsView({ parts: propParts, analysis: propAnalysis, useCase: propUseC
               </div>
             </div>
             <div style={{display:"flex",gap:"12px"}}>
-              <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(25,232,219,0.07)",border:"1px solid rgba(25,232,219,0.2)",textAlign:"center"}}>
+              <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(240,118,90,0.07)",border:"1px solid rgba(240,118,90,0.2)",textAlign:"center"}}>
                 <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginBottom:"4px"}}>Monthly payment</div>
                 <div style={{fontSize:"1.6rem",fontWeight:700,color:"var(--c-accent)",fontFamily:"'JetBrains Mono'"}}>${monthlyPayment(total,payMonths,payInterest)}</div>
               </div>
@@ -5699,11 +5699,11 @@ function ToolsView({ parts: propParts, analysis: propAnalysis, useCase: propUseC
             </div>
             {monthsToSave && (
               <div style={{display:"flex",gap:"12px",flexWrap:"wrap"}}>
-                <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(25,232,219,0.07)",border:"1px solid rgba(25,232,219,0.2)",textAlign:"center"}}>
+                <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(240,118,90,0.07)",border:"1px solid rgba(240,118,90,0.2)",textAlign:"center"}}>
                   <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginBottom:"4px"}}>Months to save</div>
                   <div style={{fontSize:"2rem",fontWeight:700,color:"var(--c-accent)",fontFamily:"'JetBrains Mono'"}}>{monthsToSave}</div>
                 </div>
-                <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(124,92,255,0.07)",border:"1px solid rgba(124,92,255,0.2)",textAlign:"center"}}>
+                <div style={{flex:1,padding:"12px",borderRadius:"10px",background:"rgba(157,196,138,0.07)",border:"1px solid rgba(157,196,138,0.2)",textAlign:"center"}}>
                   <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginBottom:"4px"}}>Target total</div>
                   <div style={{fontSize:"1.6rem",fontWeight:700,color:"var(--c-accent2)"}}>{fmt(total)}</div>
                 </div>
@@ -5725,7 +5725,7 @@ function ToolsView({ parts: propParts, analysis: propAnalysis, useCase: propUseC
               </div>
             </div>
             <div style={{display:"flex",gap:"10px",flexWrap:"wrap"}}>
-              <div style={{flex:1,padding:"10px",borderRadius:"10px",background:"rgba(70,224,160,0.08)",border:"1px solid rgba(70,224,160,0.2)",textAlign:"center"}}>
+              <div style={{flex:1,padding:"10px",borderRadius:"10px",background:"rgba(157,196,138,0.08)",border:"1px solid rgba(157,196,138,0.2)",textAlign:"center"}}>
                 <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginBottom:"4px"}}>Cashback earned</div>
                 <div style={{fontSize:"1.5rem",fontWeight:700,color:"var(--c-good)",fontFamily:"'JetBrains Mono'"}}>${cashbackAmt}</div>
               </div>
@@ -5777,8 +5777,8 @@ function ToolsView({ parts: propParts, analysis: propAnalysis, useCase: propUseC
                   </div>
                   <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
                     <span style={{fontWeight:600,fontSize:"0.84rem"}}>${parts[c].price}</span>
-                    <a href={amazonSearch(parts[c].name)} target="_blank" rel="noopener noreferrer" style={{fontSize:"0.72rem",color:"var(--c-accent)",border:"1px solid rgba(25,232,219,0.3)",borderRadius:"6px",padding:"2px 7px",textDecoration:"none"}}>Amazon</a>
-                    <a href={neweggSearch(parts[c].name)} target="_blank" rel="noopener noreferrer" style={{fontSize:"0.72rem",color:"var(--c-accent2)",border:"1px solid rgba(124,92,255,0.3)",borderRadius:"6px",padding:"2px 7px",textDecoration:"none"}}>Newegg</a>
+                    <a href={amazonSearch(parts[c].name)} target="_blank" rel="noopener noreferrer" style={{fontSize:"0.72rem",color:"var(--c-accent)",border:"1px solid rgba(240,118,90,0.3)",borderRadius:"6px",padding:"2px 7px",textDecoration:"none"}}>Amazon</a>
+                    <a href={neweggSearch(parts[c].name)} target="_blank" rel="noopener noreferrer" style={{fontSize:"0.72rem",color:"var(--c-accent2)",border:"1px solid rgba(157,196,138,0.3)",borderRadius:"6px",padding:"2px 7px",textDecoration:"none"}}>Newegg</a>
                   </div>
                 </div>
               ))}
@@ -5891,7 +5891,7 @@ function BuildStatsView({ parts: propParts, analysis: propAnalysis, useCase: pro
                 <div key={c} style={{padding:"14px",borderRadius:"12px",background:"var(--c-panel)",border:`2px solid ${g.color}44`,textAlign:"center"}}>
                   <M.Icon size={20} style={{color:g.color,marginBottom:"6px"}} />
                   <div style={{fontSize:"0.76rem",color:"var(--c-muted)",marginBottom:"4px"}}>{tCat(c)}</div>
-                  <div style={{fontSize:"2.5rem",fontWeight:800,color:g.color,fontFamily:"'Chakra Petch',sans-serif",lineHeight:1}}>{g.grade}</div>
+                  <div style={{fontSize:"2.5rem",fontWeight:800,color:g.color,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{g.grade}</div>
                   <div style={{fontSize:"0.72rem",color:"var(--c-muted)",marginTop:"4px"}}>{g.score}/100</div>
                 </div>
               );
@@ -5900,11 +5900,11 @@ function BuildStatsView({ parts: propParts, analysis: propAnalysis, useCase: pro
         )}
         {tab==="tier" && tier && (
           <div style={{textAlign:"center",padding:"40px 20px"}}>
-            <div style={{fontSize:"6rem",fontWeight:900,color:tier.color,fontFamily:"'Chakra Petch',sans-serif",lineHeight:1,textShadow:`0 0 60px ${tier.color}66`}}>{tier.tier}</div>
+            <div style={{fontSize:"6rem",fontWeight:900,color:tier.color,fontFamily:"'Inter',sans-serif",lineHeight:1,textShadow:`0 0 60px ${tier.color}66`}}>{tier.tier}</div>
             <div style={{fontSize:"1.4rem",fontWeight:700,color:tier.color,marginTop:"8px"}}>{tier.label}</div>
             <p style={{color:"var(--c-muted)",marginTop:"8px",fontSize:"0.9rem"}}>{tier.desc}</p>
             <div style={{marginTop:"20px",display:"inline-flex",gap:"6px",flexWrap:"wrap",justifyContent:"center"}}>
-              {["D","C","B","A","S","S+"].map(t=><span key={t} style={{padding:"6px 14px",borderRadius:"999px",border:`2px solid ${tier.tier===t?tier.color:"var(--c-border)"}`,fontWeight:700,fontSize:"0.9rem",color:tier.tier===t?tier.color:"var(--c-muted)",fontFamily:"'Chakra Petch'"}}>{t}</span>)}
+              {["D","C","B","A","S","S+"].map(t=><span key={t} style={{padding:"6px 14px",borderRadius:"999px",border:`2px solid ${tier.tier===t?tier.color:"var(--c-border)"}`,fontWeight:700,fontSize:"0.9rem",color:tier.tier===t?tier.color:"var(--c-muted)",fontFamily:"'Inter'"}}>{t}</span>)}
             </div>
             <div style={{marginTop:"24px",padding:"12px 16px",borderRadius:"10px",background:"var(--c-panel)",display:"inline-block"}}>
               <span className="rf-muted" style={{fontSize:"0.84rem"}}>Performance score: </span>
@@ -6064,7 +6064,7 @@ function ExportMoreView({ parts: propParts, analysis: propAnalysis, useCase: pro
             return (
               <div key={era.year} style={{padding:"16px",borderRadius:"12px",background:"var(--c-panel)",border:`2px solid ${isCurrent?"var(--c-accent)":"var(--c-border)"}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
-                  <span style={{fontWeight:700,fontSize:"1rem",fontFamily:"'Chakra Petch'"}}>{era.year} {isCurrent&&<span style={{color:"var(--c-accent)",fontSize:"0.8rem"}}>(Now)</span>}</span>
+                  <span style={{fontWeight:700,fontSize:"1rem",fontFamily:"'Inter'"}}>{era.year} {isCurrent&&<span style={{color:"var(--c-accent)",fontSize:"0.8rem"}}>(Now)</span>}</span>
                   <span style={{fontSize:"0.82rem",color:"var(--c-muted)"}}>{era.note}</span>
                 </div>
                 <div style={{fontSize:"0.84rem",marginBottom:"10px",color:"var(--c-muted)"}}>{era.desc}</div>
@@ -6083,7 +6083,7 @@ function ExportMoreView({ parts: propParts, analysis: propAnalysis, useCase: pro
 
       {tab==="summary" && (
         !parts ? <NoBuildPicker saved={saved} onPick={setLocalBuild} /> :
-        <div style={{maxWidth:"480px",padding:"24px",borderRadius:"14px",background:"linear-gradient(135deg,rgba(25,232,219,0.06),rgba(124,92,255,0.06))",border:"2px solid var(--c-accent)",fontFamily:"'Chakra Petch',sans-serif"}}>
+        <div style={{maxWidth:"480px",padding:"24px",borderRadius:"14px",background:"linear-gradient(135deg,rgba(240,118,90,0.06),rgba(157,196,138,0.06))",border:"2px solid var(--c-accent)",fontFamily:"'Inter',sans-serif"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px"}}>
             <div>
               <div style={{fontSize:"1.1rem",fontWeight:700,color:"var(--c-accent)"}}>FORGEAPC</div>
@@ -6302,8 +6302,8 @@ function AnalyzeView({ parts: propParts, analysis: propAnalysis, useCase: propUs
                 ? <p style={{color:"var(--c-good)",fontSize:"0.85rem"}}>✅ No deprecated platforms detected</p>
                 : alerts.map((a,i) => (
                   <div key={i} style={{display:"flex",gap:"8px",padding:"7px 10px",borderRadius:"8px",marginBottom:"6px",
-                    background: a.sev==="bad"?"rgba(255,92,114,0.08)":a.sev==="warn"?"rgba(255,194,75,0.08)":"rgba(25,232,219,0.06)",
-                    border:`1px solid ${a.sev==="bad"?"rgba(255,92,114,0.3)":a.sev==="warn"?"rgba(255,194,75,0.3)":"rgba(25,232,219,0.2)"}`}}>
+                    background: a.sev==="bad"?"rgba(255,92,114,0.08)":a.sev==="warn"?"rgba(255,194,75,0.08)":"rgba(240,118,90,0.06)",
+                    border:`1px solid ${a.sev==="bad"?"rgba(255,92,114,0.3)":a.sev==="warn"?"rgba(255,194,75,0.3)":"rgba(240,118,90,0.2)"}`}}>
                     <span style={{fontSize:"0.82rem",color:a.sev==="bad"?"var(--c-bad)":a.sev==="warn"?"var(--c-warn)":"var(--c-muted)"}}>{a.text}</span>
                   </div>
                 ))
@@ -6325,8 +6325,8 @@ function AnalyzeView({ parts: propParts, analysis: propAnalysis, useCase: propUs
                   <div className="rf-analyze-row"><span className="rf-muted">PSU rated</span><span>{pwr.psuWatt}W</span></div>
                   <div className="rf-analyze-row"><span className="rf-muted">Boost spike (125%)</span><span style={{color:pwr.spikeOk?"var(--c-good)":"var(--c-bad)"}}>{pwr.spikeRequired}W {pwr.spikeOk?"✓":"✗"}</span></div>
                   <div style={{marginTop:"8px",padding:"8px 10px",borderRadius:"8px",
-                    background:pwr.status==="bad"?"rgba(255,92,114,0.1)":pwr.status==="tight"?"rgba(255,194,75,0.08)":"rgba(70,224,160,0.08)",
-                    border:`1px solid ${pwr.status==="bad"?"rgba(255,92,114,0.3)":pwr.status==="tight"?"rgba(255,194,75,0.3)":"rgba(70,224,160,0.2)"}`}}>
+                    background:pwr.status==="bad"?"rgba(255,92,114,0.1)":pwr.status==="tight"?"rgba(255,194,75,0.08)":"rgba(157,196,138,0.08)",
+                    border:`1px solid ${pwr.status==="bad"?"rgba(255,92,114,0.3)":pwr.status==="tight"?"rgba(255,194,75,0.3)":"rgba(157,196,138,0.2)"}`}}>
                     <span style={{fontSize:"0.82rem",color:pwr.status==="bad"?"var(--c-bad)":pwr.status==="tight"?"var(--c-warn)":"var(--c-good)"}}>
                       {pwr.status==="bad" ? `⚠ PSU underpowered — ${Math.abs(pwr.margin)}W short` : pwr.status==="tight" ? `⚠ Tight headroom (${pwr.margin}W)` : `✓ ${pwr.margin}W headroom — solid`}
                     </span>

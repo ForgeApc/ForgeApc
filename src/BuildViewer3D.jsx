@@ -29,7 +29,7 @@ function SpinningBuild({ parts, useCase, hasGpu, gpuColor, ramSticks }) {
       </mesh>
       <mesh position={[-0.3, 0.1, 0.99]}>
         <boxGeometry args={[1.4, 0.02, 0.01]} />
-        <meshStandardMaterial color="#19e8db" emissive="#19e8db" emissiveIntensity={1} />
+        <meshStandardMaterial color="#f0765a" emissive="#f0765a" emissiveIntensity={1} />
       </mesh>
 
       {/* CPU */}
@@ -39,7 +39,7 @@ function SpinningBuild({ parts, useCase, hasGpu, gpuColor, ramSticks }) {
       </mesh>
       <mesh position={[-0.1, 0.7, 1.02]}>
         <boxGeometry args={[0.3, 0.3, 0.01]} />
-        <meshStandardMaterial color="#19e8db" emissive="#19e8db" emissiveIntensity={0.5} />
+        <meshStandardMaterial color="#f0765a" emissive="#f0765a" emissiveIntensity={0.5} />
       </mesh>
 
       {/* Cooler */}
@@ -54,7 +54,7 @@ function SpinningBuild({ parts, useCase, hasGpu, gpuColor, ramSticks }) {
       {Array.from({ length: ramSticks }).map((_, i) => (
         <mesh key={i} position={[0.28 + i * 0.13, 0.65, 0.99]}>
           <boxGeometry args={[0.08, 0.6, 0.05]} />
-          <meshStandardMaterial color="#7c5cff" emissive="#7c5cff" emissiveIntensity={0.4} metalness={0.5} />
+          <meshStandardMaterial color="#9dc48a" emissive="#9dc48a" emissiveIntensity={0.4} metalness={0.5} />
         </mesh>
       ))}
 
@@ -84,7 +84,7 @@ function SpinningBuild({ parts, useCase, hasGpu, gpuColor, ramSticks }) {
       {parts.storage && (
         <mesh position={[0.72, 0.1, 0.99]}>
           <boxGeometry args={[0.28, 0.1, 0.05]} />
-          <meshStandardMaterial color="#19e8db" emissive="#19e8db" emissiveIntensity={0.3} metalness={0.9} />
+          <meshStandardMaterial color="#f0765a" emissive="#f0765a" emissiveIntensity={0.3} metalness={0.9} />
         </mesh>
       )}
 
@@ -108,8 +108,8 @@ export default function BuildViewer3D({ parts, useCase }) {
     <div style={{ height: "420px", background: "#070a0f", borderRadius: "10px", overflow: "hidden" }}>
       <Canvas camera={{ position: [0, 1, 6], fov: 45 }} gl={{ antialias: true }}>
         <ambientLight intensity={0.4} />
-        <pointLight position={[3, 4, 3]} intensity={1.2} color="#19e8db" />
-        <pointLight position={[-3, -2, 2]} intensity={0.6} color="#7c5cff" />
+        <pointLight position={[3, 4, 3]} intensity={1.2} color="#f0765a" />
+        <pointLight position={[-3, -2, 2]} intensity={0.6} color="#9dc48a" />
         <SpinningBuild parts={parts} useCase={useCase} hasGpu={hasGpu} gpuColor={gpuColor} ramSticks={ramSticks} />
       </Canvas>
       <div style={{ textAlign: "center", fontSize: "0.75rem", color: "#7c8798", marginTop: "6px" }}>
