@@ -916,7 +916,7 @@ function useCountUp(target, duration = 900, startDelay = 0) {
 }
 
 function Gauge({ value, max = 100, size = 132, label, accent = "var(--c-accent)", delay = 0 }) {
-  const [tick, setTick] = useState(0);
+  const [tick, setTick] = useState(1);
   const v = useCountUp(tick > 0 ? value : 0, 3200, 0);
   const r = (size - 16) / 2;
   const circ = 2 * Math.PI * r;
@@ -1670,43 +1670,33 @@ export default function RigForge() {
     <div className={"rf-root" + (theme === "light" ? " rf-light" : "")} dir={lang === "ar" ? "rtl" : "ltr"}>
       <StyleBlock />
       <div className="rf-bg" />
-      <div className="rf-grid" />
-      <ParticleField />
       {!isOnline && <OfflineBanner offlinePriceStatus={offlinePriceStatus} priceInfo={priceInfo} />}
       {!isOnline && <div style={{height:"38px"}} />}
 
       <header className="rf-header">
         <div className="rf-brand" onClick={() => setViewAnimated("home")}>
-          <div className="rf-logo"><Zap size={18} /></div>
-          <span>FORGE<span className="rf-accent">APC</span></span>
+          <div className="rf-logo"><Zap size={14} /></div>
+          <span>ForgeAPC</span>
         </div>
-        <div className="rf-header-right">
-          {view !== "home" && (
-            <button className="rf-ghost" onClick={() => setViewAnimated("home")}>
-              <ChevronLeft size={16} /> {t("myRigs")}
-            </button>
-          )}
-          <div className="rf-settings-wrap" style={{position:"relative"}}>
-            <button className="rf-ghost rf-plans-btn" onClick={(e) => { e.stopPropagation(); setMoreOpen(o => !o); setSettingsOpen(false); }}>
-              ☰ More
-            </button>
+        <nav className="rf-nav">
+          {[["home","Builds"],["mogger","Duels"],["community","Community"],["parts","Parts"],["compare","Compare"]].map(([v, label]) => (
+            <button key={v} className={"rf-nav-link" + (view === v || (v === "home" && ["survey","budget","results"].includes(view)) ? " active" : "")} onClick={() => { v === "mogger" ? openDuels() : setViewAnimated(v); setMoreOpen(false); }}>{label}</button>
+          ))}
+          <div className="rf-settings-wrap">
+            <button className={"rf-nav-link" + (["analyze","tools","fps-games","build-stats","power-peripherals","export-more"].includes(view) ? " active" : "")} onClick={(e) => { e.stopPropagation(); setMoreOpen(o => !o); setSettingsOpen(false); }}>More</button>
             {moreOpen && (
-              <div className="rf-settings-menu rf-more-menu" style={{minWidth:"180px",right:0,top:"calc(100% + 6px)"}} onClick={(e) => e.stopPropagation()}>
-                <button className="rf-lang-opt" onClick={() => { setView("community"); setMoreOpen(false); }}><Users size={14} /> Community</button>
-                <button className="rf-lang-opt" onClick={() => { setView("parts"); setMoreOpen(false); }}><PackageSearch size={14} /> Parts</button>
-                <button className="rf-lang-opt" onClick={() => { setView("compare"); setMoreOpen(false); }}><Columns2 size={14} /> Compare</button>
-                <button className="rf-lang-opt" onClick={() => { setView("analyze"); setMoreOpen(false); }}><Zap size={14} /> Analyze Build</button>
-                <button className="rf-lang-opt" onClick={() => { setView("tools"); setMoreOpen(false); }}><DollarSign size={14} /> Cost Tools</button>
-                <div style={{height:"1px",background:"var(--c-border)",margin:"4px 0"}}/>
-                <button className="rf-lang-opt" onClick={() => { setView("fps-games"); setMoreOpen(false); }}>🎮 FPS &amp; Games</button>
-                <button className="rf-lang-opt" onClick={() => { setView("build-stats"); setMoreOpen(false); }}>🏆 Build Stats</button>
-                <button className="rf-lang-opt" onClick={() => { setView("power-peripherals"); setMoreOpen(false); }}>🔋 Power &amp; Peripherals</button>
-                <button className="rf-lang-opt" onClick={() => { setView("export-more"); setMoreOpen(false); }}>📁 Export &amp; More</button>
+              <div className="rf-settings-menu rf-more-menu" onClick={(e) => e.stopPropagation()}>
+                {[["analyze","Analyze build"],["tools","Cost tools"],["fps-games","FPS & games"],["build-stats","Build stats"],["power-peripherals","Power & peripherals"],["export-more","Export"]].map(([v, label]) => (
+                  <button key={v} className={"rf-lang-opt" + (view === v ? " active" : "")} onClick={() => { setView(v); setMoreOpen(false); }}>{label}</button>
+                ))}
+                <div className="rf-menu-sep" />
+                <button className="rf-lang-opt" onClick={() => { setShowPatch(true); setMoreOpen(false); }}>What's new</button>
+                <button className="rf-lang-opt" onClick={() => { setPlansOpen(true); setMoreOpen(false); }}>Plans</button>
               </div>
             )}
           </div>
-          <button className="rf-ghost rf-plans-btn" onClick={() => setShowPatch(true)}>✨ What's New</button>
-          <button className="rf-ghost rf-plans-btn" onClick={() => setPlansOpen(true)}><Sparkles size={15} /> Plans</button>
+        </nav>
+        <div className="rf-header-right">
           {hdrUser ? (
             <>
               {hdrUser.name === "Rayaan" && (
@@ -1756,6 +1746,7 @@ export default function RigForge() {
               </div>
             )}
           </div>
+          <button className="rf-ghost rf-fs-btn" onClick={() => changeTheme(theme === "dark" ? "light" : "dark")} title="Toggle theme">{theme === "dark" ? <Moon size={15} /> : <Sun size={15} />}</button>
           <button className="rf-ghost rf-fs-btn" onClick={toggleFs} title={isFs ? "Exit full screen" : "Full screen"}>
             {isFs ? <Minimize size={16} /> : <Maximize size={16} />}
           </button>
@@ -4894,34 +4885,37 @@ function Home({ saved, loading, onNew, onOpen, onDelete, priceInfo, onMogger, on
   const sorted = [...filtered].sort((a, b2) => { const ap = pins.includes(a.id) ? 1 : 0; const bp = pins.includes(b2.id) ? 1 : 0; return bp - ap; });
   return (
     <div className="rf-fade">
-      <div className="rf-hero rf-hero-flash">
-        <div className="rf-hero-text">
-          <div className="rf-eyebrow">PART PICKER · COMPATIBILITY · SCORING</div>
-          <h1 className="rf-hero-title">How to forge the<br /><span className="rf-accent rf-hero-grad">perfect computer.</span></h1>
-          <p className="rf-muted rf-hero-sub">
-            Tell us your use case and budget. We score every part, auto-assemble a balanced build,
-            check full compatibility, and grade the result out of 100.
-          </p>
-          <div className="rf-cta-grid">
-            <div className="rf-cta-card">
-              <button className="rf-btn rf-btn-lg" onClick={onNew}><Plus size={18} /> {t("startBuild")}</button>
-              <span className="rf-cta-desc">Answer two quick questions — we auto-pick balanced, compatible parts for your budget and grade the result out of 100.</span>
-            </div>
-            {onMogger && (
-              <div className="rf-cta-card">
-                <button className="rf-btn rf-btn-lg rf-mogger-cta" onClick={onMogger}><Gamepad2 size={18} /> Play PC Duels</button>
-                <span className="rf-cta-desc">A head-to-head build-off game — assemble the best PC for a budget and use case, then beat players or AI to climb the elo leaderboard.</span>
-              </div>
-            )}
+      <section className="rf-dash">
+        <div className="rf-dash-top">
+          <div>
+            <div className="rf-dash-label">Your garage <span className="rf-tag">{CATALOG_COUNT} parts</span></div>
+            <div className="rf-dash-value">{saved.length ? fmt(saved.reduce((m, b) => Math.max(m, b.total || 0), 0)) : "$0"}</div>
+            <div className="rf-dash-sub">{saved.length ? <><span className="rf-pos">{saved.length} {t("savedWord")}</span> · top build value</> : "Build a rig to get started"}</div>
           </div>
-          <div className="rf-price-status">
-            <span className="rf-db-count"><Boxes size={13} /> {CATALOG_COUNT} {t("componentsDb")}</span>
-            <span className="rf-dot-sep">·</span>
-            <span className="rf-live-ind"><span className="rf-live-dot" /> {t("livePrices")}</span>
-            {priceInfo && <> · {t("updated")} {new Date(priceInfo.updatedAt).toLocaleDateString()}</>}
+          <div className="rf-dash-actions">
+            <button className="rf-act rf-act-primary" onClick={onNew}><Plus size={15} /> {t("startBuild")}</button>
+            {onMogger && <button className="rf-act" onClick={onMogger}><Gamepad2 size={15} /> PC Duels</button>}
           </div>
         </div>
-        <ForgeArt />
+        <div className="rf-dash-stats">
+          <div><span>Saved rigs</span><strong>{saved.length}</strong></div>
+          <div><span>Best perf</span><strong>{saved.length ? Math.max(...saved.map(b => b.overallScore || 0)) : "—"}</strong></div>
+          <div><span>Best price/perf</span><strong>{saved.length ? Math.max(...saved.map(b => b.ppScore || 0)) : "—"}</strong></div>
+          <div><span>Prices</span><strong className="rf-live-ind"><span className="rf-live-dot" /> {priceInfo ? new Date(priceInfo.updatedAt).toLocaleDateString() : "Live"}</strong></div>
+        </div>
+      </section>
+
+      <div className="rf-dash-row">
+        <button className="rf-tile" onClick={onNew}>
+          <div className="rf-tile-head"><span>New build</span><Plus size={16} /></div>
+          <p>Answer two quick questions. We pick balanced, compatible parts for your budget and grade the build out of 100.</p>
+        </button>
+        {onMogger && (
+          <button className="rf-tile" onClick={onMogger}>
+            <div className="rf-tile-head"><span>PC Duels</span><Gamepad2 size={16} /></div>
+            <p>Head-to-head build-offs. Beat players or AI on a budget and climb the elo leaderboard.</p>
+          </button>
+        )}
       </div>
 
       <div className="rf-section-head">
